@@ -1,0 +1,15 @@
+version: '3'
+services:
+  isaiah:
+    image: mosswill/isaiah:latest
+    ports:
+      - "443:443"
+    volumes:
+      - ./certificate.pem:/certificate.pem
+      - ./key.pem:/key.pem
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      SSL_ENABLED: "TRUE"
+      SERVER_PORT: "443"
+
+      AUTHENTICATION_SECRET: "your-very-long-and-mysterious-secret"

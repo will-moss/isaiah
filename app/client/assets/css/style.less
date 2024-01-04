@@ -1,0 +1,395 @@
+@import './fonts.less';
+@import './normalize.less';
+@import './reset.less';
+@import './mixins.less';
+@import './colors.less';
+@import './components.less';
+
+* {
+  // outline: 1px dashed blue;
+}
+
+// Globals
+html {
+  .ft1();
+}
+
+// Screen - Animations
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+.app-wrapper {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: var(--color-terminal-background);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.screen {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  // Screen - Active
+  &.is-active {
+    pointer-events: all;
+    z-index: 2;
+    animation: fade-in 0.25s ease-in-out forwards;
+  }
+
+  // Screen - Inactive
+  &:not(.is-active) {
+    pointer-events: none;
+    z-index: -1;
+    animation: fade-out 0.25s ease-in-out forwards;
+  }
+
+  // Screen - Loading
+  &.for-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 60px;
+
+    @keyframes blink {
+      0% {
+        opacity: 0;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+    .loader {
+      color: #ffffff;
+      animation: blink 1s infinite alternate;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      svg {
+        width: 100%;
+      }
+    }
+
+    p {
+      margin-top: 30px;
+      text-align: center;
+    }
+  }
+
+  // Screen - Dashboard
+  &.for-dashboard {
+    display: flex;
+    flex-direction: column;
+
+    .main,
+    .footer {
+      width: 100%;
+    }
+
+    .main {
+      height: 100%;
+      display: flex;
+    }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      padding: 8px 4px;
+      height: 40px;
+
+      .left,
+      .right {
+        height: 100%;
+        display: flex;
+        align-items: center;
+      }
+
+      .left {
+        .help {
+          &:not(.is-active) {
+            display: none;
+          }
+        }
+      }
+
+      .right {
+        justify-content: flex-end;
+        position: relative;
+
+        .indicator {
+          color: var(--color-terminal-base);
+          justify-content: center;
+          align-items: center;
+          height: 100%;
+          transition: opacity 0.3s;
+          display: none;
+
+          svg {
+            height: 20px;
+          }
+
+          &.for-loading {
+            animation: spin 1s infinite linear;
+          }
+          &.for-disconnected {
+            color: var(--color-terminal-warning);
+          }
+          &.for-connected {
+            color: var(--color-terminal-accent-alternative);
+          }
+          &.is-active {
+            display: flex;
+          }
+        }
+      }
+    }
+
+    // Layouts
+    // &[data-layout='default'] {
+    .main {
+      column-gap: 16px;
+      padding-left: 4px; // Account for the tabs borders
+      padding-right: 16px + 4px; // Account for the tabs borders
+      padding-top: 18px; // Account for the first tabs' title + borders
+
+      @width-left: 34%;
+      @width-right: 66%;
+
+      .left,
+      .right {
+        // width: 50%;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+
+        .tab {
+          width: 100%;
+          height: 100%;
+        }
+      }
+
+      .left {
+        width: @width-left;
+        row-gap: 28px;
+        .tab {
+          .tab-content {
+            height: 0; // Trick to make overflow:auto work without setting a defined height
+            min-height: 100%;
+
+            .row {
+              gap: 24px;
+            }
+          }
+
+          &.for-containers {
+            .cell {
+              &[data-value='exited'] {
+                color: var(--color-terminal-cell-failure);
+
+                + .cell {
+                  color: var(--color-terminal-cell-failure);
+                }
+              }
+              &[data-value='running'] {
+                color: var(--color-terminal-cell-success);
+              }
+              &[data-value='paused'] {
+                color: var(--color-terminal-cell-paused);
+              }
+            }
+          }
+        }
+      }
+      // Inspector part
+      .right {
+        width: @width-right;
+        .tab {
+          .tab-content {
+            height: 0; // Trick to make overflow:auto work without setting a defined height
+            min-height: 100%;
+            overflow: auto;
+
+            .row:not(:has(.sub-row)) {
+              gap: 24px;
+
+              &.sub-row {
+                gap: 8px;
+                &:has(.sub-row) {
+                  gap: 0;
+                }
+              }
+            }
+            .row:not(:has(.sub-row)).is-json {
+              gap: 8px;
+            }
+          }
+        }
+
+        [data-tab='Logs'] .row.is-textual {
+          white-space: nowrap;
+        }
+      }
+    }
+    // }
+
+    &[data-layout='half'] {
+      .main {
+        .left,
+        .right {
+          width: 50%;
+        }
+      }
+    }
+
+    &[data-layout='focus'] {
+      .main {
+        .left,
+        .right {
+          width: 50%;
+        }
+
+        .left .tab:not(.is-current) {
+          display: none;
+        }
+      }
+    }
+
+    // States
+    &.is-loading {
+      .footer {
+        .right {
+          .indicator.for-loading {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Popup
+.popup-layer {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  z-index: 9;
+  display: none;
+
+  &.is-active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .popup {
+    width: 55vw;
+    background: var(--color-terminal-background);
+
+    &[data-type='error'] .tab-content .row.is-textual p {
+      color: var(--color-terminal-danger);
+    }
+
+    &.for-menu .tab-content {
+      overflow: auto;
+    }
+
+    &.for-tty {
+      width: 90%;
+      height: 80%;
+
+      .tab-content {
+        justify-content: flex-start;
+        height: 100%;
+        overflow: auto;
+
+        input {
+          border: 0;
+          background: transparent;
+          color: var(--color-terminal-base);
+          caret-color: var(--color-terminal-base);
+          outline: 0;
+          margin-left: 8px;
+          width: 90%;
+        }
+      }
+    }
+
+    &.for-prompt {
+      &.for-login {
+        width: 435px;
+      }
+
+      .tab-content {
+        justify-content: flex-start;
+        overflow: auto;
+
+        input {
+          border: 0;
+          background: transparent;
+          color: var(--color-terminal-base);
+          caret-color: var(--color-terminal-base);
+          outline: 0;
+          margin-left: 8px;
+          width: 90%;
+        }
+      }
+    }
+
+    &.for-message[data-category='authentication'] {
+      width: 435px;
+    }
+  }
+}
+
+// Mobile blocker
+.mobile-blocker {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99;
+  pointer-events: none;
+  background: var(--color-terminal-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  p {
+    padding: 0 24px;
+    line-height: 125%;
+  }
+
+  @media screen and (min-width: 920px) {
+    display: none;
+  }
+}

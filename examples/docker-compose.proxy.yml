@@ -1,0 +1,36 @@
+version: '3'
+services:
+  isaiah:
+    image: mosswill/isaiah:latest
+    networks:
+      - global
+    expose:
+      - 80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      SERVER_PORT: "80"
+      AUTHENTICATION_SECRET: "your-very-long-and-mysterious-secret"
+
+      VIRTUAL_HOST: "your-domain.tld"
+      VIRTUAL_PORT: "80"
+
+      # Depending on your setup, you may also need
+      # CERT_NAME: "default"
+      # Or even
+      # LETSENCRYPT_HOST: "your-domain.tld"
+
+  proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - global
+
+networks:
+  # Assumption made : network "global" is created beforehand
+  # with            : docker network create global
+  global:
+    external: true

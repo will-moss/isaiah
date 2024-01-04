@@ -1,0 +1,12 @@
+version: '3'
+services:
+  isaiah:
+    image: mosswill/isaiah:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      SERVER_PORT: "80"
+      AUTHENTICATION_SECRET: "your-very-long-and-mysterious-secret"
