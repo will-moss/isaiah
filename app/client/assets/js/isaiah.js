@@ -163,6 +163,15 @@
    */
   const hgetPromptInput = () => q('#prompt-input');
 
+  /**
+   * @returns {HTMLElement}
+   */
+  const hgetMobileControl = (action) =>
+    q(`.mobile-controls button[data-action="${action}"]`);
+
+  const hgetMobileControls = (action) =>
+    qq(`.mobile-controls button[data-action]`);
+
   // === Render-related methods
 
   /**
@@ -876,6 +885,35 @@
     ).classList.add('is-active');
     if (_state.isLoading)
       hgetConnectionIndicator('loading').classList.add('is-active');
+
+    // 8. Reset mobile controls' visibility
+    hgetMobileControls().forEach((e) => {
+      e.classList.remove('is-active');
+    });
+
+    // 9. Update the mobile controls' visibility
+
+    // 9.1. Case when menuing
+    if (_state.isMenuIng) {
+      hgetMobileControl('reject').classList.add('is-active');
+      hgetMobileControl('confirm').classList.add('is-active');
+    }
+    // 9.2. Case when tty-ing / showing a message
+    else if (_state.popup === 'tty' || _state.popup === 'message') {
+      hgetMobileControl('_ttyQuit').classList.add('is-active');
+    }
+    // 9.3. Case when prompting
+    else if (_state.prompt.isEnabled || _state.prompt.input.isEnabled) {
+      hgetMobileControl('reject').classList.add('is-active');
+      hgetMobileControl('confirm').classList.add('is-active');
+    }
+    // 9.4. Every other case (default navigation)
+    else {
+      hgetMobileControl('previousTab').classList.add('is-active');
+      hgetMobileControl('nextTab').classList.add('is-active');
+      hgetMobileControl('menu').classList.add('is-active');
+      hgetMobileControl('bulk').classList.add('is-active');
+    }
   };
 
   // === Websocket-related methods
@@ -1456,6 +1494,17 @@
         action: 'shell.command',
         args: { Command: command },
       });
+    },
+
+    /**
+     * Public - Mobile-only - TTY-only - Quit the current TTY
+     */
+    ttyQuit: function () {
+      state.tty.isEnabled = false;
+      state.tty.lines = [];
+      state.tty.history = [];
+      state.tty.historyCursor = [];
+      cmdRun(cmds._clearPopup);
     },
 
     /**
@@ -2431,7 +2480,7 @@
       // 4.2. If menuing, and clicked outside the menu, dismiss it
       else if (state.isMenuIng && target.classList.contains('popup-layer'))
         cmdRun(cmds.reject);
-      // 4.3. If menuing, run the 3. scenario (assumption: we clicked a span inside a row)
+      // 4.3. If menuing, and clicked inside the menu, run the 3. scenario (assumption: we clicked a span inside a row)
       else {
         const tabContent = target.parentNode.parentNode;
         const tabRow = target.parentNode;

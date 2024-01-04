@@ -112,8 +112,10 @@ func main() {
 	}
 	server.Melody.Config.MaxMessageSize = _strconv.ParseInt(_os.GetEnv("SERVER_MAX_READ_SIZE"), 10, 64)
 
-	// Set up static file serving for the front-end with support for color-theming
+	// Load embed assets as a filesystem
 	serverRoot := _fs.Sub(clientAssets, "client")
+
+	// Set up static file serving for the CSS theming
 	http.HandleFunc("/assets/css/custom.css", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := os.Stat("custom.css"); errors.Is(err, os.ErrNotExist) {
 			w.WriteHeader(200)
@@ -122,7 +124,13 @@ func main() {
 
 		http.ServeFile(w, r, "custom.css")
 	})
-	http.Handle("/", http.StripPrefix("/", http.FileServer(http.FS(serverRoot))))
+
+	if _os.GetEnv("DEV_ENABLED") != "TRUE" {
+		// Set up static file serving for all the front-end files
+		http.Handle("/", http.StripPrefix("/", http.FileServer(http.FS(serverRoot))))
+	} else {
+		http.Handle("/", http.FileServer(http.Dir("./client")))
+	}
 
 	// Set up an endpoint to handle Websocket connections with Melody
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
