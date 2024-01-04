@@ -5,6 +5,8 @@
 @import './colors.less';
 @import './components.less';
 
+@width-mobile: 960px;
+
 * {
   // outline: 1px dashed blue;
 }
@@ -115,6 +117,10 @@ html {
     .main {
       height: 100%;
       display: flex;
+
+      @media screen and (max-width: @width-mobile) {
+        flex-direction: column;
+      }
     }
 
     .footer {
@@ -136,6 +142,43 @@ html {
         .help {
           &:not(.is-active) {
             display: none;
+          }
+
+          @media screen and (max-width: @width-mobile) {
+            display: none;
+          }
+        }
+
+        .mobile-controls {
+          align-items: center;
+          width: 100%;
+          height: 100%;
+          gap: 48px;
+          display: none;
+
+          @media screen and (max-width: @width-mobile) {
+            display: flex;
+          }
+
+          button {
+            width: 36px;
+            height: 100%;
+
+            &.has-icon {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+
+              svg {
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+              }
+            }
+
+            &:not(.is-active) {
+              display: none;
+            }
           }
         }
       }
@@ -183,6 +226,11 @@ html {
       @width-left: 34%;
       @width-right: 66%;
 
+      @media screen and (max-width: @width-mobile) {
+        padding-right: 6px;
+        row-gap: 24px;
+      }
+
       .left,
       .right {
         // width: 50%;
@@ -199,6 +247,12 @@ html {
       .left {
         width: @width-left;
         row-gap: 28px;
+
+        @media screen and (max-width: @width-mobile) {
+          width: 100%;
+          height: ~'calc(50% - 12px)';
+        }
+
         .tab {
           .tab-content {
             height: 0; // Trick to make overflow:auto work without setting a defined height
@@ -231,6 +285,12 @@ html {
       // Inspector part
       .right {
         width: @width-right;
+
+        @media screen and (max-width: @width-mobile) {
+          width: 100%;
+          height: ~'calc(50% - 12px)';
+        }
+
         .tab {
           .tab-content {
             height: 0; // Trick to make overflow:auto work without setting a defined height
@@ -279,6 +339,13 @@ html {
         .left .tab:not(.is-current) {
           display: none;
         }
+      }
+    }
+
+    @media screen and (max-width: @width-mobile) {
+      // Copied from data-layout='focus'
+      .left .tab:not(.is-current) {
+        display: none;
       }
     }
 
@@ -366,6 +433,19 @@ html {
     &.for-message[data-category='authentication'] {
       width: 435px;
     }
+
+    @media screen and (max-width: @width-mobile) {
+      width: 90%;
+      &.for-message[data-category='authentication'],
+      &.for-tty,
+      &.for-prompt.for-login {
+        width: 90%;
+      }
+    }
+  }
+
+  @media screen and (max-width: @width-mobile) {
+    height: ~'calc(100% - 78px)';
   }
 }
 
