@@ -1,0 +1,99 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 1
+
+before:
+  hooks:
+    - ./scripts/pre-release.sh
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm
+      - arm64
+      - 386
+    goarm:
+      - 6
+      - 7
+    dir: app
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Tag }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+dockers:
+- image_templates:
+  - 'mosswill/isaiah:{{ .Tag }}-amd64'
+  use: buildx
+  build_flag_templates:
+  - "--pull"
+  - "--platform=linux/amd64"
+  goarch: amd64
+
+
+- image_templates:
+  - 'mosswill/isaiah:{{ .Tag }}-arm64'
+  use: buildx
+  build_flag_templates:
+  - "--pull"
+  - "--platform=linux/arm64"
+  goarch: arm64
+
+- image_templates:
+  - 'mosswill/isaiah:{{ .Tag }}-armv6'
+  use: buildx
+  build_flag_templates:
+  - "--pull"
+  - "--platform=linux/arm/v6"
+  goarch: arm
+  goarm: 6
+
+- image_templates:
+  - 'mosswill/isaiah:{{ .Tag }}-armv7'
+  use: buildx
+  build_flag_templates:
+  - "--pull"
+  - "--platform=linux/arm/v7"
+  goarch: arm
+  goarm: 7
+
+docker_manifests:
+- name_template: "mosswill/isaiah:{{ .Tag }}"
+  image_templates:
+  - "mosswill/isaiah:{{ .Tag }}-amd64"
+  - "mosswill/isaiah:{{ .Tag }}-arm64"
+  - "mosswill/isaiah:{{ .Tag }}-armv6"
+  - "mosswill/isaiah:{{ .Tag }}-armv7"
+
+- name_template: "mosswill/isaiah:latest"
+  image_templates:
+  - "mosswill/isaiah:{{ .Tag }}-amd64"
+  - "mosswill/isaiah:{{ .Tag }}-arm64"
+  - "mosswill/isaiah:{{ .Tag }}-armv6"
+  - "mosswill/isaiah:{{ .Tag }}-armv7"

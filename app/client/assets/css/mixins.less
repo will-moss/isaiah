@@ -1,0 +1,6 @@
+.generate-columns(@class; @number-cols; @i: 1) when (@i =< @number-cols) {
+  .@{class}-@{i}\/@{number-cols} {
+    width: 100% * (@i / @number-cols);
+  }
+  .generate-columns(@class; @number-cols; @i + 1);
+}
