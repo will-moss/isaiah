@@ -44,7 +44,7 @@ Isaiah has all these features implemented :
 - Built-in authentication by master password
 - Built-in terminal emulator (with support for opening a shell on the server)
 - Support for multiple layouts
-- Support for color-theming
+- Support for custom CSS theming (with variables for colors already defined)
 - Support for keyboard navigation
 - Support for mouse navigation
 - Support for custom Docker Host / Context.
