@@ -20,3 +20,4 @@ node_modules/
 app/package.json
 app/package-lock.json
 scripts/_*.sh
+!app/sample.custom.css
