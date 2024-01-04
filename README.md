@@ -92,7 +92,7 @@ docker run \
   -p <YOUR-PORT-MAPPING> \
   mosswill/isaiah
 
-# Option 3 : Quick run with default variables
+# Option 3 : Quick run with default settings
 docker run -v /var/run/docker.sock:/var/run/docker.sock:ro -p 3000:3000 mosswill/isaiah
 ```
 
