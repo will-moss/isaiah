@@ -240,6 +240,41 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 
 > **Note :** Boolean values are case-insensitive, and can be represented via "ON" / "OFF" / "TRUE" / "FALSE" / 0 / 1.
 
+## Theming
+
+You can customize Isaiah's web interface using your own custom CSS. At runtime, Isaiah will look for a file named `custom.css` right next to the executable.
+If this file exists, it will be loaded in your browser and it will override any existing CSS rule.
+
+In order to help you get started, a [sample file](/blob/master/app/sample.custom.css) was created.
+It shows how to modify the CSS variables responsible for the colors of the interface. (All the values are the ones used by default)
+You can copy that file, update it, and rename it to `custom.css`.
+
+If you're using Docker, you should mount a `custom.css` file at the root of your container's filesystem.
+Example : `docker ... -v my-custom.css:/custom.css ...`
+
+Finally, you will find below a table that describes what each CSS color variable means :
+
+| Variable                | Description                |
+| :---------------------- | :--------                  |
+| `color-terminal-background` | Background of the interface |
+| `color-terminal-base` | Texts of the interface |
+| `color-terminal-accent` | Elements that are interactive or must catch the attention |
+| `color-terminal-accent-selected` | Panel's title when the panel is in focus |
+| `color-terminal-hover` | Panel's rows that are in focus / hover |
+| `color-terminal-border` | Panels' borders color |
+| `color-terminal-danger` | The color used to convey danger / failure |
+| `color-terminal-warning` | Connection indicator when connection is lost |
+| `color-terminal-accent-alternative` | Connection indicator when connection is established |
+| `color-terminal-json-key` | The color used to distinguish keys from values in the inspector when displaying a long configuration |
+| `color-terminal-json-value` | The color used to distinguish values from keys in the inspector when displaying a long configuration |
+| `color-terminal-cell-failure` | Container health state when exited |
+| `color-terminal-cell-success` | Container health state when running |
+| `color-terminal-cell-paused` | Container health state when paused |
+
+On a side note, creating custom layouts using only CSS isn't implemented yet as it requires interaction with Javascript.
+That said, implementing this feature should be quick and simple since the way layouts are managed currently is already modular.
+
+
 ## Troubleshoot
 
 Should you encounter any issue running Isaiah, please refer to the following common problems with their solutions.
