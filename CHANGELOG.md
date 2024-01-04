@@ -3,6 +3,13 @@
 
 ### Features
 
+* **project:** first release ([fc04f02](https://github.com/will-moss/isaiah/commit/fc04f02880daac8d0a4acd4ed9f7670ce154ab99))
+
+# 1.0.0 (2024-01-04)
+
+
+### Features
+
 * **project:** first release ([ad046b9](https://github.com/will-moss/isaiah/commit/ad046b933353f9e949f01380655b2a9ddd54e249))
 
 # 1.0.0 (2024-01-04)
