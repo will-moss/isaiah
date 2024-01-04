@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/will-moss/isaiah/compare/1.1.0...1.2.0) (2024-01-04)
+
+
+### Features
+
+* **client:** added full support for mobile responsiveness with adapted controls ([cf8ed79](https://github.com/will-moss/isaiah/commit/cf8ed79cfa3f91270aa2cbccb83298e5aba94832))
+
 # [1.1.0](https://github.com/will-moss/isaiah/compare/1.0.0...1.1.0) (2024-01-04)
 
 
