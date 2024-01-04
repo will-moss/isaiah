@@ -43,6 +43,7 @@ Isaiah has all these features implemented :
 - Built-in automatic Docker host discovery
 - Built-in authentication by master password
 - Built-in terminal emulator (with support for opening a shell on the server)
+- Responsive for Desktop, Tablet, and Mobile
 - Support for multiple layouts
 - Support for custom CSS theming (with variables for colors already defined)
 - Support for keyboard navigation
@@ -316,6 +317,7 @@ Also, the following techniques are used to try to enhance the user experience on
 - Handle both "\r" and "\n" newline characters
 - Use a time-based approach to detect when a command is finished if it doesn't output anything that shows clear ending
 - Remove all escape sequences meant for coloring the terminal output
+- Handle up and down arrow keys to cycle through commands history locally
 
 Therefore it appears that, unless we use a VNC-like solution, the emulation can neither be enhanced nor use keyboard-based features (such as tab completion).
 
@@ -330,13 +332,6 @@ I leave here a few ideas that I believe could be implemented, but may require mo
 
 The default commands used to spawn a shell, although being more or less standard, may not fit your environment.
 In this case, please edit the `TTY_SERVER_COMMAND` and `TTY_CONTAINER_COMMAND` variables to define a command that works better in your setup.
-
-#### Isaiah doesn't work on mobile
-
-As of now, the web interface isn't responsive. For this reason, a piece of code was intentionally added to prevent any user
-from using Isaiah on mobile, so as to spare the unpleasant usage. If this was a mistake on our end, please feel free to open an issue.
-Making it an option, or disabling it altogether shouldn't take too long. Also note that the piece of code that is responsible for
-disabling Isaiah on mobile devices is easy to bypass as it is 100% CSS-based (removing/editing a CSS class is all it takes, so a browser extension could do it)
 
 #### The connection with the remote server randomly stops or restarts
 
