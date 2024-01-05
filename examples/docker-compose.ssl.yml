@@ -2,6 +2,7 @@ version: '3'
 services:
   isaiah:
     image: mosswill/isaiah:latest
+    restart: unless-stopped
     ports:
       - "443:443"
     volumes:
