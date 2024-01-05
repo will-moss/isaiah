@@ -1563,6 +1563,19 @@
     },
 
     /**
+     * Private - Container-only - Rename a container
+     * @param {object} args
+     * @param {string} args.Name (new container's name)
+     */
+    _containerRename: function (args) {
+      if (!args.Name || args.Name.length === 0) return;
+      websocketSend({
+        action: 'container.rename',
+        args: { Resource: sgetCurrentRow(), Name: args.Name },
+      });
+    },
+
+    /**
      * Private - Get available inspector (sub) tabs for the current tab (containers, images, etc.)
      */
     _inspectorTabs: function () {
@@ -2076,6 +2089,22 @@
     },
 
     /**
+     * Public - Container-only - Rename
+     */
+    rename: function () {
+      if (sgetCurrentTabKey() !== 'containers') return;
+
+      cmdRun(cmds.prompt, {
+        input: {
+          isEnabled: true,
+          name: 'Name',
+          placeholder: 'Please fill in a new name for the container',
+        },
+        callback: cmds._containerRename,
+      });
+    },
+
+    /**
      * Public - Container-only - Exec shell
      */
     shellContainer: function () {
@@ -2240,6 +2269,7 @@
     p: 'pause',
     s: 'stop',
     r: 'run_restart',
+    m: 'rename',
     E: 'shellContainer',
     S: 'shellSystem',
     R: 'reload',
