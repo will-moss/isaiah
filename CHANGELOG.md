@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/will-moss/isaiah/compare/1.2.0...1.2.1) (2024-01-05)
+
+
+### Bug Fixes
+
+* **client:** added missing mobile control for initiating a system shell ([9b0267d](https://github.com/will-moss/isaiah/commit/9b0267d4415016736a8687fb91043700627395ab))
+
 # [1.2.0](https://github.com/will-moss/isaiah/compare/1.1.0...1.2.0) (2024-01-04)
 
 
