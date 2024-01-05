@@ -1,6 +1,6 @@
 <p align="center">
 <h1 align="center">Isaiah</h1>
-<p align="center">Self-hostable clone of lazydocker for the web</p>
+<p align="center">Self-hostable clone of lazydocker for the web. Manage your Docker fleet with ease</p>
 </p>
 
 | | | |
