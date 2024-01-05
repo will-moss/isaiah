@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/will-moss/isaiah/compare/1.2.1...1.3.0) (2024-01-05)
+
+
+### Features
+
+* **containers:** added rename feature ([4e2ecd6](https://github.com/will-moss/isaiah/commit/4e2ecd61fb048ace9eff6935e8a6223343dc1896))
+
 ## [1.2.1](https://github.com/will-moss/isaiah/compare/1.2.0...1.2.1) (2024-01-05)
 
 
