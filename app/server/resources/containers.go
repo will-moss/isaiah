@@ -93,6 +93,13 @@ func ContainerSingleActions() []ui.MenuAction {
 			RequiresResource: true,
 		},
 		ui.MenuAction{
+			Key:              "m",
+			Label:            "rename container",
+			Command:          "rename",
+			RequiresResource: false,
+			RunLocally:       true,
+		},
+		ui.MenuAction{
 			Key:              "E",
 			Label:            "exec shell inside container",
 			Command:          "container.shell",
@@ -397,6 +404,12 @@ func (c Container) GetBrowserUrl(client *client.Client) (string, error) {
 	}
 
 	return address, nil
+}
+
+// Rename the Docker container
+func (c Container) Rename(client *client.Client, newName string) error {
+	err := client.ContainerRename(context.Background(), c.ID, newName)
+	return err
 }
 
 // Inspector - Retrieve the logs written by the Docker container

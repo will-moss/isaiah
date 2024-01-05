@@ -331,6 +331,24 @@ func (Containers) RunCommand(server *Server, session *melody.Session, command ui
 
 		server.SendNotification(session, ui.NotificationData(ui.NP{Content: ui.JSON{"Address": address}}))
 
+	// Single - Rename
+	case "container.rename":
+		var container resources.Container
+		mapstructure.Decode(command.Args["Resource"], &container)
+		err := container.Rename(server.Docker, command.Args["Name"].(string))
+
+		if err != nil {
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+			break
+		}
+
+		server.SendNotification(
+			session,
+			ui.NotificationSuccess(ui.NP{
+				Content: ui.JSON{"Message": "Your container was succesfully renamed"},
+				Follow:  "containers.list",
+			}))
+
 	// Single - Get inspector tabs
 	case "container.inspect.tabs":
 		server.SendNotification(
