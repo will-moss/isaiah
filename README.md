@@ -1,6 +1,13 @@
 <p align="center">
-<h1 align="center">Isaiah</h1>
-<p align="center">Self-hostable clone of lazydocker for the web. Manage your Docker fleet with ease</p>
+    <h1 align="center">Isaiah</h1>
+    <p align="center">
+      Self-hostable clone of lazydocker for the web.<br />Manage your Docker fleet with ease
+    </p>
+    <p align="center">
+      <a href="#table-of-contents">Table of Contents</a> -
+      <a href="#deployment-and-examples">Install</a> -
+      <a href="#configuration">Configure</a>
+    </p>
 </p>
 
 | | | |
@@ -11,6 +18,23 @@
 |<img width="1604" src="/assets/CAPTURE-10.png"/> |  <img width="1604" src="/assets/CAPTURE-11.png"/> | <img width="1604" src="/assets/CAPTURE-12.png"/> |
 |<img width="1604" src="/assets/CAPTURE-13.png"/> |  <img width="1604" src="/assets/CAPTURE-14.png"/> | <img width="1604" src="/assets/CAPTURE-15.png"/> |
 
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Features](#features)
+- [Deployment and Examples](#deployment-and-examples)
+  * [Deploy with Docker](#deploy-with-docker)
+  * [Deploy with Docker Compose](#deploy-with-docker-compose)
+  * [Deploy as a standalone application](#deploy-as-a-standalone-application)
+    + [Using an existing binary](#using-an-existing-binary)
+    + [Building the binary manually](#building-the-binary-manually)
+- [Configuration](#configuration)
+- [Theming](#theming)
+- [Troubleshoot](#troubleshoot)
+- [Security](#security)
+- [Disclaimer](#disclaimer)
+- [Contribute](#contribute)
+- [Credits](#credits)
 
 ## Introduction
 
