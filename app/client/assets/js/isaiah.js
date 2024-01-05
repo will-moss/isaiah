@@ -913,6 +913,7 @@
       hgetMobileControl('nextTab').classList.add('is-active');
       hgetMobileControl('menu').classList.add('is-active');
       hgetMobileControl('bulk').classList.add('is-active');
+      hgetMobileControl('shellSystem').classList.add('is-active');
     }
   };
 
