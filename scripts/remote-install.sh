@@ -17,6 +17,12 @@ GITHUB_URL="https://github.com/will-moss/isaiah/releases/download/${GITHUB_LATES
 # Install/Update the local binary
 curl -L -o isaiah.tar.gz $GITHUB_URL
 tar xzvf isaiah.tar.gz isaiah
-mv isaiah /usr/bin/
-chmod 755 /usr/bin/isaiah
+
+DESTINATION="/usr/bin"
+if [ -d "/usr/local/bin" ]; then
+  DESTINATION="/usr/local/bin"
+fi
+
+mv isaiah $DESTINATION
+chmod 755 $DESTINATION/isaiah
 rm isaiah.tar.gz

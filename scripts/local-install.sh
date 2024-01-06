@@ -30,9 +30,14 @@ rm -f ./client/assets/css/tmp.css
 rm -f ./client/assets/css/style.css
 mv ./client/assets/js/isaiah.backup.js ./client/assets/js/isaiah.js
 
+DESTINATION="/usr/bin"
+if [ -d "/usr/local/bin" ]; then
+  DESTINATION="/usr/local/bin"
+fi
+
 # Remove any previous installation
-rm -f /usr/bin/isaiah
+rm -f $DESTINATION/isaiah
 
 # Install the app's binary 
-mv isaiah /usr/bin/
-chmod 755 /usr/bin/isaiah
+mv isaiah $DESTINATION/
+chmod 755 $DESTINATION/isaiah
