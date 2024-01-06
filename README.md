@@ -168,7 +168,7 @@ curl https://raw.githubusercontent.com/will-moss/isaiah/master/scripts/remote-in
 ```
 
 This script will try to automatically download a binary that matches your operating system and architecture, and put it
-in your `/usr/bin/` directory to ease running it. Later on, you can run :
+in your `/usr/[local/]bin/` directory to ease running it. Later on, you can run :
 
 ```sh
 # Create a new .env file
@@ -226,14 +226,14 @@ isaiah
 # rm -rf ./isaiah
 ```
 
-The local install script will try to perform a production build on your machine, and move `isaiah` to your `/usr/bin/` directory
+The local install script will try to perform a production build on your machine, and move `isaiah` to your `/usr/[local/]bin/` directory
 to ease running it. In more details, the following actions are performed :
 - Local install of Babel, LightningCSS, Less, and Terser
 - Prefixing, Transpilation, and Minification of CSS and JS assets
 - Building of the Go source code into a single-file executable (with CSS and JS embed)
 - Cleaning of the artifacts generated during the previous steps
-- Removal of the previous `isaiah` executable, if any in `/usr/bin/`
-- Moving the new `isaiah` executable in `/usr/bin` with `755` permissions.
+- Removal of the previous `isaiah` executable, if any in `/usr/[local/]bin/`
+- Moving the new `isaiah` executable in `/usr/[local/]bin` with `755` permissions.
 
 If you encounter any issue during this process, please feel free to tweak the install script or reach out by opening an issue.
 
