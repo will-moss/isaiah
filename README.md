@@ -271,7 +271,7 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 You can customize Isaiah's web interface using your own custom CSS. At runtime, Isaiah will look for a file named `custom.css` right next to the executable.
 If this file exists, it will be loaded in your browser and it will override any existing CSS rule.
 
-In order to help you get started, a [sample file](/blob/master/app/sample.custom.css) was created.
+In order to help you get started, a [sample file](/app/sample.custom.css) was created.
 It shows how to modify the CSS variables responsible for the colors of the interface. (All the values are the ones used by default)
 You can copy that file, update it, and rename it to `custom.css`.
 
