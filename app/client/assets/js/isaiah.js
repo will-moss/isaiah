@@ -513,21 +513,23 @@
   };
 
   /**
-   * @param {"menu"|"bulk"}
    * @param {Menu} menu
    * @returns {string}
    */
-  const renderMenu = (key, menu) => {
+  const renderMenu = (menu) => {
     // Cell padding according to the longest key
     let maxKeyWidth = -1;
-    for (const action of menu.actions)
-      maxKeyWidth = Math.max(maxKeyWidth, action.Key.length);
+
+    if (menu.actions.length > 0 && menu.actions[0].Key)
+      for (const action of menu.actions)
+        maxKeyWidth = Math.max(maxKeyWidth, action.Key.length);
+    else maxKeyWidth = 0;
 
     return `
-      <div class="popup for-${key}">
+      <div class="popup for-menu">
         <div class="tab is-active">
           <span class="tab-title">
-            ${key === 'menu' ? 'Menu' : 'Bulk actions'}
+            ${{ menu: 'Menu', bulk: 'Bulk actions', theme: 'Theme' }[menu.key]}
           </span>
           <div class="tab-content">
             ${menu.actions
@@ -746,9 +748,8 @@
       if (_state.prompt.isEnabled) html = renderPrompt(_state.prompt);
       // 4.2. Popup - Message
       else if (_state.message.isEnabled) html = renderMessage(_state.message);
-      // 4.3. Popup - Menu
-      else if (_state.menu.actions.length > 0)
-        html = renderMenu(_state.popup, _state.menu);
+      // 4.3. Popup - Menu / Theme
+      else if (_state.menu.actions.length > 0) html = renderMenu(_state.menu);
       // 4.4. Popup - Tty
       else if (_state.tty.isEnabled) html = renderTty(_state.tty);
       // 4.5. Popup - Help
@@ -1022,6 +1023,11 @@
        * @type {Array<MenuAction>}
        */
       actions: [],
+
+      /**
+       * @type {'menu'|'bulk'|'theme'}
+       */
+      key: null,
     },
 
     /**
@@ -1673,6 +1679,8 @@
         ? state.navigation.previousTab
         : state.navigation.currentTab;
 
+      state.menu.key = 'menu';
+
       websocketSend({
         action: `${currentTab.slice(0, -1)}.menu`,
         args: { Resource: sgetCurrentRow() },
@@ -1687,10 +1695,9 @@
         ? state.navigation.previousTab
         : state.navigation.currentTab;
 
-      websocketSend({ action: `${currentTab}.bulk` });
+      state.menu.key = 'bulk';
 
-      cmdRun(cmds._showPopup, 'bulk');
-      state.helper = 'menu';
+      websocketSend({ action: `${currentTab}.bulk` });
     },
 
     /**
@@ -2637,9 +2644,9 @@
         if ('Actions' in notification.Content) {
           state.menu.actions = notification.Content.Actions;
           state.navigation.currentMenuRow = 1;
+          state.helper = 'menu';
 
           cmdRun(cmds._showPopup, 'menu');
-          state.helper = 'menu';
         }
 
         if ('Address' in notification.Content) {
