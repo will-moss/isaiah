@@ -6,6 +6,7 @@
 @import './components.less';
 
 @width-mobile: 960px;
+@width-small-mobile: 390px;
 
 * {
   // outline: 1px dashed blue;
@@ -160,9 +161,15 @@ html {
             display: flex;
           }
 
+          @media screen and (max-width: @width-small-mobile) {
+            max-width: 240px;
+            overflow-x: auto;
+          }
+
           button {
             width: 36px;
             height: 100%;
+            flex-shrink: 0;
 
             &.has-icon {
               display: flex;
