@@ -64,6 +64,61 @@ func (Images) RunCommand(server *Server, session *melody.Session, command ui.Com
 			}),
 		)
 
+	// Bulk - Pull
+	case "images.pull":
+		images := resources.ImagesList(server.Docker)
+
+		for _, image := range images {
+			if image.Version != "latest" {
+				continue
+			}
+
+			task := process.LongTask{
+				Function: resources.ImagePull,
+				Args:     map[string]interface{}{"Image": image.Name},
+				OnStep: func(update string) {
+					metadata := make(map[string]string)
+					json.Unmarshal([]byte(update), &metadata)
+
+					message := fmt.Sprintf("Pulling : %s", image.Name)
+					message += fmt.Sprintf("<br />Status : %s", metadata["status"])
+					if _, ok := metadata["progress"]; ok {
+						message += fmt.Sprintf("<br />Progress : %s", metadata["progress"])
+					}
+
+					server.SendNotification(
+						session,
+						ui.NotificationInfo(ui.NP{
+							Content: ui.JSON{
+								"Message": message,
+							},
+						}),
+					)
+				},
+				OnError: func(err error) {
+					server.SendNotification(
+						session,
+						ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}),
+					)
+				},
+				OnDone: func() {
+					server.SendNotification(
+						session,
+						ui.NotificationSuccess(ui.NP{
+							Content: ui.JSON{"Message": fmt.Sprintf("The image %s was succesfully pulled", image.Name)}, Follow: "images.list",
+						}),
+					)
+				},
+			}
+			task.RunSync(server.Docker)
+		}
+		server.SendNotification(
+			session,
+			ui.NotificationSuccess(ui.NP{
+				Content: ui.JSON{"Message": "All your latest image were succesfully pulled"}, Follow: "images.list",
+			}),
+		)
+
 	// Single - Default remove
 	case "image.remove.default":
 		var image resources.Image
