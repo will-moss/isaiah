@@ -182,6 +182,7 @@
    * @param {string} action.Key
    * @param {string} action.Label
    * @param {boolean} action.RequiresResource
+   * @param {boolean} action.RequiresMenuAction
    * @param {boolean} action.RunLocally
    * @param {number} maxKeyWidth
    * @returns {string}
@@ -193,6 +194,7 @@
     if (action.PromptInput)
       html += ` data-prompt-input="${action.PromptInput}"`;
     if (action.RequiresResource) html += ` data-use-row="true"`;
+    if (action.RequiresMenuAction) html += ` data-use-menu-action="true"`;
     if (action.RunLocally) html += ` data-run-locally="true"`;
     html += ` data-command="${action.Command}">`;
 
@@ -656,6 +658,10 @@
                <span class="cell">G        </span>
                <span class="cell">open project on Github</span>
              </div>
+             <div class="row is-not-interactive">
+               <span class="cell">T        </span>
+               <span class="cell">open theme picker</span>
+             </div>
              <div class="row is-not-interactive"></div>
              <div class="row is-not-interactive">
                <span class="cell">Ctrl+C   </span>
@@ -691,6 +697,9 @@
    */
   const renderApp = (_state) => {
     let html;
+
+    // -1. Set app's theme
+    document.body.setAttribute('data-theme', _state.appearance.currentTheme);
 
     // 0. Determine screen to display
 
@@ -915,6 +924,7 @@
       hgetMobileControl('menu').classList.add('is-active');
       hgetMobileControl('bulk').classList.add('is-active');
       hgetMobileControl('shellSystem').classList.add('is-active');
+      hgetMobileControl('theme').classList.add('is-active');
     }
   };
 
@@ -969,7 +979,7 @@
      * @returns {boolean}
      */
     get isMenuIng() {
-      return state.popup && ['menu', 'bulk'].includes(state.popup);
+      return state.popup && ['menu', 'bulk', 'theme'].includes(state.popup);
     },
 
     /**
@@ -1003,6 +1013,7 @@
     /**
      * @typedef {object} Menu
      * @property {Array<MenuAction>} actions
+     * @property {'menu'|'bulk'|'theme'} key
      */
 
     /**
@@ -1036,7 +1047,7 @@
     helper: 'default',
 
     /**
-     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"}
+     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"theme"}
      */
     popup: null,
 
@@ -1050,6 +1061,16 @@
        * @type {"default"|"half"|"focus"}
        */
       currentLayout: 'default',
+
+      /**
+       * @type {Array<string>}
+       */
+      availableThemes: ['default', 'moon', 'dawn'],
+
+      /**
+       * @type {"default"|"moon"|"dawn"}
+       */
+      currentTheme: 'default',
     },
 
     /**
@@ -1209,6 +1230,13 @@
     return currentTab.Rows[
       state.navigation.currentTabsRows[currentTab.Key] - 1
     ];
+  };
+
+  /**
+   * @returns {MenuAction}
+   */
+  const sgetCurrentMenuAction = () => {
+    return state.menu.actions[state.navigation.currentMenuRow - 1];
   };
 
   // === Commands-related methods
@@ -1637,6 +1665,15 @@
     },
 
     /**
+     * Private - Pick a theme and store it in LocalStorage
+     * @param {MenuAction} action
+     */
+    _pickTheme: function (action) {
+      state.appearance.currentTheme = action.Label.toLowerCase();
+      localStorage.setItem('theme', state.appearance.currentTheme);
+    },
+
+    /**
      * Public - Quit the app / Quit the current popup
      * Requires prompt
      */
@@ -1772,11 +1809,23 @@
           // Can clear anytime as the command is private ("_wsSend")
           cmdRun(cmds._clearPopup);
         } else {
+          // Save the focused menu row in case we need it later
+          const _menuAction = sgetCurrentMenuAction();
+
           // Must clear first to enable running a command out of menu context
           cmdRun(cmds._clearPopup);
 
-          if (!attributes.useRow) cmdRun(cmds[attributes.command]);
-          else cmdRun(cmds[attributes.command], sgetCurrentRow());
+          if (attributes.useRow) {
+            cmdRun(cmds[attributes.command], sgetCurrentRow());
+            return;
+          }
+
+          if (attributes.useMenuAction) {
+            cmdRun(cmds[attributes.command], _menuAction);
+            return;
+          }
+
+          cmdRun(cmds[attributes.command]);
         }
 
         return;
@@ -2209,6 +2258,22 @@
       if (!state.tabs[3]) return;
       state.navigation.currentTab = state.tabs[3].Key;
     },
+
+    /**
+     * Public - Show theme picker
+     */
+    theme: function () {
+      state.menu.key = 'theme';
+      state.menu.actions = state.appearance.availableThemes.map((t) => ({
+        RunLocally: true,
+        RequiresResource: false,
+        RequiresMenuAction: true,
+        Label: t,
+        Command: '_pickTheme',
+      }));
+      state.navigation.currentMenuRow = 1;
+      cmdRun(cmds._showPopup, 'menu');
+    },
   };
 
   // === Variables
@@ -2285,6 +2350,7 @@
     w: 'browser',
     h: 'hub',
     G: 'github',
+    T: 'theme',
     '?': 'help',
 
     // Misc
@@ -2784,13 +2850,16 @@
   // === Entry Point
   // ===
   window.addEventListener('load', () => {
-    // 1. Connect to server (first execution loop)
+    // 1. Load user settings if any
+    state.appearance.currentTheme = localStorage.getItem('theme') || 'default';
+
+    // 2. Connect to server (first execution loop)
     websocketConnect();
 
-    // 2. Set keyboard listener (second execution loop)
+    // 3. Set keyboard listener (second execution loop)
     window.addEventListener('keydown', listenerKeyDown);
 
-    // 3. Set mouse listener (third execution loop)
+    // 4. Set mouse listener (third execution loop)
     window.addEventListener('click', listenerMouseClick);
   });
 })(window);
