@@ -55,6 +55,7 @@ Isaiah has all these features implemented :
     - Run (create and start a container using the image)
     - Open on Docker Hub
     - Pull a new image (from Docker Hub)
+    - Bulk pull all latest images (from Docker Hub)
     - Inspect (full configuration, layers)
 - For volumes :
     - Prune
