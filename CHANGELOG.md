@@ -1,3 +1,18 @@
+# [1.4.0](https://github.com/will-moss/isaiah/compare/1.3.0...1.4.0) (2024-01-09)
+
+
+### Bug Fixes
+
+* **menu:** refactored the menu display logic, and now the menu's title is correct when using bulk ([18e65f6](https://github.com/will-moss/isaiah/commit/18e65f665d7bdd7ebbfd51b808286e8267ad5480))
+* **mobile:** fixed CSS to display mobile controls properly even when the screen width is below 390px ([8029572](https://github.com/will-moss/isaiah/commit/8029572fd9b1861be71752b69e65cd9a60fa08c4))
+
+
+### Features
+
+* **client:** added full support for custom themes with theme picker, help, and theme save ([f8fefe8](https://github.com/will-moss/isaiah/commit/f8fefe8ce0b255f60fbe777d07370606cbd86ff6))
+* **images:** added support for bulk-pulling latest images ([0629435](https://github.com/will-moss/isaiah/commit/062943575f3d8f22cdbe9af8cdededfdf6dcf635))
+* **theming:** added two ready-to-use themes (dawn, and moon) based on Rosé Pine ([fd86de5](https://github.com/will-moss/isaiah/commit/fd86de5b96ff03c7b448795cc501683e469ff028))
+
 # [1.3.0](https://github.com/will-moss/isaiah/compare/1.2.1...1.3.0) (2024-01-05)
 
 
