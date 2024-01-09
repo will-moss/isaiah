@@ -123,6 +123,10 @@ func ImagesBulkActions() []ui.MenuAction {
 			Prompt:  "Are you sure you want to prune all unused images?",
 			Command: "images.prune",
 		},
+		ui.MenuAction{
+			Label:   "pull latest images",
+			Command: "images.pull",
+		},
 	)
 	return actions
 }
