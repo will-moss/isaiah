@@ -300,6 +300,9 @@ Finally, you will find below a table that describes what each CSS color variable
 On a side note, creating custom layouts using only CSS isn't implemented yet as it requires interaction with Javascript.
 That said, implementing this feature should be quick and simple since the way layouts are managed currently is already modular.
 
+Ultimately, please note that Isaiah already comes with three themes : dawn, moon, and the default one.
+The first two themes are based on Rosé Pine, and new themes may be implemented later.
+
 
 ## Troubleshoot
 
