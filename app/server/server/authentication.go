@@ -14,6 +14,20 @@ func (Authentication) RunCommand(server *Server, session *melody.Session, comman
 
 	// Command : Authenticate the client by password
 	case "auth.login":
+		if _os.GetEnv("AUTHENTICATION_ENABLED") != "TRUE" {
+			session.Set("authenticated", true)
+			server.SendNotification(session, ui.NotificationAuth(ui.NP{
+				Type: ui.TypeSuccess,
+				Content: ui.JSON{
+					"Authentication": ui.JSON{
+						"Message": "Your are now authenticated",
+					},
+				},
+			}),
+			)
+			break
+		}
+
 		password := command.Args["Password"]
 
 		if password != _os.GetEnv("AUTHENTICATION_SECRET") {
