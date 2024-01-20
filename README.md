@@ -80,8 +80,7 @@ Isaiah has all these features implemented :
 - Support for custom Docker Host / Context.
 - Support for extensive configuration with `.env`
 - Support for HTTP and HTTPS
-- Support for standalone / proxy deployment
-- Support for multi-node deployment
+- Support for standalone / proxy / multi-node deployment
 
 On top of these, one may appreciate the following characteristics :
 - Written in Go (for the server) and Vanilla JS (for the client)
@@ -142,6 +141,8 @@ Here's a description of every example :
 - `docker-compose.proxy.yml`: A full setup with Isaiah running on port 80, behind a proxy listening on port 443.
 
 - `docker-compose.traefik.yml`: A sample setup with Isaiah running on port 80, behind a Traefik proxy listening on port 443.
+
+- `docker-compose.agent.yml`: A sample setup with Isaiah operating as an Agent in a multi-node deployment.
 
 When your `docker-compose` file is on point, you can use the following commands :
 ```sh
