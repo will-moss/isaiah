@@ -910,7 +910,7 @@
     }
     // 9.2. Case when tty-ing / showing a message
     else if (_state.popup === 'tty' || _state.popup === 'message') {
-      hgetMobileControl('_ttyQuit').classList.add('is-active');
+      hgetMobileControl('ttyQuit').classList.add('is-active');
     }
     // 9.3. Case when prompting
     else if (_state.prompt.isEnabled || _state.prompt.input.isEnabled) {
