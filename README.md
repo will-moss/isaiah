@@ -28,6 +28,9 @@
   * [Deploy as a standalone application](#deploy-as-a-standalone-application)
     + [Using an existing binary](#using-an-existing-binary)
     + [Building the binary manually](#building-the-binary-manually)
+- [Multi-node deployment](#multi-node-deployment)
+  * [General information](#general-information)
+  * [Setup](#setup)
 - [Configuration](#configuration)
 - [Theming](#theming)
 - [Troubleshoot](#troubleshoot)
@@ -78,6 +81,7 @@ Isaiah has all these features implemented :
 - Support for extensive configuration with `.env`
 - Support for HTTP and HTTPS
 - Support for standalone / proxy deployment
+- Support for multi-node deployment
 
 On top of these, one may appreciate the following characteristics :
 - Written in Go (for the server) and Vanilla JS (for the client)
@@ -238,6 +242,63 @@ to ease running it. In more details, the following actions are performed :
 
 If you encounter any issue during this process, please feel free to tweak the install script or reach out by opening an issue.
 
+## Multi-node deployment
+
+Using Isaiah, you can manage multiple nodes with their own distinct Docker resources from a single dashboard.
+
+Before delving into that part, please get familiar with the general information below.
+
+### General information
+
+You may find these information useful during your setup and reading :
+- Isaiah distinguishes two types of nodes : `Master` and `Agent`.
+- The word `node` refers to any machine (virtual or not) holding Docker resources.
+- The `Master` node has three responsabilities :
+  - Serving the web interface.
+  - Managing the Docker resources inside the environment on which it is already installed.
+  - Acting as a central proxy between the client (you) and the remote Agent nodes.
+- The `Master` node has the following characteristics :
+  - There should be only one Master node in a multi-node deployment.
+  - The Master node should be the only part of your deployment that is publicly exposed on the network.
+- The `Agent` nodes have the following characteristics :
+  - They are headless instances of Isaiah, and they can't exist without a Master node.
+  - As with the Master node, they have their own authentication if you don't disable it explicitly.
+  - On startup, they perform registration with their Master node using as a Websocket client
+  - For as long as the Master node is alive, a Websocket connection remains established between them.
+  - The Agent node should never be publicly exposed on the network.
+  - The Agent node never communicates with the client (you). Everything remains between the nodes.
+  - There is no limit to how many Agent nodes can connect to a Master node.
+
+In other words, one `Master` acts as a `Proxy` between the `Client` and the `Agents`.<br />
+For example, when a `Client` wants to stop a Docker container inside an `Agent`, the `Client` first requests it from `Master`.
+Then, `Master` forwards it to the designated `Agent`.
+When the `Agent` has finished, they reply to `Master`, and `Master` forwards that response to the initial `Client`.
+
+Schematically, it looks like this :
+- Client ------------> Master : Stop container C-123 on Agent AG-777
+- Master ------------> Agent  : Stop container C-123
+- Agent  ------------> Master : Container C-123 was stopped
+- Master ------------> Client : Container C-123 was stopped on Agent AG-777
+
+Now that we understand how everything works, let's see how to set up a multi-node deployment.
+
+### Setup
+
+First, please ensure the following :
+- Your `Master` node is running, exposed on the network, and available in your web browser
+- Your `Agent` node has Isaiah installed and configured with the following settings :
+  - `SERVER_ROLE` equal to `Agent`
+  - `MASTER_HOST` configured to reach the `Master` node
+  - `MASTER_SECRET` equal to the `AUTHENTICATION_SECRET` setting on the `Master` node, or empty when authentication is disabled
+  - `AGENT_NAME` equal to a unique string of your choice
+
+Then, launch Isaiah on each `Agent` node, and you should see logs indicating whether connection with `Master` was established. Eventually, you will see `Master` or `The name of your agent` in the lower right corner of your screen as agents register.
+
+If encounter any issue, please read the [Troubleshoot](#troubleshoot) section.
+
+You're done!
+
+
 ## Configuration
 
 To run Isaiah, you will need to set the following environment variables in a `.env` file located next to your executable :
@@ -248,8 +309,8 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | :---------------------- | :-------- | :------------------------- | ------- |
 | `SSL_ENABLED`           | `boolean` | Whether HTTPS should be used in place of HTTP. When configured, Isaiah will look for `certificate.pem` and `key.pem` next to the executable for configuring SSL. Note that if Isaiah is behind a proxy that already handles SSL, this should be set to `false`. | False        |
 | `SERVER_PORT`           | `integer` | The port Isaiah listens on. | 3000        |
-| `SERVER_MAX_READ_SIZE`  | `integer` | The maximum size (in bytes) per message that Isaiah will accept over Websocket. (Shouldn't be modified, unless your server randomly restarts the Websocket session for no obvious reason) | 1024        |
-| `AUTHENTICATION_ENABLED`| `boolean` | Whether a master password is required to access Isaiah. (Recommended) | True |
+| `SERVER_MAX_READ_SIZE`  | `integer` | The maximum size (in bytes) per message that Isaiah will accept over Websocket. Note that, in a multi-node deployment, you may need to incrase the value of that setting. (Shouldn't be modified, unless your server randomly restarts the Websocket session for no obvious reason) | 100000        |
+| `AUTHENTICATION_ENABLED`| `boolean` | Whether a password is required to access Isaiah. (Recommended) | True |
 | `AUTHENTICATION_SECRET` | `string`  | The master password used to secure your Isaiah instance against malicious actors. | one-very-long-and-mysterious-secret        |
 | `DISPLAY_CONFIRMATIONS` | `boolean` | Whether the web interface should display a confirmation message after every succesful operation. | True |
 | `COLUMNS_CONTAINERS`    | `string`  | Comma-separated list of fields to display in the `Containers` panel. (Case-sensitive) (Available: ID, State, ExitCode, Name, Image) | State,ExitCode,Name,Image |
@@ -264,6 +325,10 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `CUSTOM_DOCKER_HOST`    | `string`  | The host to use in place of the one defined by the DOCKER_HOST default variable | Empty |
 | `CUSTOM_DOCKER_CONTEXT` | `string`  | The Docker context to use in place of the current Docker context set on the system | Empty |
 | `SKIP_VERIFICATIONS`    | `boolean` | Whether Isaiah should skip startup verification checks before running the HTTP(S) server. (Not recommended) | False        |
+| `SERVER_ROLE`           | `string`  | For multi-node deployments only. The role of the current instance of Isaiah. Can be either `Master` or `Agent` and is case-sensitive. | Master        |
+| `MASTER_HOST`           | `string`  | For multi-node deployments only. The host used to reach the Master node, specifying the IP address or the hostname, and the port if applicable (e.g. my-server.tld:3000). | Empty        |
+| `MASTER_SECRET`         | `string`  | For multi-node deployments only. The secret password used to authenticate on the Master node. Note that it should equal the `AUTHENTICATION_SECRET` setting on the Master node. | Empty        |
+| `AGENT_NAME`            | `string`  | For multi-node deployments only. The name associated with the Agent node as it is displayed on the web interface. It should be unique for each Agent. | Empty        |
 
 > **Note :** Boolean values are case-insensitive, and can be represented via "ON" / "OFF" / "TRUE" / "FALSE" / 0 / 1.
 
@@ -303,7 +368,6 @@ That said, implementing this feature should be quick and simple since the way la
 
 Ultimately, please note that Isaiah already comes with three themes : dawn, moon, and the default one.
 The first two themes are based on Rosé Pine, and new themes may be implemented later.
-
 
 ## Troubleshoot
 
@@ -357,15 +421,17 @@ I leave here a few ideas that I believe could be implemented, but may require mo
 - Wrap every command in a "block" (begin - command - end) to easily distinguish user-sent commands from output
 - Sending to the real terminal the key presses captured from the web (a.k.a sending key presses to a running process)
 
+Ultimately, please also note that in a multi-node setup, the extra network latency and unexpected buffering from remote terminals may cause additional display artifacts.
+
 #### An error happens when spawning a new shell on the server / inside a Docker container
 
 The default commands used to spawn a shell, although being more or less standard, may not fit your environment.
-In this case, please edit the `TTY_SERVER_COMMAND` and `TTY_CONTAINER_COMMAND` variables to define a command that works better in your setup.
+In this case, please edit the `TTY_SERVER_COMMAND` and `TTY_CONTAINER_COMMAND` settings to define a command that works better in your setup.
 
 #### The connection with the remote server randomly stops or restarts
 
 This is a known incident that happens when the Websocket server receives a data message that exceeds its maximum read size.
-You should be able to fix that by setting the `SERVER_MAX_READ_SIZE` variable to a higher value (default is 1024 bytes).
+You should be able to fix that by updating the `SERVER_MAX_READ_SIZE` setting to a higher value (default is 1024 bytes).
 This operation shouldn't cause any problem or impact performances.
 
 #### I can neither click nor use the keyboard, nothing happens
@@ -374,6 +440,38 @@ In such a case, please check the icon in the lower right corner.
 If you see an orange warning symbol, it means that the connection with the server was lost.
 When the connection is lost, all inputs are disabled, until the connection is reestablished (a new attempt is performed every second).
 
+#### The interface is stuck loading indefinitely
+
+This incident arises when a crash occurs while inside a shell or performing a Docker command.
+The quickest "fix" for that is to refresh your browser tab (Ctrl+R/Cmd+R).
+
+The real "fix" (if any) could be to implement a "timeout" (client-side or server-side) after which, the "loading" state is automatically discarded
+
+If you encounter this incident consistently, please reach out by opening an issue so we look deeper into that part
+
+#### The web interface seems to randomly crash and restart
+
+If you haven't already, please read about the `SERVER_MAX_READ_SIZE` setting in the [Configuration](#configuration) section.
+
+That incident occurs when the Websocket messages sent from the client to the server are too big.
+The server's reaction to overly large messages sent over Websocket is to close the connection with the client.
+When that happens, Isaiah (as a client in your browser) automatically reopens a connection with the server, hence explaining the "crash-restart" cycle.
+
+#### A feature that works on desktop is missing from the mobile user interface
+
+Please note that you can horizontally scroll the mobile controls located in the bottom part of your screen to reveal all of them.
+If, for any reason, you still encounter a case when a feature is missing on your mobile device, please open an issue
+indicating the browser you're using, your screen's viewport size, and the model of your phone.
+
+#### In a multi-node deployment, the agent's registration with master is stuck loading indefinitely
+
+This issue arises when the authentication settings between Master and Agent nodes are incompatible.<br />
+To fix it, please make sure that :
+- When authentication is enabled on Master, the Agent has a `MASTER_SECRET` setting defined.
+- When authentication is disabled on Master, the Agent has no `MASTER_SECRET` setting defined.
+
+Also don't forget to restart your nodes when changing settings.
+
 #### Something else
 
 Please feel free to open an issue, explaining what happens, and describing your environment.
@@ -381,7 +479,7 @@ Please feel free to open an issue, explaining what happens, and describing your 
 ## Security
 
 Due to the very nature of Isaiah, I can't emphasize enough how important it is to harden your server :
-- Always enable the authentication (with `AUTHENTICATION_ENABLED` and `AUTHENTICATION_SECRET` variables) unless you have your own authentication mechanism built into a proxy.
+- Always enable the authentication (with `AUTHENTICATION_ENABLED` and `AUTHENTICATION_SECRET` settings) unless you have your own authentication mechanism built into a proxy.
 - Always use a long and secure password to prevent any malicious actor from taking over your Isaiah instance.
 - You may also consider putting Isaiah on a private network accessible only through a VPN.
 
