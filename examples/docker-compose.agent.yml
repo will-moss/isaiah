@@ -3,8 +3,6 @@ services:
   isaiah:
     image: mosswill/isaiah:latest
     restart: unless-stopped
-    ports:
-      - "80:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
