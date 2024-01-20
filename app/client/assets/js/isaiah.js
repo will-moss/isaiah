@@ -1407,6 +1407,14 @@
     },
 
     /**
+     * Private - Clear menu actions
+     */
+    _clearMenu: function () {
+      state.menu.actions = [];
+      state.menu.key = null;
+    },
+
+    /**
      * Private - Show a popup
      * @param {string} key
      */
@@ -1794,6 +1802,8 @@
               },
             ],
           });
+
+          cmdRun(cmds._clearMenu);
           return;
         }
 
@@ -1817,15 +1827,18 @@
 
           if (attributes.useRow) {
             cmdRun(cmds[attributes.command], sgetCurrentRow());
+            cmdRun(cmds._clearMenu);
             return;
           }
 
           if (attributes.useMenuAction) {
             cmdRun(cmds[attributes.command], _menuAction);
+            cmdRun(cmds._clearMenu);
             return;
           }
 
           cmdRun(cmds[attributes.command]);
+          cmdRun(cmds._clearMenu);
         }
 
         return;
