@@ -6,7 +6,7 @@
 @import './components.less';
 
 @width-mobile: 960px;
-@width-small-mobile: 390px;
+@width-small-mobile: 440px;
 
 * {
   // outline: 1px dashed blue;
@@ -212,8 +212,12 @@ html {
           &.for-disconnected {
             color: var(--color-terminal-warning);
           }
-          &.for-connected {
+          &.for-connected,
+          &.for-communication-target {
             color: var(--color-terminal-accent-alternative);
+          }
+          &.for-communication-target {
+            margin-right: 8px;
           }
           &.is-active {
             display: flex;
@@ -439,6 +443,12 @@ html {
 
     &.for-message[data-category='authentication'] {
       width: 435px;
+    }
+
+    &.for-help {
+      .tab-content {
+        max-height: 630px;
+      }
     }
 
     @media screen and (max-width: @width-mobile) {

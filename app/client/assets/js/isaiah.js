@@ -531,7 +531,14 @@
       <div class="popup for-menu">
         <div class="tab is-active">
           <span class="tab-title">
-            ${{ menu: 'Menu', bulk: 'Bulk actions', theme: 'Theme' }[menu.key]}
+            ${
+              {
+                menu: 'Menu',
+                bulk: 'Bulk actions',
+                theme: 'Theme',
+                agent: 'Agent',
+              }[menu.key]
+            }
           </span>
           <div class="tab-content">
             ${menu.actions
@@ -623,6 +630,10 @@
                <span class="cell">1234     </span>
                <span class="cell">go to panel</span>
              </div>
+             <div class="row is-not-interactive">
+               <span class="cell">< >      </span>
+               <span class="cell">switch node</span>
+             </div>
              <div class="row is-not-interactive"></div>
              <div class="row is-not-interactive">
                <span class="cell">y n      </span>
@@ -661,6 +672,10 @@
              <div class="row is-not-interactive">
                <span class="cell">T        </span>
                <span class="cell">open theme picker</span>
+             </div>
+             <div class="row is-not-interactive">
+               <span class="cell">A        </span>
+               <span class="cell">open agent picker</span>
              </div>
              <div class="row is-not-interactive"></div>
              <div class="row is-not-interactive">
@@ -865,13 +880,16 @@
     // 5.4. Set focus on tty
     if (_state.tty.isEnabled && _state.tty.lines.length > 0) {
       const ttyInput = hgetTtyInput();
-      ttyInput.focus();
-      ttyInput.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      if (ttyInput) {
+        ttyInput.focus();
+        ttyInput.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
-      // 5.4.1. Focus end of input
-      setTimeout(() => {
-        ttyInput.selectionStart = ttyInput.selectionEnd = ttyInput.value.length;
-      }, _state._delays.default / 2);
+        // 5.4.1. Focus end of input
+        setTimeout(() => {
+          ttyInput.selectionStart = ttyInput.selectionEnd =
+            ttyInput.value.length;
+        }, _state._delays.default / 2);
+      }
     }
 
     // 5.5. Set focus on prompt input
@@ -896,28 +914,37 @@
     if (_state.isLoading)
       hgetConnectionIndicator('loading').classList.add('is-active');
 
-    // 8. Reset mobile controls' visibility
+    // 8. Set communication (master / agent) indicator
+    if (_state.communication.availableAgents.length > 0) {
+      hgetConnectionIndicator('communication-target').classList.add(
+        'is-active'
+      );
+      hgetConnectionIndicator('communication-target').textContent =
+        _state.communication.currentAgent || 'Master';
+    }
+
+    // 9. Reset mobile controls' visibility
     hgetMobileControls().forEach((e) => {
       e.classList.remove('is-active');
     });
 
-    // 9. Update the mobile controls' visibility
+    // 10. Update the mobile controls' visibility
 
-    // 9.1. Case when menuing
+    // 10.1. Case when menuing
     if (_state.isMenuIng) {
       hgetMobileControl('reject').classList.add('is-active');
       hgetMobileControl('confirm').classList.add('is-active');
     }
-    // 9.2. Case when tty-ing / showing a message
+    // 10.2. Case when tty-ing / showing a message
     else if (_state.popup === 'tty' || _state.popup === 'message') {
       hgetMobileControl('ttyQuit').classList.add('is-active');
     }
-    // 9.3. Case when prompting
+    // 10.3. Case when prompting
     else if (_state.prompt.isEnabled || _state.prompt.input.isEnabled) {
       hgetMobileControl('reject').classList.add('is-active');
       hgetMobileControl('confirm').classList.add('is-active');
     }
-    // 9.4. Every other case (default navigation)
+    // 10.4. Every other case (default navigation)
     else {
       hgetMobileControl('previousTab').classList.add('is-active');
       hgetMobileControl('nextTab').classList.add('is-active');
@@ -925,6 +952,7 @@
       hgetMobileControl('bulk').classList.add('is-active');
       hgetMobileControl('shellSystem').classList.add('is-active');
       hgetMobileControl('theme').classList.add('is-active');
+      hgetMobileControl('agent').classList.add('is-active');
     }
   };
 
@@ -949,7 +977,12 @@
    * @param {object} o
    */
   const websocketSend = (o) => {
-    wsSocket.send(JSON.stringify(o));
+    const copy = { ...o };
+
+    if (state.communication.currentAgent)
+      copy.Agent = state.communication.currentAgent;
+
+    wsSocket.send(JSON.stringify(copy));
   };
 
   // === State
@@ -1013,7 +1046,7 @@
     /**
      * @typedef {object} Menu
      * @property {Array<MenuAction>} actions
-     * @property {'menu'|'bulk'|'theme'} key
+     * @property {'menu'|'bulk'|'theme'|'agent'} key
      */
 
     /**
@@ -1036,7 +1069,7 @@
       actions: [],
 
       /**
-       * @type {'menu'|'bulk'|'theme'}
+       * @type {'menu'|'bulk'|'theme'|'agent'}
        */
       key: null,
     },
@@ -1047,7 +1080,7 @@
     helper: 'default',
 
     /**
-     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"theme"}
+     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"theme"|"agent"}
      */
     popup: null,
 
@@ -1178,6 +1211,18 @@
       type: null,
       _buffer: '',
       _tmpCommand: null,
+    },
+
+    communication: {
+      /**
+       * @type {String}
+       */
+      currentAgent: null,
+
+      /**
+       * @type {Array<String>}
+       */
+      availableAgents: [],
     },
 
     _delays: {
@@ -1551,7 +1596,7 @@
     },
 
     /**
-     * Private - TTY-only - Quit and close the TTY session
+     * Private - Desktop-only - TTY-only - Quit and close the TTY session
      */
     _ttyQuit: function () {
       state.tty.isEnabled = false;
@@ -1679,6 +1724,27 @@
     _pickTheme: function (action) {
       state.appearance.currentTheme = action.Label.toLowerCase();
       localStorage.setItem('theme', state.appearance.currentTheme);
+    },
+
+    /**
+     * Private - Pick an agent for further communication
+     * @param {MenuAction} action
+     */
+    _pickAgent: function (action) {
+      cmdRun(cmds._clear);
+
+      if (action.Label === 'Master') state.communication.currentAgent = null;
+      else state.communication.currentAgent = action.Label;
+
+      cmdRun(cmds._init);
+    },
+
+    /**
+     * Private - Agent-only - Clear any open stream / tty
+     */
+    _clear: function () {
+      if (!state.communication.currentAgent) return;
+      websocketSend({ action: 'clear' });
     },
 
     /**
@@ -2287,6 +2353,101 @@
       state.navigation.currentMenuRow = 1;
       cmdRun(cmds._showPopup, 'menu');
     },
+
+    /**
+     * Public - Show agent picker
+     */
+    agent: function () {
+      if (state.communication.availableAgents.length === 0) return;
+
+      state.menu.key = 'agent';
+
+      state.menu.actions = state.communication.availableAgents.map((t) => ({
+        RunLocally: true,
+        RequiresResource: false,
+        RequiresMenuAction: true,
+        Label: t,
+        Command: '_pickAgent',
+      }));
+
+      state.menu.actions.unshift({
+        RunLocally: true,
+        RequiresResource: false,
+        RequiresMenuAction: true,
+        Label: 'Master',
+        Command: '_pickAgent',
+      });
+
+      state.navigation.currentMenuRow = 1;
+      cmdRun(cmds._showPopup, 'menu');
+    },
+
+    /**
+     * Public - Switch to the previous agent for further communication
+     */
+    previousAgent: function () {
+      if (state.communication.availableAgents.length === 0) return;
+
+      cmdRun(cmds._clear);
+
+      const currentIndex = state.communication.availableAgents.indexOf(
+        state.communication.currentAgent
+      );
+
+      // Case when currently communicating with master
+      if (currentIndex === -1) {
+        state.communication.currentAgent =
+          state.communication.availableAgents[
+            state.communication.availableAgents.length - 1
+          ];
+      }
+
+      // Case when currently communicating with the first agent
+      else if (currentIndex === 0) {
+        state.communication.currentAgent = null;
+      }
+
+      // Regular case, switching to the previous agent
+      else
+        state.communication.currentAgent =
+          state.communication.availableAgents[currentIndex - 1];
+
+      cmdRun(cmds._init);
+    },
+
+    /**
+     * Public - Switch to the next agent for further communication
+     */
+    nextAgent: function () {
+      if (state.communication.availableAgents.length === 0) return;
+
+      cmdRun(cmds._clear);
+
+      const currentIndex = state.communication.availableAgents.indexOf(
+        state.communication.currentAgent
+      );
+
+      // Case when currently communicating with master
+      if (currentIndex === -1) {
+        state.communication.currentAgent =
+          state.communication.availableAgents[0];
+      }
+
+      // Case when currently communicating with the last agent
+      else if (
+        currentIndex ===
+        state.communication.availableAgents.length - 1
+      ) {
+        state.communication.currentAgent = null;
+      }
+
+      // Regular case, switching to the next agent
+      else
+        state.communication.currentAgent =
+          state.communication.availableAgents[currentIndex + 1];
+
+      cmdRun(cmds._init);
+    },
   };
 
   // === Variables
@@ -2348,6 +2509,10 @@
     x: 'menu',
     b: 'bulk',
 
+    // Agents
+    '<': 'previousAgent',
+    '>': 'nextAgent',
+
     // Sub commands
     q: 'quit',
     d: 'remove',
@@ -2362,6 +2527,7 @@
     B: 'browse',
     w: 'browser',
     h: 'hub',
+    A: 'agent',
     G: 'github',
     T: 'theme',
     '?': 'help',
@@ -2659,6 +2825,12 @@
           (a, b) => ({ ...a, [b.Key]: 1 }),
           {}
         );
+
+        // Update agents' list only on the very first init
+        if (state.communication.availableAgents.length === 0)
+          state.communication.availableAgents =
+            notification.Content.Agents || [];
+
         state.isLoading = false;
         cmdRun(cmds._inspectorTabs);
         break;
@@ -2700,6 +2872,8 @@
             }
           }
         }
+
+        state.isLoading = false;
         break;
 
       case 'refresh':
@@ -2748,6 +2922,15 @@
             else
               state.inspector.content = notification.Content.Inspector.Content;
           }
+        }
+
+        if ('Agents' in notification.Content) {
+          cmdRun(cmds._clear);
+
+          // prettier-ignore
+          state.communication.availableAgents = notification.Content.Agents || [];
+          state.communication.currentAgent = null;
+          cmdRun(cmds._init);
         }
 
         state.isLoading = false;

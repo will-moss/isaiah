@@ -8,6 +8,7 @@ import (
 	"strings"
 	_io "will-moss/isaiah/server/_internal/io"
 	_os "will-moss/isaiah/server/_internal/os"
+	_session "will-moss/isaiah/server/_internal/session"
 	"will-moss/isaiah/server/_internal/tty"
 	"will-moss/isaiah/server/resources"
 	"will-moss/isaiah/server/ui"
@@ -20,21 +21,22 @@ import (
 type Server struct {
 	Melody *melody.Melody
 	Docker *client.Client
+	Agents AgentsArray
 }
 
 // Represent a command handler, used only _internally
 // to organize functions in files on a per-resource-type basis
 type handler interface {
-	RunCommand(*Server, *melody.Session, ui.Command)
+	RunCommand(*Server, _session.GenericSession, ui.Command)
 }
 
 // Primary method for sending messages via websocket
-func (server *Server) send(session *melody.Session, message []byte) {
+func (server *Server) send(session _session.GenericSession, message []byte) {
 	session.Write(message)
 }
 
 // Send a notification
-func (server *Server) SendNotification(session *melody.Session, notification ui.Notification) {
+func (server *Server) SendNotification(session _session.GenericSession, notification ui.Notification) {
 	// If configured, don't show confirmations
 	if slices.Contains([]string{ui.TypeInfo, ui.TypeSuccess}, notification.Type) {
 		notification.Display = _os.GetEnv("DISPLAY_CONFIRMATIONS") == "TRUE"
@@ -45,11 +47,29 @@ func (server *Server) SendNotification(session *melody.Session, notification ui.
 		notification.Display = true
 	}
 
-	server.send(session, notification.ToBytes())
+	// When current node is an agent, wrap the notification in a "agent.reply" command
+	// and send that to the master node
+	if _os.GetEnv("SERVER_ROLE") == "Agent" {
+		initiator, _ := session.Get("initiator")
+
+		command := ui.Command{
+			Action: "agent.reply",
+			Args: ui.JSON{
+				"To":           initiator.(string),
+				"Notification": notification,
+			},
+		}
+
+		server.send(session, command.ToBytes())
+	} else {
+		// Default, when current node is master, simply send the notification
+		server.send(session, notification.ToBytes())
+	}
+
 }
 
 // Same as handler.RunCommand
-func (server *Server) runCommand(session *melody.Session, command ui.Command) {
+func (server *Server) runCommand(session _session.GenericSession, command ui.Command) {
 	switch command.Action {
 	// Command : Initialization
 	case "init":
@@ -59,6 +79,7 @@ func (server *Server) runCommand(session *melody.Session, command ui.Command) {
 		images := resources.ImagesList(server.Docker)
 		volumes := resources.VolumesList(server.Docker)
 		networks := resources.NetworksList(server.Docker)
+		agents := server.Agents.ToStrings()
 
 		if len(containers) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_CONTAINERS"), ",")
@@ -84,7 +105,29 @@ func (server *Server) runCommand(session *melody.Session, command ui.Command) {
 			tabs = append(tabs, ui.Tab{Key: "networks", Title: "Networks", Rows: rows})
 		}
 
-		server.SendNotification(session, ui.NotificationInit(ui.NotificationParams{Content: ui.JSON{"Tabs": tabs}}))
+		server.SendNotification(
+			session,
+			ui.NotificationInit(ui.NotificationParams{
+				Content: ui.JSON{"Tabs": tabs, "Agents": agents},
+			}))
+
+	// Command : Agent-only - Clear TTY / Stream
+	case "clear":
+		if _os.GetEnv("SERVER_ROLE") != "Agent" {
+			break
+		}
+
+		// Clear user tty if there's any open
+		if terminal, exists := session.Get("tty"); exists {
+			(terminal.(*tty.TTY)).ClearAndQuit()
+			session.UnSet("tty")
+		}
+
+		// Clear user read stream if there's any open
+		if stream, exists := session.Get("stream"); exists {
+			(*stream.(*io.ReadCloser)).Close()
+			session.UnSet("stream")
+		}
 
 	// Command : Open shell on the server
 	case "shell":
@@ -93,25 +136,28 @@ func (server *Server) runCommand(session *melody.Session, command ui.Command) {
 				session,
 				ui.NotificationTty(ui.NotificationParams{Content: ui.JSON{"Output": string(p)}}),
 			)
+
 		}})
 		session.Set("tty", &terminal)
 
-		errs, updates, finished := make(chan error), make(chan string), false
-		go _os.OpenShell(&terminal, errs, updates)
+		go func() {
+			errs, updates, finished := make(chan error), make(chan string), false
+			go _os.OpenShell(&terminal, errs, updates)
 
-		for {
-			if finished {
-				break
-			}
+			for {
+				if finished {
+					break
+				}
 
-			select {
-			case e := <-errs:
-				server.SendNotification(session, ui.NotificationError(ui.NotificationParams{Content: ui.JSON{"Message": e.Error()}}))
-			case u := <-updates:
-				server.SendNotification(session, ui.NotificationTty(ui.NotificationParams{Content: ui.JSON{"Status": u, "Type": "system"}}))
-				finished = u == "exited"
+				select {
+				case e := <-errs:
+					server.SendNotification(session, ui.NotificationError(ui.NotificationParams{Content: ui.JSON{"Message": e.Error()}}))
+				case u := <-updates:
+					server.SendNotification(session, ui.NotificationTty(ui.NotificationParams{Content: ui.JSON{"Status": u, "Type": "system"}}))
+					finished = u == "exited"
+				}
 			}
-		}
+		}()
 
 	// Command : Run a command inside the currently-opened shell (can be a container shell, or a system shell)
 	case "shell.command":
@@ -151,14 +197,17 @@ func (server *Server) runCommand(session *melody.Session, command ui.Command) {
 }
 
 // Main function (dispatch a message to the appropriate handler, and run it)
-func (server *Server) Handle(session *melody.Session, message ...[]byte) {
+func (server *Server) Handle(session _session.GenericSession, message ...[]byte) {
+	// Dev-only : Set authenticated by default if authentication is disabled
+	if _os.GetEnv("AUTHENTICATION_ENABLED") != "TRUE" {
+		session.Set("authenticated", true)
+	}
+
 	// On first connection
 	if len(message) == 0 {
 		// Dev-only : If authentication is disabled
-		//            - set client's session authenticated by default
-		//            - send confirmation to the client
+		//            - send spontaneous auth confirmation to the client
 		if _os.GetEnv("AUTHENTICATION_ENABLED") != "TRUE" {
-			session.Set("authenticated", true)
 			server.SendNotification(session, ui.NotificationAuth(ui.NP{
 				Type: ui.TypeSuccess,
 				Content: ui.JSON{
@@ -184,20 +233,76 @@ func (server *Server) Handle(session *melody.Session, message ...[]byte) {
 		return
 	}
 
-	// By default, prior to running the command, close the current stream if any's still open
+	if command.Action == "" {
+		return
+	}
+
+	// If the command is meant to be forwarded to the final client, locally store the "initiator" field
+	if _os.GetEnv("SERVER_ROLE") == "Agent" && command.Initiator != "" {
+		session.Set("initiator", command.Initiator)
+
+		// Set "authenticated" to true when authentication is disabled
+		// Why once again? Because now, we have an "initiator" field, so "authenticated" is per-client
+		if _os.GetEnv("AUTHENTICATION_ENABLED") != "TRUE" {
+			session.Set("authenticated", true)
+		}
+	}
+
+	// By default, prior to running any command, close the current stream if any's still open
 	if stream, exists := session.Get("stream"); exists {
 		(*stream.(*io.ReadCloser)).Close()
 		session.UnSet("stream")
 	}
 
-	// Dispatch the command to the appropriate handler
+	// If the command is meant to be run by an agent, forward it, no further action
+	if _os.GetEnv("SERVER_ROLE") == "Master" && command.Agent != "" {
+		allSessions, _ := server.Melody.Sessions()
+		for index := range allSessions {
+			s := allSessions[index]
+
+			agent, ok := s.Get("agent")
+
+			if !ok {
+				continue
+			}
+
+			if agent.(Agent).Name != command.Agent {
+				continue
+			}
+
+			clientId, _ := session.Get("id")
+
+			// Remove Agent from the Command to prevent infinite forwarding
+			command.Agent = ""
+
+			// Append initial client's id to enable reverse response routing (from agent to initial client)
+			command.Initiator = clientId.(string)
+
+			// Send the command to the agent
+			s.Write(command.ToBytes())
+
+			break
+		}
+
+		// Let the client know the agent is processing their input
+		if !strings.HasPrefix(command.Action, "auth") {
+			server.SendNotification(session, ui.NotificationLoading())
+		}
+		return
+	}
+
+	// # - Dispatch the command to the appropriate handler
 	var h handler
+
 	if authenticated, _ := session.Get("authenticated"); authenticated != true ||
 		strings.HasPrefix(command.Action, "auth") {
 		h = Authentication{}
 	} else {
 		// Let the client know the server is processing their input
-		server.SendNotification(session, ui.NotificationLoading())
+		// + Disable sending "loading" notifications for agent nodes, as Master does it already
+		if _os.GetEnv("SERVER_ROLE") == "Master" {
+			server.SendNotification(session, ui.NotificationLoading())
+		}
 
 		switch true {
 		case strings.HasPrefix(command.Action, "image"):
@@ -208,6 +313,8 @@ func (server *Server) Handle(session *melody.Session, message ...[]byte) {
 			h = Volumes{}
 		case strings.HasPrefix(command.Action, "network"):
 			h = Networks{}
+		case strings.HasPrefix(command.Action, "agent"):
+			h = Agents{}
 		default:
 			h = nil
 		}
@@ -218,4 +325,5 @@ func (server *Server) Handle(session *melody.Session, message ...[]byte) {
 	} else {
 		server.runCommand(session, command)
 	}
+
 }

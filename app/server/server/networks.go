@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"strings"
 	_os "will-moss/isaiah/server/_internal/os"
+	_session "will-moss/isaiah/server/_internal/session"
 	"will-moss/isaiah/server/resources"
 	"will-moss/isaiah/server/ui"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/olahol/melody"
 )
 
 // Placeholder used for internal organization
 type Networks struct{}
 
-func (Networks) RunCommand(server *Server, session *melody.Session, command ui.Command) {
+func (Networks) RunCommand(server *Server, session _session.GenericSession, command ui.Command) {
 	switch command.Action {
 
 	// Single - Default menu
