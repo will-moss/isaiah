@@ -1,0 +1,16 @@
+version: '3'
+services:
+  isaiah:
+    image: mosswill/isaiah:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      SERVER_ROLE: "Agent"
+      AUTHENTICATION_SECRET: "your-very-long-and-mysterious-secret"
+
+      MASTER_HOST: "your-domain.tld:port"
+      MASTER_SECRET: "your-very-long-and-mysterious-secret"
+      AGENT_NAME: "Your custom name"
