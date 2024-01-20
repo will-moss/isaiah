@@ -1,3 +1,17 @@
+# [1.5.0](https://github.com/will-moss/isaiah/compare/1.4.0...1.5.0) (2024-01-20)
+
+
+### Bug Fixes
+
+* **authentication:** fixed authentication denial when authentication is disabled as per settings ([72b3124](https://github.com/will-moss/isaiah/commit/72b3124d379b5d5c3ce8fb4de184edaec609cb8a))
+* **client:** fixed a bug where menu navigation would break because of improper reset ([52a2e3b](https://github.com/will-moss/isaiah/commit/52a2e3b643907e899365af421b9abd2d08da990c))
+* **settings:** updated default settings to increase SERVER_MAX_READ_SIZE to cover most needs ([9855fde](https://github.com/will-moss/isaiah/commit/9855fde031978568694557c853357f7635ef9f0c))
+
+
+### Features
+
+* **project:** added full support for multi-node deployment ([167668d](https://github.com/will-moss/isaiah/commit/167668df6661ebbc25717829bdeaa673d1f7cfc8))
+
 # [1.4.0](https://github.com/will-moss/isaiah/compare/1.3.0...1.4.0) (2024-01-09)
 
 
