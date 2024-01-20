@@ -297,8 +297,7 @@ Then, launch Isaiah on each `Agent` node, and you should see logs indicating whe
 
 If encounter any issue, please read the [Troubleshoot](#troubleshoot) section.
 
-You're done!
-
+> You may want to note that you don't need to expose ports on the machine / Docker container running Isaiah when it is configured as an Agent.
 
 ## Configuration
 
