@@ -6,18 +6,18 @@ import (
 	"strings"
 	_io "will-moss/isaiah/server/_internal/io"
 	_os "will-moss/isaiah/server/_internal/os"
+	_session "will-moss/isaiah/server/_internal/session"
 	"will-moss/isaiah/server/_internal/tty"
 	"will-moss/isaiah/server/resources"
 	"will-moss/isaiah/server/ui"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/olahol/melody"
 )
 
 // Placeholder used for internal organization
 type Volumes struct{}
 
-func (Volumes) RunCommand(server *Server, session *melody.Session, command ui.Command) {
+func (Volumes) RunCommand(server *Server, session _session.GenericSession, command ui.Command) {
 	switch command.Action {
 
 	// Single - Default menu

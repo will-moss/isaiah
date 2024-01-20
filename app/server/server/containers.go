@@ -7,18 +7,18 @@ import (
 	_io "will-moss/isaiah/server/_internal/io"
 	_os "will-moss/isaiah/server/_internal/os"
 	"will-moss/isaiah/server/_internal/process"
+	_session "will-moss/isaiah/server/_internal/session"
 	"will-moss/isaiah/server/_internal/tty"
 	"will-moss/isaiah/server/resources"
 	"will-moss/isaiah/server/ui"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/olahol/melody"
 )
 
 // Placeholder used for internal organization
 type Containers struct{}
 
-func (Containers) RunCommand(server *Server, session *melody.Session, command ui.Command) {
+func (Containers) RunCommand(server *Server, session _session.GenericSession, command ui.Command) {
 	switch command.Action {
 
 	// Single - Default menu
@@ -301,22 +301,25 @@ func (Containers) RunCommand(server *Server, session *melody.Session, command ui
 		}})
 		session.Set("tty", &terminal)
 
-		errs, updates, finished := make(chan error), make(chan string), false
-		go container.Shell(server.Docker, &terminal, errs, updates)
+		go func() {
+			errs, updates, finished := make(chan error), make(chan string), false
+			go container.Shell(server.Docker, &terminal, errs, updates)
 
-		for {
-			if finished {
-				break
-			}
+			for {
+				if finished {
+					break
+				}
 
-			select {
-			case e := <-errs:
-				server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": e.Error()}}))
-			case u := <-updates:
-				server.SendNotification(session, ui.NotificationTty(ui.NP{Content: ui.JSON{"Status": u, "Type": "container"}}))
-				finished = u == "exited"
+				select {
+				case e := <-errs:
+					server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": e.Error()}}))
+				case u := <-updates:
+					server.SendNotification(session, ui.NotificationTty(ui.NP{Content: ui.JSON{"Status": u, "Type": "container"}}))
+					finished = u == "exited"
+				}
+
 			}
-		}
+		}()
 
 	// Single - Open in browser
 	case "container.browser":

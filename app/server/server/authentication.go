@@ -2,14 +2,13 @@ package server
 
 import (
 	_os "will-moss/isaiah/server/_internal/os"
+	_session "will-moss/isaiah/server/_internal/session"
 	"will-moss/isaiah/server/ui"
-
-	"github.com/olahol/melody"
 )
 
 type Authentication struct{}
 
-func (Authentication) RunCommand(server *Server, session *melody.Session, command ui.Command) {
+func (Authentication) RunCommand(server *Server, session _session.GenericSession, command ui.Command) {
 	switch command.Action {
 
 	// Command : Authenticate the client by password
@@ -23,8 +22,7 @@ func (Authentication) RunCommand(server *Server, session *melody.Session, comman
 						"Message": "Your are now authenticated",
 					},
 				},
-			}),
-			)
+			}))
 			break
 		}
 

@@ -8,19 +8,27 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"strings"
+	"time"
 
 	"github.com/docker/docker/client"
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
 	"github.com/olahol/melody"
 
 	_client "will-moss/isaiah/server/_internal/client"
 	_fs "will-moss/isaiah/server/_internal/fs"
+	_json "will-moss/isaiah/server/_internal/json"
 	_os "will-moss/isaiah/server/_internal/os"
+	_session "will-moss/isaiah/server/_internal/session"
 	_strconv "will-moss/isaiah/server/_internal/strconv"
 	"will-moss/isaiah/server/_internal/tty"
 	"will-moss/isaiah/server/server"
+	"will-moss/isaiah/server/ui"
 )
 
 //go:embed client/*
@@ -66,6 +74,22 @@ func performVerifications() error {
 		}
 	}
 
+	// 5. Ensure master node is available if current node is an agent
+	if _os.GetEnv("SERVER_ROLE") == "Agent" {
+		h, err := net.DialTimeout("tcp", _os.GetEnv("MASTER_HOST"), 5*time.Second)
+		if err != nil {
+			return fmt.Errorf("Failed Verification : Master node is unreachable -> %s", err)
+		}
+		defer h.Close()
+	}
+
+	// 6. Ensure an agent name is provided if current node is an agent
+	if _os.GetEnv("SERVER_ROLE") == "Agent" {
+		if _os.GetEnv("AGENT_NAME") == "" {
+			return fmt.Errorf("Failed Verification : You must provide a name for your Agent node")
+		}
+	}
+
 	return nil
 }
 
@@ -106,68 +130,223 @@ func main() {
 	}
 
 	// Set up everything (Melody instance, Docker client, Server settings)
-	server := server.Server{
+	_server := server.Server{
 		Melody: melody.New(),
 		Docker: _client.NewClientWithOpts(client.FromEnv),
 	}
-	server.Melody.Config.MaxMessageSize = _strconv.ParseInt(_os.GetEnv("SERVER_MAX_READ_SIZE"), 10, 64)
+	_server.Melody.Config.MaxMessageSize = _strconv.ParseInt(_os.GetEnv("SERVER_MAX_READ_SIZE"), 10, 64)
 
-	// Load embed assets as a filesystem
-	serverRoot := _fs.Sub(clientAssets, "client")
+	// Disable client when current node is an agent
+	if _os.GetEnv("SERVER_ROLE") != "Agent" {
 
-	// Set up static file serving for the CSS theming
-	http.HandleFunc("/assets/css/custom.css", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := os.Stat("custom.css"); errors.Is(err, os.ErrNotExist) {
-			w.WriteHeader(200)
-			return
+		// Load embed assets as a filesystem
+		serverRoot := _fs.Sub(clientAssets, "client")
+
+		// Set up static file serving for the CSS theming
+		http.HandleFunc("/assets/css/custom.css", func(w http.ResponseWriter, r *http.Request) {
+			if _, err := os.Stat("custom.css"); errors.Is(err, os.ErrNotExist) {
+				w.WriteHeader(200)
+				return
+			}
+
+			http.ServeFile(w, r, "custom.css")
+		})
+
+		// Use on-disk assets rather than embedded ones when in development
+		if _os.GetEnv("DEV_ENABLED") != "TRUE" {
+			// Set up static file serving for all the front-end files
+			http.Handle("/", http.StripPrefix("/", http.FileServer(http.FS(serverRoot))))
+		} else {
+			http.Handle("/", http.FileServer(http.Dir("./client")))
 		}
-
-		http.ServeFile(w, r, "custom.css")
-	})
-
-	if _os.GetEnv("DEV_ENABLED") != "TRUE" {
-		// Set up static file serving for all the front-end files
-		http.Handle("/", http.StripPrefix("/", http.FileServer(http.FS(serverRoot))))
-	} else {
-		http.Handle("/", http.FileServer(http.Dir("./client")))
 	}
 
 	// Set up an endpoint to handle Websocket connections with Melody
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		server.Melody.HandleRequest(w, r)
+		_server.Melody.HandleRequest(w, r)
 	})
 
 	// WS - Handle first user connecion
-	server.Melody.HandleConnect(func(session *melody.Session) {
-		server.Handle(session)
+	_server.Melody.HandleConnect(func(session *melody.Session) {
+		session.Set("id", uuid.NewString())
+		_server.Handle(session)
 	})
 
 	// WS - Handle user commands
-	server.Melody.HandleMessage(func(session *melody.Session, message []byte) {
-		go server.Handle(session, message)
+	_server.Melody.HandleMessage(func(session *melody.Session, message []byte) {
+		// go _server.Handle(session, message)
+		_server.Handle(session, message)
 	})
 
 	// WS - Handle user disconnection
-	server.Melody.HandleDisconnect(func(s *melody.Session) {
-		// Clear user tty if there's any open
-		if terminal, exists := s.Get("tty"); exists {
-			(terminal.(*tty.TTY)).ClearAndQuit()
-			s.UnSet("tty")
+	_server.Melody.HandleDisconnect(func(s *melody.Session) {
+		// When current node is master
+		if _os.GetEnv("SERVER_ROLE") == "Master" {
+			// Clear user tty if there's any open
+			if terminal, exists := s.Get("tty"); exists {
+				(terminal.(*tty.TTY)).ClearAndQuit()
+				s.UnSet("tty")
+			}
+
+			// Clear user read stream if there's any open
+			if stream, exists := s.Get("stream"); exists {
+				(*stream.(*io.ReadCloser)).Close()
+				s.UnSet("stream")
+			}
+
+			// Unregister the agent node if applicable
+			if agent, exists := s.Get("agent"); exists {
+				newAgents := make(server.AgentsArray, 0)
+				for _, _agent := range _server.Agents {
+					if (agent.(server.Agent)).Name != _agent.Name {
+						newAgents = append(newAgents, _agent)
+					}
+				}
+				_server.Agents = newAgents
+
+				s.UnSet("agent")
+
+				// Notify all the clients about the agent's disconnection
+				notification := ui.NotificationData(ui.NotificationParams{Content: ui.JSON{"Agents": _server.Agents.ToStrings()}})
+				_server.Melody.Broadcast(notification.ToBytes())
+			}
 		}
 
-		// Clear user read stream if there's any open
-		if stream, exists := s.Get("stream"); exists {
-			(*stream.(*io.ReadCloser)).Close()
-			s.UnSet("stream")
-		}
 	})
 
-	log.Printf("Server starting on port %s", _os.GetEnv("SERVER_PORT"))
+	// When current node is an agent, perform agent registration procedure with the master node
+	if _os.GetEnv("SERVER_ROLE") == "Agent" {
+		log.Print("Initiating registration with master node")
 
-	// Start the server
-	if _os.GetEnv("SSL_ENABLED") == "TRUE" {
-		http.ListenAndServeTLS(fmt.Sprintf(":%s", _os.GetEnv("SERVER_PORT")), "certificate.pem", "key.pem", nil)
-	} else {
-		http.ListenAndServe(fmt.Sprintf(":%s", _os.GetEnv("SERVER_PORT")), nil)
+		var response ui.Notification
+
+		// 1. Establish connection with Master node
+		masterAddress := url.URL{Scheme: "ws", Host: _os.GetEnv("MASTER_HOST"), Path: "/ws"}
+		connection, _, err := websocket.DefaultDialer.Dial(masterAddress.String(), nil)
+		if err != nil {
+			log.Print("Error establishing connection to the master node")
+			log.Print(err)
+			return
+		}
+
+		if _os.GetEnv("MASTER_SECRET") != "" {
+			log.Print("Performing authentication")
+
+			// 2. Send authentication command
+			authCommand := ui.Command{Action: "auth.login", Args: ui.JSON{"Password": _os.GetEnv("MASTER_SECRET")}}
+			err = connection.WriteMessage(websocket.TextMessage, _json.Marshal(authCommand))
+			if err != nil {
+				log.Print("Error sending authentication command to the master node")
+				log.Print(err)
+				return
+			}
+
+			// 3. Verify that authentication was succesful
+			err = connection.ReadJSON(&response)
+			if err != nil {
+				log.Print("Error decoding authentication response from the master node")
+				log.Print(err)
+				return
+			}
+
+			if response.Type != ui.TypeSuccess {
+				log.Print("Authentication with master node unsuccesful")
+				log.Print("Please check your MASTER_SECRET setting and restart")
+				return
+			}
+
+			// Quirk : When authentication is disabled, the server has already initially sent an auth success
+			//         Trying to empty / vaccuum the message queue proves unfeasible with Gorilla Websocket
+			//         Hence we must undergo the following code to skip authentication in that case
+			spontaneous, ok := response.Content["Authentication"].(map[string]interface{})["Spontaneous"]
+			if ok && spontaneous.(bool) {
+				connection.ReadMessage()
+			}
+		} else {
+			log.Print("No authentication secret was provided, skipping authentication")
+			// Quirk : Same as above
+			connection.ReadMessage()
+		}
+
+		// 4. Send registration command
+		registrationCommand := ui.Command{
+			Action: "agent.register",
+			Args: ui.JSON{
+				"Resource": server.Agent{
+					Name: _os.GetEnv("AGENT_NAME"),
+				},
+			},
+		}
+		err = connection.WriteMessage(websocket.TextMessage, _json.Marshal(registrationCommand))
+		if err != nil {
+			log.Print("Error sending registration command to the master node")
+			log.Print(err)
+			return
+		}
+
+		// Quirk : Skip loading indicator
+		connection.ReadMessage()
+
+		// 5. Verify that registration was succesful
+		response = ui.Notification{}
+		err = connection.ReadJSON(&response)
+		if err != nil {
+			log.Print("Error decoding registration response from the master node")
+			log.Print(err)
+			return
+		}
+		if response.Type != ui.TypeSuccess {
+			log.Print("Registration with master node unsuccesful")
+			log.Print("Please check your settings and connectivity")
+			log.Printf("Error : %s", response.Content["Message"])
+			return
+		}
+
+		log.Print("Connection with master node is established")
+
+		// Workaround : Create a tweaked reimplementation of melody.Session to reuse existing code
+		session := _session.Create(connection)
+
+		// 6. Process the commands as they are received
+		for {
+			_, message, err := connection.ReadMessage()
+			if err != nil {
+				log.Print(err)
+				break
+			}
+
+			_server.Handle(session, message)
+		}
+
+		// 7. Clear all opened TTY / Stream instances when applicable
+		session.UnSet("initiator")
+
+		// Clear all users' tty if there's any open
+		for k := range session.Keys {
+			if strings.HasSuffix(k, "tty") {
+				(session.Keys[k].(*tty.TTY)).ClearAndQuit()
+				session.UnSet(k)
+			}
+		}
+
+		// Clear all users' read stream if there's any open
+		for k := range session.Keys {
+			if strings.HasSuffix(k, "stream") {
+				(*session.Keys[k].(*io.ReadCloser)).Close()
+				session.UnSet(k)
+			}
+		}
+
+		return
+	}
+
+	// When current node is master, start the HTTP server
+	if _os.GetEnv("SERVER_ROLE") == "Master" {
+		log.Printf("Server starting on port %s", _os.GetEnv("SERVER_PORT"))
+		if _os.GetEnv("SSL_ENABLED") == "TRUE" {
+			http.ListenAndServeTLS(fmt.Sprintf(":%s", _os.GetEnv("SERVER_PORT")), "certificate.pem", "key.pem", nil)
+		} else {
+			http.ListenAndServe(fmt.Sprintf(":%s", _os.GetEnv("SERVER_PORT")), nil)
+		}
 	}
 }
