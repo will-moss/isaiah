@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/will-moss/isaiah/compare/1.5.0...1.6.0) (2024-02-03)
+
+
+### Features
+
+* **project:** added support for multi-host deployment ([828116f](https://github.com/will-moss/isaiah/commit/828116f291a5783d0fc3fe892d12bc74ce0e6091))
+
 # [1.5.0](https://github.com/will-moss/isaiah/compare/1.4.0...1.5.0) (2024-01-20)
 
 
