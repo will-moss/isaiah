@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"errors"
 	"fmt"
@@ -51,11 +52,13 @@ func performVerifications() error {
 	}
 
 	// 2. Ensure Docker socket is reachable
-	c, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		return fmt.Errorf("Failed Verification : Access to Docker socket -> %s", err)
+	if _os.GetEnv("MULTI_HOST_ENABLED") != "TRUE" {
+		c, err := client.NewClientWithOpts(client.FromEnv)
+		if err != nil {
+			return fmt.Errorf("Failed Verification : Access to Docker socket -> %s", err)
+		}
+		defer c.Close()
 	}
-	defer c.Close()
 
 	// 3. Ensure server port is available
 	l, err := net.Listen("tcp", fmt.Sprintf(":%s", _os.GetEnv("SERVER_PORT")))
@@ -90,19 +93,53 @@ func performVerifications() error {
 		}
 	}
 
+	// 7. Ensure docker_hosts file is available when multi-host is enabled
+	if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" {
+		if _, err := os.Stat("docker_hosts"); errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("Failed Verification : docker_hosts file is missing. Please put it next to the executable")
+		}
+	}
+
+	// 8. Ensure every host is reachable if multi-host is enabled, and docker_hosts is well-formatted
+	if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" {
+		raw, err := os.ReadFile("docker_hosts")
+		if err != nil {
+			return fmt.Errorf("Failed Verification : docker_hosts file can't be read -> %s", err)
+		}
+		if len(raw) == 0 {
+			return fmt.Errorf("Failed Verification : docker_hosts file is empty.")
+		}
+
+		lines := strings.Split(string(raw), "\n")
+		for _, line := range lines {
+			if len(line) == 0 {
+				continue
+			}
+
+			parts := strings.Split(line, " ")
+			if len(parts) != 2 {
+				return fmt.Errorf("Failed Verification : docker_hosts file isn't properly formatted. Line : -> %s", line)
+			}
+
+			c, err := client.NewClientWithOpts(client.WithHost(parts[1]))
+			if err != nil {
+				return fmt.Errorf("Failed Verification : Access to Docker host -> %s", err)
+			}
+
+			_, err = c.Ping(context.Background())
+			if err != nil {
+				return fmt.Errorf("Failed Verification : Access to Docker host -> %s", err)
+			}
+
+			c.Close()
+		}
+	}
+
 	return nil
 }
 
 // Entrypoint
 func main() {
-	// Automatically discover the Docker host on the machine
-	discoveredHost, err := _client.DiscoverDockerHost()
-	if err != nil {
-		log.Print(err.Error())
-		return
-	}
-	os.Setenv("DOCKER_HOST", discoveredHost)
-
 	// Load default settings via default.env file (workaround since the file is embed)
 	defaultSettings, _ := godotenv.Unmarshal(defaultEnv)
 	for k, v := range defaultSettings {
@@ -112,9 +149,19 @@ func main() {
 	}
 
 	// Load custom settings via .env file
-	err = godotenv.Overload(".env")
+	err := godotenv.Overload(".env")
 	if err != nil {
 		log.Print("No .env file provided, will continue with system env")
+	}
+
+	if _os.GetEnv("MULTI_HOST_ENABLED") != "TRUE" {
+		// Automatically discover the Docker host on the machine
+		discoveredHost, err := _client.DiscoverDockerHost()
+		if err != nil {
+			log.Print(err.Error())
+			return
+		}
+		os.Setenv("DOCKER_HOST", discoveredHost)
 	}
 
 	// Perform initial verifications
@@ -130,9 +177,38 @@ func main() {
 	}
 
 	// Set up everything (Melody instance, Docker client, Server settings)
-	_server := server.Server{
-		Melody: melody.New(),
-		Docker: _client.NewClientWithOpts(client.FromEnv),
+	var _server server.Server
+	if _os.GetEnv("MULTI_HOST_ENABLED") != "TRUE" {
+		_server = server.Server{
+			Melody: melody.New(),
+			Docker: _client.NewClientWithOpts(client.FromEnv),
+		}
+	} else {
+		_server = server.Server{
+			Melody: melody.New(),
+		}
+
+		// Populate server's known hosts when multi-host is enabled
+		_server.Hosts = make(server.HostsArray, 0)
+		var firstHost string
+
+		raw, _ := os.ReadFile("docker_hosts")
+		lines := strings.Split(string(raw), "\n")
+		for _, line := range lines {
+			if len(line) == 0 {
+				continue
+			}
+			parts := strings.Split(line, " ")
+
+			_server.Hosts = append(_server.Hosts, []string{parts[0], parts[1]})
+
+			if len(firstHost) == 0 {
+				firstHost = parts[0]
+			}
+		}
+
+		// Set default Docker client on the first known host
+		_server.SetHost(firstHost)
 	}
 	_server.Melody.Config.MaxMessageSize = _strconv.ParseInt(_os.GetEnv("SERVER_MAX_READ_SIZE"), 10, 64)
 

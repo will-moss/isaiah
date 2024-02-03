@@ -1,0 +1,3 @@
+Local unix:///var/run/docker.sock
+Host-1 tcp://your-domain.tld:your-port
+Host-2 tcp://your-ip:your-port
