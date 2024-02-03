@@ -537,6 +537,7 @@
                 bulk: 'Bulk actions',
                 theme: 'Theme',
                 agent: 'Agent',
+                host: 'Host',
               }[menu.key]
             }
           </span>
@@ -634,6 +635,10 @@
                <span class="cell">< >      </span>
                <span class="cell">switch node</span>
              </div>
+             <div class="row is-not-interactive">
+               <span class="cell">l k      </span>
+               <span class="cell">switch host</span>
+             </div>
              <div class="row is-not-interactive"></div>
              <div class="row is-not-interactive">
                <span class="cell">y n      </span>
@@ -676,6 +681,10 @@
              <div class="row is-not-interactive">
                <span class="cell">A        </span>
                <span class="cell">open agent picker</span>
+             </div>
+             <div class="row is-not-interactive">
+               <span class="cell">H        </span>
+               <span class="cell">open host picker</span>
              </div>
              <div class="row is-not-interactive"></div>
              <div class="row is-not-interactive">
@@ -914,13 +923,22 @@
     if (_state.isLoading)
       hgetConnectionIndicator('loading').classList.add('is-active');
 
-    // 8. Set communication (master / agent) indicator
-    if (_state.communication.availableAgents.length > 0) {
+    // 8. Set communication (master / agent / host) indicator
+    if (
+      _state.communication.availableAgents.length > 0 ||
+      _state.communication.availableHosts
+    ) {
       hgetConnectionIndicator('communication-target').classList.add(
         'is-active'
       );
-      hgetConnectionIndicator('communication-target').textContent =
-        _state.communication.currentAgent || 'Master';
+
+      let fullIndicator = _state.communication.currentAgent || 'Master';
+      if (_state.communication.currentHost)
+        fullIndicator = `${fullIndicator} (${_state.communication.currentHost})`;
+
+      hgetConnectionIndicator(
+        'communication-target'
+      ).textContent = fullIndicator;
     }
 
     // 9. Reset mobile controls' visibility
@@ -981,6 +999,9 @@
 
     if (state.communication.currentAgent)
       copy.Agent = state.communication.currentAgent;
+
+    if (state.communication.currentHost)
+      copy.Host = state.communication.currentHost;
 
     wsSocket.send(JSON.stringify(copy));
   };
@@ -1046,7 +1067,7 @@
     /**
      * @typedef {object} Menu
      * @property {Array<MenuAction>} actions
-     * @property {'menu'|'bulk'|'theme'|'agent'} key
+     * @property {'menu'|'bulk'|'theme'|'agent'|'host'} key
      */
 
     /**
@@ -1069,7 +1090,7 @@
       actions: [],
 
       /**
-       * @type {'menu'|'bulk'|'theme'|'agent'}
+       * @type {'menu'|'bulk'|'theme'|'agent'|'host'}
        */
       key: null,
     },
@@ -1080,7 +1101,7 @@
     helper: 'default',
 
     /**
-     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"theme"|"agent"}
+     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"theme"|"agent"|'host'}
      */
     popup: null,
 
@@ -1215,14 +1236,24 @@
 
     communication: {
       /**
-       * @type {String}
+       * @type {string}
        */
       currentAgent: null,
 
       /**
-       * @type {Array<String>}
+       * @type {Array<string>}
        */
       availableAgents: [],
+
+      /**
+       * @type {string}
+       */
+      currentHost: null,
+
+      /**
+       * @type {string}
+       */
+      availableHosts: [],
     },
 
     _delays: {
@@ -1745,6 +1776,15 @@
     _clear: function () {
       if (!state.communication.currentAgent) return;
       websocketSend({ action: 'clear' });
+    },
+
+    /**
+     * Private - Pick a new host for further communication
+     * @param {MenuAction} action
+     */
+    _pickHost: function (action) {
+      state.communication.currentHost = action.Label;
+      cmdRun(cmds._init);
     },
 
     /**
@@ -2383,6 +2423,26 @@
     },
 
     /**
+     * Public - Show host picker
+     */
+    host: function () {
+      if (state.communication.availableHosts.length === 0) return;
+
+      state.menu.key = 'host';
+
+      state.menu.actions = state.communication.availableHosts.map((t) => ({
+        RunLocally: true,
+        RequiresResource: false,
+        RequiresMenuAction: true,
+        Label: t,
+        Command: '_pickHost',
+      }));
+
+      state.navigation.currentMenuRow = 1;
+      cmdRun(cmds._showPopup, 'menu');
+    },
+
+    /**
      * Public - Switch to the previous agent for further communication
      */
     previousAgent: function () {
@@ -2445,6 +2505,49 @@
       else
         state.communication.currentAgent =
           state.communication.availableAgents[currentIndex + 1];
+
+      cmdRun(cmds._init);
+    },
+
+    /**
+     * Public - Switch to the previous host for further communication
+     */
+    previousHost: function () {
+      if (state.communication.availableHosts.length === 0) return;
+
+      const currentIndex = state.communication.availableHosts.indexOf(
+        state.communication.currentHost
+      );
+
+      if (currentIndex === 0) {
+        state.communication.currentHost =
+          state.communication.availableHosts[
+            state.communication.availableHosts.length - 1
+          ];
+      }
+      // Regular case, switching to the previous agent
+      else
+        state.communication.currentHost =
+          state.communication.availableHosts[currentIndex - 1];
+
+      cmdRun(cmds._init);
+    },
+
+    /**
+     * Public - Switch to the next host for further communication
+     */
+    nextHost: function () {
+      if (state.communication.availableHosts.length === 0) return;
+
+      const currentIndex = state.communication.availableHosts.indexOf(
+        state.communication.currentHost
+      );
+
+      if (currentIndex === state.communication.availableHosts.length - 1) {
+        state.communication.currentHost = state.communication.availableHosts[0];
+      } else
+        state.communication.currentHost =
+          state.communication.availableHosts[currentIndex + 1];
 
       cmdRun(cmds._init);
     },
@@ -2513,6 +2616,10 @@
     '<': 'previousAgent',
     '>': 'nextAgent',
 
+    // Hosts
+    k: 'previousHost',
+    l: 'nextHost',
+
     // Sub commands
     q: 'quit',
     d: 'remove',
@@ -2528,6 +2635,7 @@
     w: 'browser',
     h: 'hub',
     A: 'agent',
+    H: 'host',
     G: 'github',
     T: 'theme',
     '?': 'help',
@@ -2826,10 +2934,21 @@
           {}
         );
 
-        // Update agents' list only on the very first init
+        // Update agents list only on the very first init
         if (state.communication.availableAgents.length === 0)
           state.communication.availableAgents =
             notification.Content.Agents || [];
+
+        // Update hosts list only on the very first init
+        if (state.communication.availableHosts.length === 0) {
+          state.communication.availableHosts = notification.Content.Hosts || [];
+          if (state.communication.availableHosts.length > 0) {
+            state.communication.currentHost =
+              state.communication.availableHosts[0];
+
+            cmdRun(cmds._init);
+          }
+        }
 
         state.isLoading = false;
         cmdRun(cmds._inspectorTabs);

@@ -7,6 +7,7 @@ type Command struct {
 	Action    string
 	Args      map[string]interface{}
 	Agent     string
+	Host      string
 	Initiator string
 	Sequence  int32
 }

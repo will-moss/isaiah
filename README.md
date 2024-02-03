@@ -31,6 +31,9 @@
 - [Multi-node deployment](#multi-node-deployment)
   * [General information](#general-information)
   * [Setup](#setup)
+- [Multi-host deployment](#multi-host-deployment)
+  * [General information](#general-information-1)
+  * [Setup](#setup-1)
 - [Configuration](#configuration)
 - [Theming](#theming)
 - [Troubleshoot](#troubleshoot)
@@ -80,7 +83,7 @@ Isaiah has all these features implemented :
 - Support for custom Docker Host / Context.
 - Support for extensive configuration with `.env`
 - Support for HTTP and HTTPS
-- Support for standalone / proxy / multi-node deployment
+- Support for standalone / proxy / multi-node / multi-host deployment
 
 On top of these, one may appreciate the following characteristics :
 - Written in Go (for the server) and Vanilla JS (for the client)
@@ -143,6 +146,8 @@ Here's a description of every example :
 - `docker-compose.traefik.yml`: A sample setup with Isaiah running on port 80, behind a Traefik proxy listening on port 443.
 
 - `docker-compose.agent.yml`: A sample setup with Isaiah operating as an Agent in a multi-node deployment.
+
+- `docker-compose.host.yml`: A sample setup with Isaiah expecting to communicate with other hosts in a multi-host deployment.
 
 When your `docker-compose` file is on point, you can use the following commands :
 ```sh
@@ -299,6 +304,46 @@ If encounter any issue, please read the [Troubleshoot](#troubleshoot) section.
 
 > You may want to note that you don't need to expose ports on the machine / Docker container running Isaiah when it is configured as an Agent.
 
+## Multi-host deployment
+
+Using Isaiah, you can manage multiple hosts with their own distinct Docker resources from a single dashboard.
+
+Before delving into that part, please get familiar with the general information below.
+
+### General information
+
+The big difference between multi-node and multi-host deployments is that you won't need to install Isaiah on every single node
+if you are using multi-host. In this setup, Isaiah is installed only on one server, and communicates with other Docker hosts
+directly over TCP / Unix sockets. It makes it easier to manage multiple remote Docker environments without having to setup Isaiah
+on all of them.
+
+Please note that, in a multi-host setup, there must be a direct access between the main host (where Isaiah is running)
+and the other ones. Usually, they should be on the same network, or visible through a secured gateway / VPN / filesystem mount.
+
+Let's see how to set up a multi-host deployment.
+
+### Setup
+
+In order to help you get started, a [sample file](/app/sample.docker_hosts) was created.
+
+First, please ensure the following :
+- Your `Master` host is running, exposed on the network, and available in your web browser
+- Your `Master` host has the setting `MULTI_HOST_ENABLED` set to `true`.
+- Your `Master` host has access to the other Docker hosts over TCP / Unix socket.
+
+Second, please create a `docker_hosts` file next to Isaiah's executable, using the sample file cited above:
+- Every line should contain two strings separated by a single space.
+- The first string is the name of your host, and the second string is the path to reach it.
+- The path to your host should look like this : [PROTOCOL]://[URI]
+- Example 1 : Local unix:///var/run/docker.sock
+- Example 2 : Remote tcp://my-domain.tld:4382
+
+> If you're using Docker, you can mount the file at the root of the filesystem, as in :<br />
+`docker ... -v my_docker_hosts:/docker_hosts ...`
+
+Finally, launch Isaiah on the Master host, and you should see logs indicating whether connection with remote hosts was established. 
+Eventually, you will see `Master` with `The name of your host` in the lower right corner of your screen.
+
 ## Configuration
 
 To run Isaiah, you will need to set the following environment variables in a `.env` file located next to your executable :
@@ -329,6 +374,7 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `MASTER_HOST`           | `string`  | For multi-node deployments only. The host used to reach the Master node, specifying the IP address or the hostname, and the port if applicable (e.g. my-server.tld:3000). | Empty        |
 | `MASTER_SECRET`         | `string`  | For multi-node deployments only. The secret password used to authenticate on the Master node. Note that it should equal the `AUTHENTICATION_SECRET` setting on the Master node. | Empty        |
 | `AGENT_NAME`            | `string`  | For multi-node deployments only. The name associated with the Agent node as it is displayed on the web interface. It should be unique for each Agent. | Empty        |
+| `MULTI_HOST_ENABLED`    | `boolean` | Whether Isaiah should be run in multi-host mode. When enabled, make sure to have your `docker_hosts` file next to the executable. | False        |
 
 > **Note :** Boolean values are case-insensitive, and can be represented via "ON" / "OFF" / "TRUE" / "FALSE" / 0 / 1.
 
@@ -421,7 +467,7 @@ I leave here a few ideas that I believe could be implemented, but may require mo
 - Wrap every command in a "block" (begin - command - end) to easily distinguish user-sent commands from output
 - Sending to the real terminal the key presses captured from the web (a.k.a sending key presses to a running process)
 
-Ultimately, please also note that in a multi-node setup, the extra network latency and unexpected buffering from remote terminals may cause additional display artifacts.
+Ultimately, please also note that in a multi-node / multi-host setup, the extra network latency and unexpected buffering from remote terminals may cause additional display artifacts.
 
 #### An error happens when spawning a new shell on the server / inside a Docker container
 

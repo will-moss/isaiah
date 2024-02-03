@@ -6,6 +6,7 @@ import (
 	"io"
 	"slices"
 	"strings"
+	_client "will-moss/isaiah/server/_internal/client"
 	_io "will-moss/isaiah/server/_internal/io"
 	_os "will-moss/isaiah/server/_internal/os"
 	_session "will-moss/isaiah/server/_internal/session"
@@ -22,6 +23,7 @@ type Server struct {
 	Melody *melody.Melody
 	Docker *client.Client
 	Agents AgentsArray
+	Hosts  HostsArray
 }
 
 // Represent a command handler, used only _internally
@@ -80,6 +82,7 @@ func (server *Server) runCommand(session _session.GenericSession, command ui.Com
 		volumes := resources.VolumesList(server.Docker)
 		networks := resources.NetworksList(server.Docker)
 		agents := server.Agents.ToStrings()
+		hosts := server.Hosts.ToStrings()
 
 		if len(containers) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_CONTAINERS"), ",")
@@ -108,7 +111,7 @@ func (server *Server) runCommand(session _session.GenericSession, command ui.Com
 		server.SendNotification(
 			session,
 			ui.NotificationInit(ui.NotificationParams{
-				Content: ui.JSON{"Tabs": tabs, "Agents": agents},
+				Content: ui.JSON{"Tabs": tabs, "Agents": agents, "Hosts": hosts},
 			}))
 
 	// Command : Agent-only - Clear TTY / Stream
@@ -291,6 +294,13 @@ func (server *Server) Handle(session _session.GenericSession, message ...[]byte)
 		return
 	}
 
+	// When multi-host is enabled, set the appropriate host before interacting with Docker
+	if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" {
+		if command.Host != "" {
+			server.SetHost(command.Host)
+		}
+	}
+
 	// # - Dispatch the command to the appropriate handler
 	var h handler
 
@@ -326,4 +336,16 @@ func (server *Server) Handle(session _session.GenericSession, message ...[]byte)
 		server.runCommand(session, command)
 	}
 
+}
+
+func (s *Server) SetHost(name string) {
+	var correspondingHost []string
+	for _, v := range s.Hosts {
+		if v[0] == name {
+			correspondingHost = v
+			break
+		}
+	}
+
+	s.Docker = _client.NewClientWithOpts(client.WithHost(correspondingHost[1]))
 }
