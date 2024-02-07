@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/will-moss/isaiah/compare/1.6.0...1.6.1) (2024-02-07)
+
+
+### Bug Fixes
+
+* **multi-host:** added missing mobile control for switching host on mobile devices ([d5f14ab](https://github.com/will-moss/isaiah/commit/d5f14ab718cbcf6ab4a99c4426088ee47b8b563b))
+
 # [1.6.0](https://github.com/will-moss/isaiah/compare/1.5.0...1.6.0) (2024-02-03)
 
 
