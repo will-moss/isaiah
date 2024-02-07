@@ -926,7 +926,7 @@
     // 8. Set communication (master / agent / host) indicator
     if (
       _state.communication.availableAgents.length > 0 ||
-      _state.communication.availableHosts
+      _state.communication.availableHosts.length > 0
     ) {
       hgetConnectionIndicator('communication-target').classList.add(
         'is-active'
@@ -970,7 +970,10 @@
       hgetMobileControl('bulk').classList.add('is-active');
       hgetMobileControl('shellSystem').classList.add('is-active');
       hgetMobileControl('theme').classList.add('is-active');
-      hgetMobileControl('agent').classList.add('is-active');
+      if (_state.communication.availableAgents.length > 0)
+        hgetMobileControl('agent').classList.add('is-active');
+      if (_state.communication.availableHosts.length > 0)
+        hgetMobileControl('host').classList.add('is-active');
     }
   };
 
