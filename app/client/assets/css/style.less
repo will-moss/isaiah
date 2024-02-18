@@ -326,10 +326,14 @@ html {
 
         [data-tab='Logs'] .row.is-textual {
           white-space: nowrap;
+          line-height: 185%;
+
+          &:nth-child(2n + 1) {
+            background: #222;
+          }
         }
       }
     }
-    // }
 
     &[data-layout='half'] {
       .main {
