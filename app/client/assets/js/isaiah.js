@@ -3168,6 +3168,14 @@
   // === Entry Point
   // ===
   window.addEventListener('load', () => {
+    // 0. Append custom.css stylesheet
+    document
+      .getElementsByTagName('head')[0]
+      .insertAdjacentHTML(
+        'beforeend',
+        `<link type="text/css" rel="stylesheet" href="/assets/css/custom.css?v=${new Date().getTime()}" />`
+      );
+
     // 1. Load user settings if any
     state.appearance.currentTheme = localStorage.getItem('theme') || 'default';
 
