@@ -90,6 +90,7 @@ func ContainerSingleActions() []ui.MenuAction {
 			Key:              "r",
 			Label:            "restart container",
 			Command:          "container.restart",
+			Prompt:           "Are you sure you want to restart this container?",
 			RequiresResource: true,
 		},
 		ui.MenuAction{
