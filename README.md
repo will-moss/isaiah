@@ -412,6 +412,7 @@ Finally, you will find below a table that describes what each CSS color variable
 | `color-terminal-danger` | The color used to convey danger / failure |
 | `color-terminal-warning` | Connection indicator when connection is lost |
 | `color-terminal-accent-alternative` | Connection indicator when connection is established |
+| `color-terminal-log-row-alternative` | The color used as background for each odd row in the logs tab |
 | `color-terminal-json-key` | The color used to distinguish keys from values in the inspector when displaying a long configuration |
 | `color-terminal-json-value` | The color used to distinguish values from keys in the inspector when displaying a long configuration |
 | `color-terminal-cell-failure` | Container health state when exited |
