@@ -516,9 +516,10 @@
 
   /**
    * @param {Menu} menu
+   * @param {Row} row
    * @returns {string}
    */
-  const renderMenu = (menu) => {
+  const renderMenu = (menu, row = null) => {
     // Cell padding according to the longest key
     let maxKeyWidth = -1;
 
@@ -527,19 +528,20 @@
         maxKeyWidth = Math.max(maxKeyWidth, action.Key.length);
     else maxKeyWidth = 0;
 
+    let title = {
+      menu: 'Menu',
+      bulk: 'Bulk actions',
+      theme: 'Theme',
+      agent: 'Agent',
+      host: 'Host',
+    }[menu.key];
+    if (menu.key === 'menu' && row) title += ` (${row.Name})`;
+
     return `
       <div class="popup for-menu">
         <div class="tab is-active">
           <span class="tab-title">
-            ${
-              {
-                menu: 'Menu',
-                bulk: 'Bulk actions',
-                theme: 'Theme',
-                agent: 'Agent',
-                host: 'Host',
-              }[menu.key]
-            }
+            ${title}
           </span>
           <div class="tab-content">
             ${menu.actions
@@ -781,8 +783,12 @@
       if (_state.prompt.isEnabled) html = renderPrompt(_state.prompt);
       // 4.2. Popup - Message
       else if (_state.message.isEnabled) html = renderMessage(_state.message);
-      // 4.3. Popup - Menu / Theme
-      else if (_state.menu.actions.length > 0) html = renderMenu(_state.menu);
+      // 4.3. Popup - Menu / Theme / Agent / Host
+      else if (_state.menu.actions.length > 0) {
+        if (sgetCurrentTab().Rows)
+          html = renderMenu(_state.menu, sgetCurrentRow());
+        else html = renderMenu(_state.menu);
+      }
       // 4.4. Popup - Tty
       else if (_state.tty.isEnabled) html = renderTty(_state.tty);
       // 4.5. Popup - Help
