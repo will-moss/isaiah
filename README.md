@@ -73,7 +73,7 @@ Isaiah has all these features implemented :
     - Remove
     - Inspect (full configuration)
 - Built-in automatic Docker host discovery
-- Built-in authentication by master password
+- Built-in authentication by master password (supplied raw or sha256-hashed)
 - Built-in terminal emulator (with support for opening a shell on the server)
 - Responsive for Desktop, Tablet, and Mobile
 - Support for multiple layouts
@@ -341,7 +341,7 @@ Second, please create a `docker_hosts` file next to Isaiah's executable, using t
 > If you're using Docker, you can mount the file at the root of the filesystem, as in :<br />
 `docker ... -v my_docker_hosts:/docker_hosts ...`
 
-Finally, launch Isaiah on the Master host, and you should see logs indicating whether connection with remote hosts was established. 
+Finally, launch Isaiah on the Master host, and you should see logs indicating whether connection with remote hosts was established.
 Eventually, you will see `Master` with `The name of your host` in the lower right corner of your screen.
 
 ## Configuration
@@ -357,6 +357,7 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `SERVER_MAX_READ_SIZE`  | `integer` | The maximum size (in bytes) per message that Isaiah will accept over Websocket. Note that, in a multi-node deployment, you may need to incrase the value of that setting. (Shouldn't be modified, unless your server randomly restarts the Websocket session for no obvious reason) | 100000        |
 | `AUTHENTICATION_ENABLED`| `boolean` | Whether a password is required to access Isaiah. (Recommended) | True |
 | `AUTHENTICATION_SECRET` | `string`  | The master password used to secure your Isaiah instance against malicious actors. | one-very-long-and-mysterious-secret        |
+| `AUTHENTICATION_HASH`   | `string`  | The master password's hash (sha256 format) used to secure your Isaiah instance against malicious actors. Use this setting instead of `AUTHENTICATION_SECRET` if you feel uncomfortable providing a cleartext password. | 42b578229e397f4ac5bf067b6d384cb7a69f2ea5dca15b4a525a13a481227b66    |
 | `DISPLAY_CONFIRMATIONS` | `boolean` | Whether the web interface should display a confirmation message after every succesful operation. | True |
 | `COLUMNS_CONTAINERS`    | `string`  | Comma-separated list of fields to display in the `Containers` panel. (Case-sensitive) (Available: ID, State, ExitCode, Name, Image) | State,ExitCode,Name,Image |
 | `COLUMNS_IMAGES`        | `string`  | Comma-separated list of fields to display in the `Images` panel. (Case-sensitive) (Available: ID, Name, Version, Size) | Name,Version,Size |
@@ -377,6 +378,14 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `MULTI_HOST_ENABLED`    | `boolean` | Whether Isaiah should be run in multi-host mode. When enabled, make sure to have your `docker_hosts` file next to the executable. | False        |
 
 > **Note :** Boolean values are case-insensitive, and can be represented via "ON" / "OFF" / "TRUE" / "FALSE" / 0 / 1.
+
+
+> **Note :** Use either `AUTHENTICATION_SECRET` or `AUTHENTICATION_HASH` but not both at the same time.
+
+> **Note** : You can generate a sha256 hash using an online tool, or using the following commands :  
+**On OSX** : `echo -n your-secret | shasum -a 256`  
+**On Linux** : `echo -n your-secret | sha256sum`
+
 
 ## Theming
 
