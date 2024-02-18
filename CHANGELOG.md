@@ -1,3 +1,15 @@
+# [1.7.0](https://github.com/will-moss/isaiah/compare/1.6.1...1.7.0) (2024-02-18)
+
+
+### Features
+
+* **client:** added name of the resource in the menu's header to prevent mistakes ([cb97600](https://github.com/will-moss/isaiah/commit/cb97600cb3823100fbdc458d53954008680e831a))
+* **client:** added prompt before container restart ([b8e6424](https://github.com/will-moss/isaiah/commit/b8e64249778ff15dc3efab458919a4a99c4377db))
+* **client:** added randomly generated version number to custom.css file to prevent browser caching ([62e5b42](https://github.com/will-moss/isaiah/commit/62e5b429a46e784ea39563bf59d0884891a72d29))
+* **client:** increased logs' rows height, and added alternate background color to ease reading ([65eef1d](https://github.com/will-moss/isaiah/commit/65eef1dffb0f4506618418b4b5795393631a3d5d))
+* **client:** made logs' rows' background color a variable, and adjusted themes for better aesthetic ([e0acb53](https://github.com/will-moss/isaiah/commit/e0acb53c5db2c06daef6aab3d43bfb4c344435ee))
+* **security:** added support for providing a sha256 hash of the authentication secret ([df13683](https://github.com/will-moss/isaiah/commit/df136836ccc6a61949eabea8532e1681fa73ceb9))
+
 ## [1.6.1](https://github.com/will-moss/isaiah/compare/1.6.0...1.6.1) (2024-02-07)
 
 
