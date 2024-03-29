@@ -324,12 +324,26 @@ html {
           }
         }
 
-        [data-tab='Logs'] .row.is-textual {
-          white-space: nowrap;
-          line-height: 185%;
+        [data-tab='Logs'] {
+          .tab-content {
+            display: grid;
+            grid-auto-rows: 30px;
+          }
 
-          &:nth-child(2n + 1) {
-            background: var(--color-terminal-log-row-alternative);
+          .row.is-textual {
+            white-space: nowrap;
+            line-height: 185%;
+            min-width: unset;
+
+            &:nth-child(2n + 1) {
+              background: var(--color-terminal-log-row-alternative);
+            }
+          }
+
+          &.no-wrap {
+            .row.is-textual {
+              white-space: wrap;
+            }
           }
         }
       }
