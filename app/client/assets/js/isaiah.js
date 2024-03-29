@@ -1437,7 +1437,17 @@
     // Prevent multi-popup
     if (
       state.popup &&
-      ['menu', 'bulk', 'prompt', 'message', 'shell'].includes(cmd)
+      [
+        'menu',
+        'bulk',
+        'prompt',
+        'message',
+        'shell',
+        'theme',
+        'parameters',
+        'agent',
+        'host',
+      ].includes(cmd)
     )
       return false;
 
