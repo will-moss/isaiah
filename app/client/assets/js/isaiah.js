@@ -748,8 +748,6 @@
    * @param {state} _state
    */
   const renderApp = (_state) => {
-    if (window.paused) return;
-
     let html;
 
     // -1. Set app's theme
