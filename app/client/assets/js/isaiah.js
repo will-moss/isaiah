@@ -2322,10 +2322,23 @@
      */
     pause: function () {
       if (sgetCurrentTabKey() !== 'containers') return;
-      websocketSend({
-        action: `container.pause`,
-        args: { Resource: sgetCurrentRow() },
-      });
+
+      if (state.settings.enableMenuPrompt)
+        cmdRun(cmds._showPrompt, {
+          text: 'Are you sure you want to pause/unpause this container?',
+          callback: cmds._wsSend,
+          callbackArgs: [
+            {
+              action: `container.pause`,
+              args: { Resource: sgetCurrentRow() },
+            },
+          ],
+        });
+      else
+        websocketSend({
+          action: `container.pause`,
+          args: { Resource: sgetCurrentRow() },
+        });
     },
 
     /**
