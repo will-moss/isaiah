@@ -3354,7 +3354,8 @@
         websocketSend({ action: notification.Follow });
       }, state._delays.default);
 
-    renderApp(state);
+    // Prevent re-rendering when user is in prompt or menu
+    if (!state.isMenuIng && !state.prompt.input.isEnabled) renderApp(state);
   };
 
   /**
