@@ -1,3 +1,6 @@
+@width-mobile: 960px;
+@width-small-mobile: 440px;
+
 button {
   border: 0;
   appearance: none;
@@ -216,6 +219,10 @@ div {
     &.for-controls {
       left: unset;
       right: 16px;
+
+      @media screen and (max-width: @width-small-mobile) {
+        display: none;
+      }
     }
   }
 
