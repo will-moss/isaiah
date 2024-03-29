@@ -981,6 +981,13 @@
       if (_state.communication.availableHosts.length > 0)
         hgetMobileControl('host').classList.add('is-active');
     }
+
+    // 11. Apply extra user settings if any
+
+    // 11.1. Log lines wrap
+    if (_state.settings.enableLogLinesWrap)
+      if (_state.inspector.currentTab === 'Logs')
+        hgetTab('inspector').classList.add('no-wrap');
   };
 
   // === Websocket-related methods
@@ -1134,6 +1141,23 @@
        * @type {"default"|"moon"|"dawn"}
        */
       currentTheme: 'default',
+    },
+
+    settings: {
+      /**
+       * @type {boolean}
+       */
+      enableLogLinesWrap: false,
+
+      /**
+       * @type {boolean}
+       */
+      enableTimestampDisplay: true,
+
+      /**
+       * @type {boolean}
+       */
+      enableMenuPrompt: true,
     },
 
     /**
