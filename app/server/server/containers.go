@@ -363,6 +363,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 
 	// Single - Inspect logs
 	case "container.inspect.logs":
+		var showTimestamps = command.Args["showTimestamps"].(bool)
 		var container resources.Container
 		mapstructure.Decode(command.Args["Resource"], &container)
 
@@ -382,6 +383,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 					}),
 				)
 			}},
+			showTimestamps,
 		)
 
 		if err != nil {

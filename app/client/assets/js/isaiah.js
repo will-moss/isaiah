@@ -1746,12 +1746,16 @@
       const currentTabKey = sgetCurrentTabKey();
       const currentInspectorTab = state.inspector.currentTab;
 
+      let payload = { Resource: currentRow };
+      if (currentInspectorTab === 'Logs')
+        payload['showTimestamps'] = state.settings.enableTimestampDisplay;
+
       // Produces something like : <tab>.inspect.<sub-tab>
       // Such as : container.inspect.logs
       websocketSend({
         // prettier-ignore
         action: `${currentTabKey.slice(0,-1)}.inspect.${currentInspectorTab.toLowerCase()}`,
-        args: { Resource: currentRow },
+        args: payload,
       });
     },
 

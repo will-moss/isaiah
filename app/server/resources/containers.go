@@ -414,11 +414,11 @@ func (c Container) Rename(client *client.Client, newName string) error {
 }
 
 // Inspector - Retrieve the logs written by the Docker container
-func (c Container) GetLogs(client *client.Client, writer io.Writer) (*io.ReadCloser, error) {
+func (c Container) GetLogs(client *client.Client, writer io.Writer, showTimestamps bool) (*io.ReadCloser, error) {
 	opts := types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
-		Timestamps: false,
+		Timestamps: showTimestamps,
 		Tail:       _os.GetEnv("CONTAINER_LOGS_TAIL"),
 		Since:      _os.GetEnv("CONTAINER_LOGS_SINCE"),
 		Follow:     true,
