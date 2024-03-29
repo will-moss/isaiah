@@ -1058,7 +1058,12 @@
      * @returns {boolean}
      */
     get isMenuIng() {
-      return state.popup && ['menu', 'bulk', 'theme'].includes(state.popup);
+      return (
+        state.popup &&
+        ['menu', 'bulk', 'theme', 'agent', 'host', 'parameters'].includes(
+          state.popup
+        )
+      );
     },
 
     /**
