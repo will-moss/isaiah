@@ -401,6 +401,12 @@
     }
     html += `</div>`;
 
+    if (inspector.currentTab === 'Logs') {
+      html += `<div class="tab-title-group for-controls">`;
+      html += `<button class="tab-sub-title" data-action="inspectorCopyLogs">Copy</button>`;
+      html += `</div>`;
+    }
+
     html += `<div class="tab-content">`;
     if (inspector.content.length > 0) {
       // Render Inspector Content
@@ -461,6 +467,7 @@
                <div class="down">▼</div>
               </div>`;
     */
+
     html += `</div>`;
 
     return html;
@@ -722,6 +729,8 @@
    * @param {state} _state
    */
   const renderApp = (_state) => {
+    if (window.paused) return;
+
     let html;
 
     // -1. Set app's theme
@@ -1294,6 +1303,11 @@
        * @type {number}
        */
       forAuthentication: 2000,
+
+      /**
+       * @type {number}
+       */
+      forConfirmations: 2000,
 
       /**
        * @type {number}
@@ -2611,6 +2625,54 @@
           state.communication.availableHosts[currentIndex + 1];
 
       cmdRun(cmds._init);
+    },
+
+    /**
+     * Public - Copy the inspector's logs to the clipboard
+     */
+    inspectorCopyLogs: function () {
+      const button = q('button[data-action="inspectorCopyLogs"]');
+      const inspectorContent = q('.tab.for-inspector .tab-content');
+      const toCopy = inspectorContent.textContent;
+
+      const _showConfirmation = () => {
+        state.message.category = 'report';
+        state.message.type = 'success';
+        state.message.title = 'Confirmation';
+        state.message.content =
+          'The logs of this container were copied to your clipboard';
+        state.message.isEnabled = true;
+        state.helper = 'message';
+
+        cmdRun(cmds._showPopup, 'message');
+        setTimeout(() => {
+          if (state.message.isEnabled) cmdRun(cmds._clearMessage);
+        }, state._delays.forConfirmations);
+      };
+
+      // Modern
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(toCopy).then(_showConfirmation);
+      }
+      // Compatible
+      else {
+        const textArea = document.createElement('textarea');
+        textArea.value = toCopy;
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.position = 'fixed';
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) _showConfirmation();
+        } catch (err) {}
+
+        document.body.removeChild(textArea);
+      }
     },
   };
 
