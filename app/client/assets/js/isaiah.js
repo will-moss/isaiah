@@ -2270,10 +2270,22 @@
     stop: function () {
       if (sgetCurrentTabKey() !== 'containers') return;
 
-      websocketSend({
-        action: `container.stop`,
-        args: { Resource: sgetCurrentRow() },
-      });
+      if (state.settings.enableMenuPrompt)
+        cmdRun(cmds._showPrompt, {
+          text: 'Are you sure you want to stop this container?',
+          callback: cmds._wsSend,
+          callbackArgs: [
+            {
+              action: `container.stop`,
+              args: { Resource: sgetCurrentRow() },
+            },
+          ],
+        });
+      else
+        websocketSend({
+          action: `container.stop`,
+          args: { Resource: sgetCurrentRow() },
+        });
     },
 
     /**
@@ -2284,12 +2296,24 @@
     run_restart: function () {
       const currentTabKey = sgetCurrentTabKey();
 
-      if (currentTabKey === 'containers')
-        websocketSend({
-          action: `container.restart`,
-          args: { Resource: sgetCurrentRow() },
-        });
-      else if (currentTabKey === 'images')
+      if (currentTabKey === 'containers') {
+        if (state.settings.enableMenuPrompt)
+          cmdRun(cmds._showPrompt, {
+            text: 'Are you sure you want to restart this container?',
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: `container.restart`,
+                args: { Resource: sgetCurrentRow() },
+              },
+            ],
+          });
+        else
+          websocketSend({
+            action: `container.restart`,
+            args: { Resource: sgetCurrentRow() },
+          });
+      } else if (currentTabKey === 'images')
         cmdRun(cmds.prompt, {
           input: {
             isEnabled: true,
@@ -3212,6 +3236,12 @@
 
     // 1. Load user settings if any
     state.appearance.currentTheme = localStorage.getItem('theme') || 'default';
+    state.settings.enableMenuPrompt =
+      localStorage.getItem('enableMenuPrompt') || true;
+    state.settings.enableLogLinesWrap =
+      localStorage.getItem('enableLogLinesWrap') || false;
+    state.settings.enableTimestampDisplay =
+      localStorage.getItem('enableTimestampDisplay') || false;
 
     // 2. Connect to server (first execution loop)
     websocketConnect();
