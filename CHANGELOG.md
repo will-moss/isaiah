@@ -1,3 +1,26 @@
+# [1.8.0](https://github.com/will-moss/isaiah/compare/1.7.0...1.8.0) (2024-03-29)
+
+
+### Bug Fixes
+
+* **client:** added more constraints to prevent unfortunate multi-layered popups when using shortcuts ([7203e2f](https://github.com/will-moss/isaiah/commit/7203e2f6d9af01499dd99b4558305251df22fa91))
+* **client:** changed the shortcut for Parameters because of collision with Pull, and changed helpers ([71dc832](https://github.com/will-moss/isaiah/commit/71dc8320c248370c99b53e0bf7df0eaa6286141e))
+* **client:** fixed an annoying reset while in prompt / menu triggered by logs received in background ([5e6307f](https://github.com/will-moss/isaiah/commit/5e6307f0532d1df54b05f0d5f0ab7f707e5b7a3e))
+* **client:** fixed the client's state not associating agent and host picking to being inside a menu ([2208068](https://github.com/will-moss/isaiah/commit/22080681def4c950d474e6dd0e4b85708e6542a6))
+* **client:** on mobile display, removed the control to copy logs because it can't fit ([71f0daa](https://github.com/will-moss/isaiah/commit/71f0daa6d7c284a39e5498d9c598f99952e2df35))
+* **logs:** fixed a styling issue causing stripped log lines' background to be cut ([6b3437f](https://github.com/will-moss/isaiah/commit/6b3437f077d7ae11a8f8fafa0c66511c128d3de3))
+
+
+### Features
+
+* **client:** added control to copy logs to clipboard ([2183060](https://github.com/will-moss/isaiah/commit/2183060324ed031f0debe1e81ec688346a0ac96e))
+* **client:** added full support for client-side persistent parameters management ([ac03b03](https://github.com/will-moss/isaiah/commit/ac03b0318af454307369fe06af2e9aed2a3d2f6e))
+* **client:** added prompt before container pause when using keyboard shortcuts ([eb3c9fe](https://github.com/will-moss/isaiah/commit/eb3c9fe0769609b91a8f73773362e391ef04cc7d))
+* **client:** added search feature for Docker objects in the client ([4cc6708](https://github.com/will-moss/isaiah/commit/4cc670817c9d4c3150d5b1d35058ed09961fdd13))
+* **client:** added support for log lines wrap ([fa23f0e](https://github.com/will-moss/isaiah/commit/fa23f0ed05d3b09d5d654d01dd3f6d2d7b26ee73))
+* **client:** added support for prompts on keyboard shortcuts, and persistent user settings (WIP) ([6f1012a](https://github.com/will-moss/isaiah/commit/6f1012a93a0e73e77a688ad7042e9764bfa8db31))
+* **client:** added support for toggling log lines' timestamp display ([32b9c1a](https://github.com/will-moss/isaiah/commit/32b9c1a883ea36a0228d57fa70391a45d7fcbe14))
+
 # [1.7.0](https://github.com/will-moss/isaiah/compare/1.6.1...1.7.0) (2024-02-18)
 
 
