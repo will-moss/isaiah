@@ -711,7 +711,7 @@
                <span class="cell">open host picker</span>
              </div>
              <div class="row is-not-interactive">
-               <span class="cell">P        </span>
+               <span class="cell">X        </span>
                <span class="cell">open parameters manager</span>
              </div>
              <div class="row is-not-interactive"></div>
@@ -1146,7 +1146,7 @@
     },
 
     /**
-     * @type {'default'|'menu'|'prompt'|'prompt-input'|'message'}
+     * @type {'default'|'menu'|'prompt'|'prompt-input'|'message'|'picker'|'parameters'}
      */
     helper: 'default',
 
@@ -2538,6 +2538,7 @@
     agent: function () {
       if (state.communication.availableAgents.length === 0) return;
 
+      state.helper = 'picker';
       state.menu.key = 'agent';
 
       state.menu.actions = state.communication.availableAgents.map((t) => ({
@@ -2566,6 +2567,7 @@
     host: function () {
       if (state.communication.availableHosts.length === 0) return;
 
+      state.helper = 'picker';
       state.menu.key = 'host';
 
       state.menu.actions = state.communication.availableHosts.map((t) => ({
@@ -2584,6 +2586,7 @@
      * Public - Show parameters manager
      */
     parameters: function () {
+      state.helper = 'parameters';
       state.menu.key = 'parameters';
       state.menu.actions = Object.keys(state.settings).map((k) => ({
         RunLocally: true,
@@ -2814,14 +2817,18 @@
     // Menu
     x: 'menu',
     b: 'bulk',
+    X: 'parameters',
+    T: 'theme',
 
     // Agents
     '<': 'previousAgent',
     '>': 'nextAgent',
 
-    // Hosts
+    // Hosts & Agents
     k: 'previousHost',
     l: 'nextHost',
+    A: 'agent',
+    H: 'host',
 
     // Sub commands
     q: 'quit',
