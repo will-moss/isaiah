@@ -68,6 +68,20 @@
   };
 
   /**
+   * Retrieve a value from localStorage, with support for booleans and default value
+   * @param {string} key
+   * @param {*} d
+   * @returns {*}
+   */
+  const lsGet = (key, d) => {
+    const v = localStorage.getItem(key);
+    if (v === null) return d;
+    if (v === 'true') return true;
+    if (v === 'false') return false;
+    return v;
+  };
+
+  /**
    * Prevent artifacts from CLI color codes
    * @param {string} str
    * @returns {string}
@@ -541,6 +555,7 @@
       theme: 'Theme',
       agent: 'Agent',
       host: 'Host',
+      parameters: 'Parameters',
     }[menu.key];
     if (menu.key === 'menu' && row) title += ` (${row.Name})`;
 
@@ -695,6 +710,10 @@
                <span class="cell">H        </span>
                <span class="cell">open host picker</span>
              </div>
+             <div class="row is-not-interactive">
+               <span class="cell">P        </span>
+               <span class="cell">open parameters manager</span>
+             </div>
              <div class="row is-not-interactive"></div>
              <div class="row is-not-interactive">
                <span class="cell">Ctrl+C   </span>
@@ -792,7 +811,7 @@
       if (_state.prompt.isEnabled) html = renderPrompt(_state.prompt);
       // 4.2. Popup - Message
       else if (_state.message.isEnabled) html = renderMessage(_state.message);
-      // 4.3. Popup - Menu / Theme / Agent / Host
+      // 4.3. Popup - Menu / Theme / Agent / Host / Parameters
       else if (_state.menu.actions.length > 0) {
         if (sgetCurrentTab().Rows)
           html = renderMenu(_state.menu, sgetCurrentRow());
@@ -985,6 +1004,7 @@
       hgetMobileControl('bulk').classList.add('is-active');
       hgetMobileControl('shellSystem').classList.add('is-active');
       hgetMobileControl('theme').classList.add('is-active');
+      hgetMobileControl('parameters').classList.add('is-active');
       if (_state.communication.availableAgents.length > 0)
         hgetMobileControl('agent').classList.add('is-active');
       if (_state.communication.availableHosts.length > 0)
@@ -1097,7 +1117,7 @@
     /**
      * @typedef {object} Menu
      * @property {Array<MenuAction>} actions
-     * @property {'menu'|'bulk'|'theme'|'agent'|'host'} key
+     * @property {'menu'|'bulk'|'theme'|'agent'|'host'|'parameters'} key
      */
 
     /**
@@ -1120,7 +1140,7 @@
       actions: [],
 
       /**
-       * @type {'menu'|'bulk'|'theme'|'agent'|'host'}
+       * @type {'menu'|'bulk'|'theme'|'agent'|'host'|'parameters'}
        */
       key: null,
     },
@@ -1131,7 +1151,7 @@
     helper: 'default',
 
     /**
-     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"theme"|"agent"|'host'}
+     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"theme"|"agent"|'host'|'parameters'}
      */
     popup: null,
 
@@ -1844,6 +1864,21 @@
     },
 
     /**
+     * Private - Toggle a parameter
+     * @param {MenuAction} action
+     */
+    _toggleParameter: function (action) {
+      state.settings[action.Metadata['Key']] = !state.settings[
+        action.Metadata['Key']
+      ];
+      localStorage.setItem(
+        action.Metadata['Key'],
+        state.settings[action.Metadata['Key']]
+      );
+      cmdRun(cmds._init);
+    },
+
+    /**
      * Public - Quit the app / Quit the current popup
      * Requires prompt
      */
@@ -2523,6 +2558,23 @@
     },
 
     /**
+     * Public - Show parameters manager
+     */
+    parameters: function () {
+      state.menu.key = 'parameters';
+      state.menu.actions = Object.keys(state.settings).map((k) => ({
+        RunLocally: true,
+        RequiresResource: false,
+        RequiresMenuAction: true,
+        Label: `[${state.settings[k] ? 'x' : ' '}] ${k}`,
+        Command: '_toggleParameter',
+        Metadata: { Key: k },
+      }));
+      state.navigation.currentMenuRow = 1;
+      cmdRun(cmds._showPopup, 'menu');
+    },
+
+    /**
      * Public - Switch to the previous agent for further communication
      */
     previousAgent: function () {
@@ -2764,6 +2816,7 @@
     h: 'hub',
     A: 'agent',
     H: 'host',
+    P: 'parameters',
     G: 'github',
     T: 'theme',
     '?': 'help',
@@ -3302,13 +3355,13 @@
       );
 
     // 1. Load user settings if any
-    state.appearance.currentTheme = localStorage.getItem('theme') || 'default';
-    state.settings.enableMenuPrompt =
-      localStorage.getItem('enableMenuPrompt') || true;
-    state.settings.enableLogLinesWrap =
-      localStorage.getItem('enableLogLinesWrap') || false;
-    state.settings.enableTimestampDisplay =
-      localStorage.getItem('enableTimestampDisplay') || false;
+    state.appearance.currentTheme = lsGet('theme', 'default');
+    state.settings.enableMenuPrompt = lsGet('enableMenuPrompt', true);
+    state.settings.enableLogLinesWrap = lsGet('enableLogLinesWrap', false);
+    state.settings.enableTimestampDisplay = lsGet(
+      'enableTimestampDisplay',
+      false
+    );
 
     // 2. Connect to server (first execution loop)
     websocketConnect();
