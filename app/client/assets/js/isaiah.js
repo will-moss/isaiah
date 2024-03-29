@@ -180,6 +180,16 @@
   /**
    * @returns {HTMLElement}
    */
+  const hgetSearchControl = () => q('.search-control');
+
+  /**
+   * @returns {HTMLElement}
+   */
+  const hgetSearchInput = () => q('#search-input');
+
+  /**
+   * @returns {HTMLElement}
+   */
   const hgetMobileControl = (action) =>
     q(`.mobile-controls button[data-action="${action}"]`);
 
@@ -791,6 +801,9 @@
     // 1.6. Hide connection indicators
     hgetConnectionIndicators().forEach((i) => i.classList.remove('is-active'));
 
+    // 1.7. Hide search control
+    hgetSearchControl().classList.remove('is-active');
+
     // 2. Build every tab
     html = _state.tabs.map(renderTab).join('');
     hgetScreen('dashboard').querySelector('.left').innerHTML = html;
@@ -823,21 +836,24 @@
       hgetPopupContainer().innerHTML = html;
     }
 
-    // 5. Set focus on DOM elements
+    // 5. Show search control
+    if (_state.search.isEnabled) hgetSearchControl().classList.add('is-active');
 
-    // 5.1. Set focus on inspector
-    if (_state.inspector.isEnabled)
+    // 6. Set focus on DOM elements
+
+    // 6.1. Set focus on inspector
+    if (_state.inspector.isEnabled && !_state.search.isEnabled)
       hgetTab('inspector').classList.add('is-active');
 
-    // 5.1.1. Scroll horizontally on the inspector
+    // 6.1.1. Scroll horizontally on the inspector
     hgetTab('inspector').querySelector('.tab-content').scrollLeft =
       _state.inspector.horizontalScroll;
 
-    // 5.1.2. Scroll vertically on the inspector
+    // 6.1.2. Scroll vertically on the inspector
     hgetTab('inspector').querySelector('.tab-content').scrollTop =
       _state.inspector.verticalScroll;
 
-    // 5.1.3. Scroll down the inspector if it's for logs
+    // 6.1.3. Scroll down the inspector if it's for logs
     if (_state.inspector.content.length > 0) {
       if (_state.inspector.content[0].Type === 'lines') {
         const _inspector = hgetTab('inspector');
@@ -849,11 +865,14 @@
       }
     }
 
-    // 5.2. Set focus on tab
-    if (_state.navigation.currentTab) {
+    // 6.2. Set focus on tab
+    if (
+      _state.navigation.currentTab &&
+      (!_state.search.isEnabled || _state.search.isPending)
+    ) {
       hgetTab(_state.navigation.currentTab).classList.add('is-active');
 
-      // 5.2.1. Set focus on row - Tab
+      // 6.2.1. Set focus on row - Tab
       const currentRow = hgetTabRow(
         _state.navigation.currentTab,
         _state.navigation.currentTabsRows[_state.navigation.currentTab]
@@ -908,9 +927,9 @@
       */
     }
 
-    // 5.3. Set focus on menu
+    // 6.3. Set focus on menu
     if (_state.isMenuIng) {
-      // 5.3.1. Set focus on row - Menu
+      // 6.3.1. Set focus on row - Menu
       if (_state.menu.actions.length > 0)
         hgetPopupRow(
           _state.popup,
@@ -918,14 +937,14 @@
         ).classList.add('is-active');
     }
 
-    // 5.4. Set focus on tty
+    // 6.4. Set focus on tty
     if (_state.tty.isEnabled && _state.tty.lines.length > 0) {
       const ttyInput = hgetTtyInput();
       if (ttyInput) {
         ttyInput.focus();
         ttyInput.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
-        // 5.4.1. Focus end of input
+        // 6.4.1. Focus end of input
         setTimeout(() => {
           ttyInput.selectionStart = ttyInput.selectionEnd =
             ttyInput.value.length;
@@ -933,29 +952,40 @@
       }
     }
 
-    // 5.5. Set focus on prompt input
+    // 6.5. Set focus on prompt input
     if (_state.prompt.isEnabled && _state.prompt.input.isEnabled) {
-      // Dev-only (case when the server spontaneously tells us we're authenticated)
+      // Dev-only (lack of input happens when the server spontaneously tells us we're authenticated)
+      // (hence the need for checking it)
       if (hgetPromptInput()) hgetPromptInput().focus();
     }
 
-    // 5.6. Set flag on previous/current tab for the "focus" layout
+    // 6.6. Set focus on search input
+    if (_state.search.isEnabled && !_state.search.isPending) {
+      hgetSearchInput().focus();
+    }
+    // 6.6.1. Unfocus search input when pending
+    if (_state.search.isEnabled && _state.search.isPending) {
+      hgetSearchInput().blur();
+    }
+
+    // 6.7. Set flag on previous/current tab for the "focus" layout
     if (_state.navigation.currentTab)
       hgetTab(_state.navigation.currentTab).classList.add('is-current');
     else if (_state.navigation.previousTab)
       hgetTab(_state.navigation.previousTab).classList.add('is-current');
 
-    // 6. Set helper
-    hgetHelper(_state.helper).classList.add('is-active');
+    // 7. Set helper
+    if (!_state.search.isEnabled)
+      hgetHelper(_state.helper).classList.add('is-active');
 
-    // 7. Set connection indicator
+    // 8. Set connection indicator
     hgetConnectionIndicator(
       _state.isConnected ? 'connected' : 'disconnected'
     ).classList.add('is-active');
     if (_state.isLoading)
       hgetConnectionIndicator('loading').classList.add('is-active');
 
-    // 8. Set communication (master / agent / host) indicator
+    // 9. Set communication (master / agent / host) indicator
     if (
       _state.communication.availableAgents.length > 0 ||
       _state.communication.availableHosts.length > 0
@@ -973,28 +1003,28 @@
       ).textContent = fullIndicator;
     }
 
-    // 9. Reset mobile controls' visibility
+    // 10. Reset mobile controls' visibility
     hgetMobileControls().forEach((e) => {
       e.classList.remove('is-active');
     });
 
-    // 10. Update the mobile controls' visibility
+    // 11. Update the mobile controls' visibility
 
-    // 10.1. Case when menuing
+    // 11.1. Case when menuing
     if (_state.isMenuIng) {
       hgetMobileControl('reject').classList.add('is-active');
       hgetMobileControl('confirm').classList.add('is-active');
     }
-    // 10.2. Case when tty-ing / showing a message
+    // 11.2. Case when tty-ing / showing a message
     else if (_state.popup === 'tty' || _state.popup === 'message') {
       hgetMobileControl('ttyQuit').classList.add('is-active');
     }
-    // 10.3. Case when prompting
+    // 11.3. Case when prompting
     else if (_state.prompt.isEnabled || _state.prompt.input.isEnabled) {
       hgetMobileControl('reject').classList.add('is-active');
       hgetMobileControl('confirm').classList.add('is-active');
     }
-    // 10.4. Every other case (default navigation)
+    // 11.4. Every other case (default navigation)
     else {
       hgetMobileControl('previousTab').classList.add('is-active');
       hgetMobileControl('nextTab').classList.add('is-active');
@@ -1009,9 +1039,9 @@
         hgetMobileControl('host').classList.add('is-active');
     }
 
-    // 11. Apply extra user settings if any
+    // 12. Apply extra user settings if any
 
-    // 11.1. Log lines wrap
+    // 12.1. Log lines wrap
     if (_state.settings.enableLogLinesWrap)
       if (_state.inspector.currentTab === 'Logs')
         hgetTab('inspector').classList.add('no-wrap');
@@ -1321,6 +1351,23 @@
       availableHosts: [],
     },
 
+    /**
+     * @typedef Search
+     * @property {string} query
+     * @property {boolean} isEnabled
+     * @property {Array<Row>} previousRows
+     */
+
+    /**
+     * @type Search
+     */
+    search: {
+      query: null,
+      isEnabled: false,
+      isPending: false,
+      previousRows: [],
+    },
+
     _delays: {
       /**
        * @type {number}
@@ -1420,6 +1467,7 @@
     if (
       (state.prompt.isEnabled ||
         state.message.isEnabled ||
+        (state.search.isEnabled && !state.search.isPending) ||
         (state.popup && !state.isMenuIng)) &&
       !['confirm', 'reject', 'quit'].includes(cmd)
     )
@@ -1469,6 +1517,8 @@
 
     const isPrivate = cmdString[0] === '_';
     const isAllowed = isPrivate ? true : cmdAllowed(cmdString);
+
+    console.log(cmdString, isAllowed);
 
     if (!isAllowed) return;
 
@@ -1887,6 +1937,68 @@
     },
 
     /**
+     * Private - Clear search and reset display
+     */
+    _clearSearch: function () {
+      const currentTabKey = sgetCurrentTabKey();
+
+      state.tabs = state.tabs.map((t) =>
+        t.Key === currentTabKey
+          ? { ...t, Rows: [...state.search.previousRows] }
+          : t
+      );
+      state.navigation.currentTabsRows[currentTabKey] = 1;
+
+      state.search.isEnabled = false;
+      state.search.isPending = false;
+      state.search.query = null;
+      state.search.previousRows = [];
+      hgetSearchInput().value = '';
+    },
+
+    /**
+     * Private - Perform search
+     * @param {boolean} resetOriginalRows
+     */
+    _performSearch: function (resetOriginalRows = false) {
+      const { query } = state.search;
+      const currentTab = sgetCurrentTab();
+      const currentTabKey = currentTab.Key;
+
+      // Reset when empty
+      if (!query && state.search.previousRows.length > 0) {
+        state.tabs = state.tabs.map((t) =>
+          t.Key === currentTabKey
+            ? { ...t, Rows: [...state.search.previousRows] }
+            : t
+        );
+        state.navigation.currentTabsRows[currentTabKey] = 1;
+        return;
+      }
+
+      // Save initial rows
+      if (state.search.previousRows.length === 0 || resetOriginalRows)
+        state.search.previousRows = [...currentTab.Rows];
+
+      // Perform search
+      const currentRows = state.search.previousRows;
+      const filteredRows = currentRows.filter((r) =>
+        r._representation
+          .map((e) => e.value)
+          .filter((v) => v)
+          .join('~')
+          .toLowerCase()
+          .includes(query.toLowerCase())
+      );
+
+      // Update tab's rows
+      state.tabs = state.tabs.map((t) =>
+        t.Key === currentTabKey ? { ...t, Rows: filteredRows } : t
+      );
+      state.navigation.currentTabsRows[currentTabKey] = 1;
+    },
+
+    /**
      * Public - Quit the app / Quit the current popup
      * Requires prompt
      */
@@ -2049,6 +2161,18 @@
         return;
       }
 
+      // Search confirm
+      if (state.search.isEnabled) {
+        // No row found
+        if (sgetCurrentTab().Rows.length === 0) cmdRun(cmds._clearSearch);
+        // Rounws found
+        else {
+          state.search.isPending = true;
+          cmdRun(cmds._refreshInspector);
+        }
+        return;
+      }
+
       // Help / Any other popup (close popup)
       if (state.popup) {
         cmdRun(cmds._clearPopup);
@@ -2089,6 +2213,11 @@
         cmdRun(cmds._exitInspect);
         return;
       }
+
+      if (state.search.isEnabled) {
+        cmdRun(cmds._clearSearch);
+        return;
+      }
     },
 
     /**
@@ -2096,6 +2225,9 @@
      */
     previousTab: function () {
       if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
+
+      if (state.search.isEnabled && state.search.isPending)
+        cmdRun(cmds._clearSearch);
 
       const currentIndex = state.tabs.findIndex(
         (t) => t.Key === state.navigation.currentTab
@@ -2114,6 +2246,9 @@
      */
     nextTab: function () {
       if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
+
+      if (state.search.isEnabled && state.search.isPending)
+        cmdRun(cmds._clearSearch);
 
       const currentIndex = state.tabs.findIndex(
         (t) => t.Key === state.navigation.currentTab
@@ -2518,6 +2653,7 @@
      * Public - Show theme picker
      */
     theme: function () {
+      state.helper = 'picker';
       state.menu.key = 'theme';
       state.menu.actions = state.appearance.availableThemes.map((t) => ({
         RunLocally: true,
@@ -2755,6 +2891,19 @@
         document.body.removeChild(textArea);
       }
     },
+
+    /**
+     * Public - Toggle search mode
+     */
+    search: function () {
+      // if (state.inspector.isEnabled && state.inspector.currentTab !== 'Logs')
+      //   return;
+
+      if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
+
+      state.search.isEnabled = true;
+      state.search.isPending = false;
+    },
   };
 
   // === Variables
@@ -2842,14 +2991,13 @@
     B: 'browse',
     w: 'browser',
     h: 'hub',
-    A: 'agent',
-    H: 'host',
-    P: 'parameters',
     G: 'github',
-    T: 'theme',
-    '?': 'help',
 
     // Misc
+    '?': 'help',
+    '/': 'search',
+
+    // Appearance
     '+': 'nextLayout', // Next layout
     '-': 'previousLayout', // Previous layout
   };
@@ -2878,6 +3026,10 @@
       return;
     }
 
+    if (state.search.isEnabled && !state.search.isPending) {
+      return;
+    }
+
     if (evt.metaKey) return;
 
     let { key } = evt;
@@ -2890,6 +3042,19 @@
     evt.preventDefault();
 
     cmdRun(cmds[kbMap[key]]);
+  };
+
+  /**
+   * Called every time the user releases a key up
+   * on their keyboard. Will exclusively be handled during
+   * search, as it requires live input and off-by-one characters
+   * wouldn't work
+   */
+  const listenerKeyUp = (evt) => {
+    if (!state.search.isEnabled) return;
+    if (state.search.isPending) return;
+
+    listenerSearchInputKeyUp(evt);
   };
 
   /**
@@ -2961,6 +3126,27 @@
     evt.preventDefault();
 
     cmdRun(cmds[kbMap[key]]);
+  };
+
+  /**
+   * Called every time the user presses a key down
+   * on their keyboard, while in Search Input mode. Will
+   * allow the user to input data using any key, while
+   * Escape and Enter will be used to Leave/Confirm the
+   * Search
+   */
+  const listenerSearchInputKeyUp = (evt) => {
+    const { key } = evt;
+
+    if (!key) return;
+
+    if (['Escape', 'Enter'].includes(key)) {
+      cmdRun(cmds[kbMap[key]]);
+      return;
+    }
+
+    state.search.query = hgetSearchInput().value;
+    cmdRun(cmds._performSearch);
   };
 
   /**
@@ -3118,6 +3304,7 @@
    */
   const listenerSocketMessage = (evt) => {
     const { data } = evt;
+    let reapplySearch = false;
 
     /**
      * @typedef Notification
@@ -3213,6 +3400,7 @@
                 : t
             );
             state.navigation.currentTabsRows[notification.Content.Tab.Key] = 1;
+            reapplySearch = true;
           } else {
             state.tabs = state.tabs.filter(
               (t) => t.Key !== notification.Content.Tab.Key
@@ -3322,6 +3510,7 @@
               if (state.tty._buffer.length > 0) {
                 state.tty.lines.push(state.tty._buffer);
                 state.tty._buffer = '';
+
                 cmdRun(cmds._render);
               }
             }, state._delays.forTTYBufferClear);
@@ -3355,7 +3544,13 @@
       }, state._delays.default);
 
     // Prevent re-rendering when user is in prompt or menu
-    if (!state.isMenuIng && !state.prompt.input.isEnabled) renderApp(state);
+    if (!state.isMenuIng && !state.prompt.input.isEnabled) {
+      renderApp(state);
+
+      // Reapply search when search was enabled prior
+      if (state.search.isEnabled && state.search.isPending && reapplySearch)
+        cmdRun(cmds._performSearch, true);
+    }
   };
 
   /**
@@ -3397,6 +3592,7 @@
 
     // 3. Set keyboard listener (second execution loop)
     window.addEventListener('keydown', listenerKeyDown);
+    window.addEventListener('keyup', listenerKeyUp);
 
     // 4. Set mouse listener (third execution loop)
     window.addEventListener('click', listenerMouseClick);

@@ -150,6 +150,34 @@ html {
           }
         }
 
+        .search-control {
+          display: flex;
+          align-items: center;
+
+          &:not(.is-active) {
+            display: none;
+          }
+
+          span {
+            color: var(--color-terminal-accent);
+          }
+
+          input {
+            height: 100%;
+            width: 440px;
+            margin-left: 4px;
+            border: 0;
+            background: transparent;
+            color: var(--color-terminal-base);
+            caret-color: var(--color-terminal-base);
+            outline: 0;
+          }
+
+          @media screen and (max-width: @width-mobile) {
+            display: none;
+          }
+        }
+
         .mobile-controls {
           align-items: center;
           width: 100%;
