@@ -81,6 +81,7 @@ Isaiah has all these features implemented :
 - Support for keyboard navigation
 - Support for mouse navigation
 - Support for search through Docker resources and container logs
+- Support for ascending and descending sort by any supported field
 - Support for customizable user settings (line-wrap, timestamps, prompt, etc.)
 - Support for custom Docker Host / Context.
 - Support for extensive configuration with `.env`
@@ -361,10 +362,14 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `AUTHENTICATION_SECRET` | `string`  | The master password used to secure your Isaiah instance against malicious actors. | one-very-long-and-mysterious-secret        |
 | `AUTHENTICATION_HASH`   | `string`  | The master password's hash (sha256 format) used to secure your Isaiah instance against malicious actors. Use this setting instead of `AUTHENTICATION_SECRET` if you feel uncomfortable providing a cleartext password. | 42b578229e397f4ac5bf067b6d384cb7a69f2ea5dca15b4a525a13a481227b66    |
 | `DISPLAY_CONFIRMATIONS` | `boolean` | Whether the web interface should display a confirmation message after every succesful operation. | True |
-| `COLUMNS_CONTAINERS`    | `string`  | Comma-separated list of fields to display in the `Containers` panel. (Case-sensitive) (Available: ID, State, ExitCode, Name, Image) | State,ExitCode,Name,Image |
+| `COLUMNS_CONTAINERS`    | `string`  | Comma-separated list of fields to display in the `Containers` panel. (Case-sensitive) (Available: ID, State, ExitCode, Name, Image, Created) | State,ExitCode,Name,Image |
 | `COLUMNS_IMAGES`        | `string`  | Comma-separated list of fields to display in the `Images` panel. (Case-sensitive) (Available: ID, Name, Version, Size) | Name,Version,Size |
 | `COLUMNS_VOLUMES`       | `string`  | Comma-separated list of fields to display in the `Volumes` panel. (Case-sensitive) (Available: Name, Driver, MountPoint) | Driver,Name |
 | `COLUMNS_NETWORKS`      | `string`  | Comma-separated list of fields to display in the `Networks` panel. (Case-sensitive) (Available: ID, Name, Driver) | Driver,Name |
+| `SORTBY_CONTAINERS`     | `string`  | Field used to sort the rows in the `Containers` panel. (Case-sensitive) (Available: ID, State, ExitCode, Name, Image, Created) | Empty |
+| `SORTBY_IMAGES`         | `string`  | Field used to sort the rows in the `Images` panel. (Case-sensitive) (Available: ID, Name, Version, Size) | Empty |
+| `SORTBY_VOLUMES`        | `string`  | Field used to sort the rows in the `Volumes` panel. (Case-sensitive) (Available: Name, Driver, MountPoint) | Empty |
+| `SORTBY_NETWORKS`       | `string`  | Field used to sort the rows in the `Networks` panel. (Case-sensitive) (Available: Id, Name, Driver) | Empty |
 | `CONTAINER_HEALTH_STYLE`| `string`  | Style used to display the containers' health state. (Available: long, short, icon)| long |
 | `CONTAINER_LOGS_TAIL`   | `integer` | Number of lines to retrieve when requesting the last container logs | 50 |
 | `CONTAINER_LOGS_SINCE`  | `string`  | The amount of time from now to use for retrieving the last container logs | 60m |
@@ -381,11 +386,12 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 
 > **Note :** Boolean values are case-insensitive, and can be represented via "ON" / "OFF" / "TRUE" / "FALSE" / 0 / 1.
 
+> **Note :** To sort rows in reverse using the `SORTBY_` parameters, prepend your field with the minus symbol, as in `-Name`
 
 > **Note :** Use either `AUTHENTICATION_SECRET` or `AUTHENTICATION_HASH` but not both at the same time.
 
-> **Note** : You can generate a sha256 hash using an online tool, or using the following commands :  
-**On OSX** : `echo -n your-secret | shasum -a 256`  
+> **Note** : You can generate a sha256 hash using an online tool, or using the following commands :
+**On OSX** : `echo -n your-secret | shasum -a 256`
 **On Linux** : `echo -n your-secret | sha256sum`
 
 
