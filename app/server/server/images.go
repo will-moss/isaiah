@@ -46,7 +46,7 @@ func (Images) RunCommand(server *Server, session _session.GenericSession, comman
 		server.SendNotification(
 			session,
 			ui.NotificationData(ui.NP{
-				Content: ui.JSON{"Tab": ui.Tab{Key: "images", Title: "Images", Rows: rows}},
+				Content: ui.JSON{"Tab": ui.Tab{Key: "images", Title: "Images", Rows: rows, SortBy: _os.GetEnv("SORTBY_IMAGES")}},
 			}),
 		)
 

@@ -47,7 +47,7 @@ func (Networks) RunCommand(server *Server, session _session.GenericSession, comm
 		server.SendNotification(
 			session,
 			ui.NotificationData(ui.NP{
-				Content: ui.JSON{"Tab": ui.Tab{Key: "networks", Title: "Networks", Rows: rows}},
+				Content: ui.JSON{"Tab": ui.Tab{Key: "networks", Title: "Networks", Rows: rows, SortBy: _os.GetEnv("SORTBY_NETWORKS")}},
 			}),
 		)
 

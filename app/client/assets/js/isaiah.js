@@ -82,6 +82,19 @@
   };
 
   /**
+   * Determine the general type of a variable
+   * @param {*} v
+   * @returns {'string'|'numeric'|'date'}
+   */
+  const getGeneralType = (v) => {
+    if (typeof v !== 'string') v = v.toString();
+
+    const isNumeric = !isNaN(v) && !isNaN(parseFloat(v));
+
+    return isNumeric ? 'numeric' : 'string';
+  };
+
+  /**
    * Prevent artifacts from CLI color codes
    * @param {string} str
    * @returns {string}
@@ -382,6 +395,7 @@
    * @param {string} tab.Key
    * @param {string} tab.Title
    * @param {Array<Row>} tab.Rows
+   * @param {string} tab.SortBy
    * @returns {string}
    */
   const renderTab = (tab) => {
@@ -390,7 +404,25 @@
 
     html += `<div class="tab-content">`;
     if (tab.Rows.length > 0) {
-      html += renderRows(tab.Rows);
+      html += renderRows(
+        !tab.SortBy
+          ? tab.Rows
+          : tab.Rows.sort((a, b) => {
+              const inReverse = tab.SortBy.startsWith('-');
+              const key = inReverse ? tab.SortBy.slice(1) : tab.SortBy;
+
+              let val1 = a[key];
+              let val2 = b[key];
+              const comparisonType = getGeneralType(!val1 ? val2 : val1);
+
+              if (comparisonType === 'string')
+                return !inReverse
+                  ? val1.localeCompare(val2)
+                  : val2.localeCompare(val1);
+              else if (comparisonType === 'numeric')
+                return !inReverse ? val1 - val2 : val2 - val1;
+            })
+      );
     }
     html += `</div>`;
 
@@ -1301,6 +1333,7 @@
      * @property {string} Key
      * @property {string} Title
      * @property {Array<Row>} Rows
+     * @property {string} SortBy
      */
 
     /**

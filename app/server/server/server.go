@@ -87,25 +87,25 @@ func (server *Server) runCommand(session _session.GenericSession, command ui.Com
 		if len(containers) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_CONTAINERS"), ",")
 			rows := containers.ToRows(columns)
-			tabs = append(tabs, ui.Tab{Key: "containers", Title: "Containers", Rows: rows})
+			tabs = append(tabs, ui.Tab{Key: "containers", Title: "Containers", Rows: rows, SortBy: _os.GetEnv("SORTBY_CONTAINERS")})
 		}
 
 		if len(images) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_IMAGES"), ",")
 			rows := images.ToRows(columns)
-			tabs = append(tabs, ui.Tab{Key: "images", Title: "Images", Rows: rows})
+			tabs = append(tabs, ui.Tab{Key: "images", Title: "Images", Rows: rows, SortBy: _os.GetEnv("SORTBY_IMAGES")})
 		}
 
 		if len(volumes) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_VOLUMES"), ",")
 			rows := volumes.ToRows(columns)
-			tabs = append(tabs, ui.Tab{Key: "volumes", Title: "Volumes", Rows: rows})
+			tabs = append(tabs, ui.Tab{Key: "volumes", Title: "Volumes", Rows: rows, SortBy: _os.GetEnv("SORTBY_VOLUMES")})
 		}
 
 		if len(networks) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_NETWORKS"), ",")
 			rows := networks.ToRows(columns)
-			tabs = append(tabs, ui.Tab{Key: "networks", Title: "Networks", Rows: rows})
+			tabs = append(tabs, ui.Tab{Key: "networks", Title: "Networks", Rows: rows, SortBy: _os.GetEnv("SORTBY_NETWORKS")})
 		}
 
 		server.SendNotification(
