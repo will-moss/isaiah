@@ -2840,6 +2840,8 @@
       const inspectorContent = q('.tab.for-inspector .tab-content');
       const toCopy = inspectorContent.textContent;
 
+      if (!toCopy) return;
+
       const _showConfirmation = () => {
         state.message.category = 'report';
         state.message.type = 'success';
