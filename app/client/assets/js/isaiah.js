@@ -1978,10 +1978,12 @@
       );
 
       // Update tab's rows
-      state.tabs = state.tabs.map((t) =>
-        t.Key === currentTabKey ? { ...t, Rows: filteredRows } : t
-      );
-      state.navigation.currentTabsRows[currentTabKey] = 1;
+        state.tabs = state.tabs.map((t) =>
+          t.Key === currentTabKey ? { ...t, Rows: filteredRows } : t
+        );
+        state.navigation.currentTabsRows[currentTabKey] = 1;
+
+        if (filteredRows.length > 0) cmdRun(cmds._refreshInspector);
     },
 
     /**
