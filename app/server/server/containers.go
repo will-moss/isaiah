@@ -48,7 +48,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 		server.SendNotification(
 			session,
 			ui.NotificationData(ui.NP{
-				Content: ui.JSON{"Tab": ui.Tab{Key: "containers", Title: "Containers", Rows: rows}}}),
+				Content: ui.JSON{"Tab": ui.Tab{Key: "containers", Title: "Containers", Rows: rows, SortBy: _os.GetEnv("SORTBY_CONTAINERS")}}}),
 		)
 
 	// Bulk - Prune

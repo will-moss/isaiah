@@ -47,7 +47,7 @@ func (Volumes) RunCommand(server *Server, session _session.GenericSession, comma
 		server.SendNotification(
 			session,
 			ui.NotificationData(ui.NP{
-				Content: ui.JSON{"Tab": ui.Tab{Key: "volumes", Title: "Volumes", Rows: rows}},
+				Content: ui.JSON{"Tab": ui.Tab{Key: "volumes", Title: "Volumes", Rows: rows, SortBy: _os.GetEnv("SORTBY_VOLUMES")}},
 			}),
 		)
 
