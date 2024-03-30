@@ -1355,6 +1355,7 @@
      * @typedef Search
      * @property {string} query
      * @property {boolean} isEnabled
+     * @property {boolean} isPending
      * @property {Array<Row>} previousRows
      */
 
@@ -1444,21 +1445,6 @@
 
     // Prevent running anything while loading
     if (state.isLoading) return false;
-
-    // if (
-    //   state.isLoading &&
-    //   ![
-    //     'scrollUp',
-    //     'scrollDown',
-    //     'scrollLeft',
-    //     'scrollRight',
-    //     'nextTab',
-    //     'previousTab',
-    //     'nextSubTab',
-    //     'previousSubTab',
-    //   ].includes(cmd)
-    // )
-    //   return false;
 
     // Prevent running anything other than submit while unauthenticated
     if (!state.isAuthenticated && !['confirm'].includes(cmd)) return false;
@@ -2165,7 +2151,7 @@
       if (state.search.isEnabled) {
         // No row found
         if (sgetCurrentTab().Rows.length === 0) cmdRun(cmds._clearSearch);
-        // Rounws found
+        // Rows found
         else {
           state.search.isPending = true;
           cmdRun(cmds._refreshInspector);
@@ -3173,6 +3159,7 @@
       // 1.1. Tab Header
       if (part === 'tab') {
         if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
+        if (state.search.isEnabled) cmdRun(cmds._clearSearch);
         state.navigation.currentTab = key;
         cmdRun(cmds._inspectorTabs);
       }
@@ -3195,6 +3182,7 @@
         // prettier-ignore
         const [_part, _key] = tabHeader.getAttribute('data-navigate').split('.');
         if (_key !== state.navigation.currentTab) {
+          if (state.search.isEnabled) cmdRun(cmds._clearSearch);
           if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
           state.navigation.currentTab = _key;
         }
@@ -3224,6 +3212,7 @@
           // prettier-ignore
           const [_part, _key] = tabHeader.getAttribute('data-navigate').split('.');
           if (_key !== state.navigation.currentTab) {
+            if (state.search.isEnabled) cmdRun(cmds._clearSearch);
             if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
             state.navigation.currentTab = _key;
           }
