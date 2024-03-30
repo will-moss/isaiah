@@ -1,3 +1,16 @@
+# [1.10.0](https://github.com/will-moss/isaiah/compare/1.9.0...1.10.0) (2024-03-30)
+
+
+### Bug Fixes
+
+* **client:** fixed mouse navigation when performing search on logs, with minor refactoring ([85707f4](https://github.com/will-moss/isaiah/commit/85707f419a37400d4d79d91523c73df5d9a58245))
+
+
+### Features
+
+* **containers:** added "Created At" to the list of supported fields for Containers ([28eb6c3](https://github.com/will-moss/isaiah/commit/28eb6c3e8a563a508f296ebc7ea572807e778de3))
+* **project:** added full support for client-side sorting of all the Docker resource lists ([071758d](https://github.com/will-moss/isaiah/commit/071758d6c984fbc2c9af2dc725d18acce71551b3))
+
 # [1.9.0](https://github.com/will-moss/isaiah/compare/1.8.0...1.9.0) (2024-03-30)
 
 
