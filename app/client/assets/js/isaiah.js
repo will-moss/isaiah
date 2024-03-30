@@ -1518,7 +1518,7 @@
     const isPrivate = cmdString[0] === '_';
     const isAllowed = isPrivate ? true : cmdAllowed(cmdString);
 
-    console.log(cmdString, isAllowed);
+    // console.log(cmdString, isAllowed);
 
     if (!isAllowed) return;
 
