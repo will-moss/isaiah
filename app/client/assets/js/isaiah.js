@@ -842,7 +842,10 @@
     // 6. Set focus on DOM elements
 
     // 6.1. Set focus on inspector
-    if (_state.inspector.isEnabled && !_state.search.isEnabled)
+    if (
+      _state.inspector.isEnabled &&
+      (!_state.search.isEnabled || _state.search.isPending)
+    )
       hgetTab('inspector').classList.add('is-active');
 
     // 6.1.1. Scroll horizontally on the inspector
@@ -1484,7 +1487,12 @@
       return false;
 
     // Prevent multi-inspect
-    if (state.inspector.isEnabled && ['confirm'].includes(cmd)) return false;
+    if (
+      state.inspector.isEnabled &&
+      !state.search.isEnabled &&
+      ['confirm'].includes(cmd)
+    )
+      return false;
 
     return true;
   };
@@ -1926,14 +1934,21 @@
      * Private - Clear search and reset display
      */
     _clearSearch: function () {
-      const currentTabKey = sgetCurrentTabKey();
+      const isForLogs =
+        state.inspector.isEnabled && state.inspector.currentTab === 'Logs';
 
-      state.tabs = state.tabs.map((t) =>
-        t.Key === currentTabKey
-          ? { ...t, Rows: [...state.search.previousRows] }
-          : t
-      );
-      state.navigation.currentTabsRows[currentTabKey] = 1;
+      if (!isForLogs) {
+        const currentTabKey = sgetCurrentTabKey();
+
+        state.tabs = state.tabs.map((t) =>
+          t.Key === currentTabKey
+            ? { ...t, Rows: [...state.search.previousRows] }
+            : t
+        );
+        state.navigation.currentTabsRows[currentTabKey] = 1;
+      } else {
+        state.inspector.content = [...state.search.previousRows];
+      }
 
       state.search.isEnabled = false;
       state.search.isPending = false;
@@ -1950,40 +1965,58 @@
       const { query } = state.search;
       const currentTab = sgetCurrentTab();
       const currentTabKey = currentTab.Key;
+      const isForLogs =
+        state.inspector.isEnabled && state.inspector.currentTab === 'Logs';
 
       // Reset when empty
       if (!query && state.search.previousRows.length > 0) {
-        state.tabs = state.tabs.map((t) =>
-          t.Key === currentTabKey
-            ? { ...t, Rows: [...state.search.previousRows] }
-            : t
-        );
-        state.navigation.currentTabsRows[currentTabKey] = 1;
+        if (!isForLogs) {
+          state.tabs = state.tabs.map((t) =>
+            t.Key === currentTabKey
+              ? { ...t, Rows: [...state.search.previousRows] }
+              : t
+          );
+          state.navigation.currentTabsRows[currentTabKey] = 1;
+        } else {
+          state.inspector.content = [...state.search.previousRows];
+        }
         return;
       }
 
       // Save initial rows
-      if (state.search.previousRows.length === 0 || resetOriginalRows)
-        state.search.previousRows = [...currentTab.Rows];
+      if (state.search.previousRows.length === 0 || resetOriginalRows) {
+        if (!isForLogs) state.search.previousRows = [...currentTab.Rows];
+        else state.search.previousRows = [...state.inspector.content];
+      }
+
+      // else state.search.previousRows = [];
 
       // Perform search
       const currentRows = state.search.previousRows;
-      const filteredRows = currentRows.filter((r) =>
-        r._representation
-          .map((e) => e.value)
-          .filter((v) => v)
-          .join('~')
-          .toLowerCase()
-          .includes(query.toLowerCase())
-      );
+      const filteredRows = !isForLogs
+        ? currentRows.filter((r) =>
+            r._representation
+              .map((e) => e.value)
+              .filter((v) => v)
+              .join('~')
+              .toLowerCase()
+              .includes(query.toLowerCase())
+          )
+        : currentRows.filter((r) =>
+            r.Content.some((l) => l.toLowerCase().includes(query.toLowerCase()))
+          );
 
       // Update tab's rows
+      if (!isForLogs) {
         state.tabs = state.tabs.map((t) =>
           t.Key === currentTabKey ? { ...t, Rows: filteredRows } : t
         );
         state.navigation.currentTabsRows[currentTabKey] = 1;
 
         if (filteredRows.length > 0) cmdRun(cmds._refreshInspector);
+      } else {
+        state.inspector.content = [...filteredRows];
+      }
     },
 
     /**
@@ -2151,12 +2184,20 @@
 
       // Search confirm
       if (state.search.isEnabled) {
-        // No row found
-        if (sgetCurrentTab().Rows.length === 0) cmdRun(cmds._clearSearch);
-        // Rows found
-        else {
-          state.search.isPending = true;
-          cmdRun(cmds._refreshInspector);
+        const isForLogs =
+          state.inspector.isEnabled && state.inspector.currentTab === 'Logs';
+
+        if (!isForLogs) {
+          // No row found
+          if (sgetCurrentTab().Rows.length === 0) cmdRun(cmds._clearSearch);
+          // Rows found
+          else {
+            state.search.isPending = true;
+            cmdRun(cmds._refreshInspector);
+          }
+        } else {
+          if (state.inspector.content.length === 0) cmdRun(cmds._clearSearch);
+          else state.search.isPending = true;
         }
         return;
       }
@@ -2197,13 +2238,13 @@
         return;
       }
 
-      if (state.inspector.isEnabled) {
-        cmdRun(cmds._exitInspect);
+      if (state.search.isEnabled) {
+        cmdRun(cmds._clearSearch);
         return;
       }
 
-      if (state.search.isEnabled) {
-        cmdRun(cmds._clearSearch);
+      if (state.inspector.isEnabled) {
+        cmdRun(cmds._exitInspect);
         return;
       }
     },
@@ -2212,10 +2253,10 @@
      * Public - Navigate to the previous tab
      */
     previousTab: function () {
-      if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
-
       if (state.search.isEnabled && state.search.isPending)
         cmdRun(cmds._clearSearch);
+
+      if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
 
       const currentIndex = state.tabs.findIndex(
         (t) => t.Key === state.navigation.currentTab
@@ -2233,10 +2274,10 @@
      * Public - Navigate to the next tab
      */
     nextTab: function () {
-      if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
-
       if (state.search.isEnabled && state.search.isPending)
         cmdRun(cmds._clearSearch);
+
+      if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
 
       const currentIndex = state.tabs.findIndex(
         (t) => t.Key === state.navigation.currentTab
@@ -2261,6 +2302,14 @@
 
       if (prevIndex == -1) prevIndex = state.inspector.availableTabs.length - 1;
 
+      if (
+        state.search.isEnabled &&
+        state.search.isPending &&
+        !state.navigation.currentTab &&
+        state.inspector.currentTab === 'Logs'
+      )
+        cmdRun(cmds._clearSearch);
+
       state.inspector.currentTab =
         state.inspector.availableTabs[
           prevIndex % state.inspector.availableTabs.length
@@ -2277,6 +2326,15 @@
         state.inspector.currentTab
       );
       const nextIndex = currentIndex + 1;
+
+      if (
+        state.search.isEnabled &&
+        state.search.isPending &&
+        !state.navigation.currentTab &&
+        state.inspector.currentTab === 'Logs'
+      )
+        cmdRun(cmds._clearSearch);
+
       state.inspector.currentTab =
         state.inspector.availableTabs[
           nextIndex % state.inspector.availableTabs.length
@@ -2886,10 +2944,8 @@
      * Public - Toggle search mode
      */
     search: function () {
-      // if (state.inspector.isEnabled && state.inspector.currentTab !== 'Logs')
-      //   return;
-
-      if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
+      if (state.inspector.isEnabled && state.inspector.currentTab !== 'Logs')
+        cmdRun(cmds._exitInspect);
 
       state.search.isEnabled = true;
       state.search.isPending = false;
@@ -3299,6 +3355,13 @@
    */
   const listenerSocketMessage = (evt) => {
     const { data } = evt;
+
+    const searchIsEnabled = state.search.isEnabled;
+    const searchIsPending = state.search.isPending;
+    const searchIsForLogs =
+      searchIsEnabled &&
+      state.inspector.isEnabled &&
+      state.inspector.currentTab === 'Logs';
     let reapplySearch = false;
 
     /**
@@ -3425,13 +3488,27 @@
           }
           if ('Content' in notification.Content.Inspector) {
             // When raw lines are received, append them
-            if (notification.Content.Inspector.Content[0].Type === 'lines')
-              state.inspector.content.push(
-                ...notification.Content.Inspector.Content
-              );
+            if (notification.Content.Inspector.Content[0].Type === 'lines') {
+              if (!searchIsEnabled || !searchIsForLogs)
+                state.inspector.content.push(
+                  ...notification.Content.Inspector.Content
+                );
+              else
+                state.search.previousRows.push(
+                  ...notification.Content.Inspector.Content
+                );
+            }
             // Else, replace the current content with the one received
-            else
-              state.inspector.content = notification.Content.Inspector.Content;
+            else {
+              if (!searchIsEnabled || !searchIsForLogs)
+                state.inspector.content =
+                  notification.Content.Inspector.Content;
+              else
+                state.search.previousRows =
+                  notification.Content.Inspector.Content;
+            }
+
+            reapplySearch = true;
           }
         }
 
@@ -3542,9 +3619,13 @@
     if (!state.isMenuIng && !state.prompt.input.isEnabled) {
       renderApp(state);
 
-      // Reapply search when search was enabled prior
-      if (state.search.isEnabled && state.search.isPending && reapplySearch)
-        cmdRun(cmds._performSearch, true);
+      // Reapply search when search was enabled prior and new data was received
+      return;
+      if (searchIsEnabled && reapplySearch) {
+        if (!searchIsForLogs && searchIsPending)
+          cmdRun(cmds._performSearch, true);
+        else cmdRun(cmds._performSearch);
+      }
     }
   };
 
@@ -3565,6 +3646,7 @@
   // === Entry Point
   // ===
   window.addEventListener('load', () => {
+    window.xxx = state;
     // 0. Append custom.css stylesheet
     document
       .getElementsByTagName('head')[0]
