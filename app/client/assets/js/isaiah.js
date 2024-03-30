@@ -1359,7 +1359,8 @@
      * @property {string} query
      * @property {boolean} isEnabled
      * @property {boolean} isPending
-     * @property {Array<Row>} previousRows
+     * @property {'logs'|'resource'} startedOn
+     * @property {Array<Row>|Array<*>} previousRows
      */
 
     /**
@@ -1369,6 +1370,7 @@
       query: null,
       isEnabled: false,
       isPending: false,
+      startedOn: null,
       previousRows: [],
     },
 
@@ -1953,6 +1955,7 @@
       state.search.isEnabled = false;
       state.search.isPending = false;
       state.search.query = null;
+      state.search.startedOn = null;
       state.search.previousRows = [];
       hgetSearchInput().value = '';
     },
@@ -2240,6 +2243,7 @@
 
       if (state.search.isEnabled) {
         cmdRun(cmds._clearSearch);
+        cmdRun(cmds._refreshInspector);
         return;
       }
 
@@ -2944,11 +2948,17 @@
      * Public - Toggle search mode
      */
     search: function () {
-      if (state.inspector.isEnabled && state.inspector.currentTab !== 'Logs')
-        cmdRun(cmds._exitInspect);
-
       state.search.isEnabled = true;
       state.search.isPending = false;
+      state.search.startedOn = 'resource';
+
+      if (state.inspector.isEnabled && state.inspector.currentTab !== 'Logs')
+        cmdRun(cmds._exitInspect);
+      else if (
+        state.inspector.isEnabled &&
+        state.inspector.currentTab === 'Logs'
+      )
+        state.search.startedOn = 'logs';
     },
   };
 
@@ -3225,7 +3235,11 @@
       }
       // 1.2. Inspector Tab Header
       else if (part === 'inspector') {
+        if (state.search.isEnabled && state.search.startedOn === 'logs')
+          cmdRun(cmds._clearSearch);
+
         if (!state.inspector.isEnabled) cmdRun(cmds._enterInspect);
+
         state.inspector.currentTab = key;
         cmdRun(cmds._refreshInspector);
       }
@@ -3242,8 +3256,12 @@
         // prettier-ignore
         const [_part, _key] = tabHeader.getAttribute('data-navigate').split('.');
         if (_key !== state.navigation.currentTab) {
-          if (state.search.isEnabled) cmdRun(cmds._clearSearch);
+          if (_key !== state.navigation.previousTab) {
+            if (state.search.isEnabled) cmdRun(cmds._clearSearch);
+          }
+
           if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
+
           state.navigation.currentTab = _key;
         }
 
@@ -3272,16 +3290,22 @@
           // prettier-ignore
           const [_part, _key] = tabHeader.getAttribute('data-navigate').split('.');
           if (_key !== state.navigation.currentTab) {
-            if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
             if (_key !== state.navigation.previousTab) {
               if (state.search.isEnabled) cmdRun(cmds._clearSearch);
+            } else {
+              if (state.search.isEnabled && state.search.startedOn === 'logs')
+                cmdRun(cmds._clearSearch);
             }
+
+            if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
             state.navigation.currentTab = _key;
           }
 
           // 1.4.2.2. Focus the clicked row and refresh the inspector
           const rowIndex = Array.from(tabContent.children).indexOf(tabRow);
           state.navigation.currentTabsRows[_key] = rowIndex + 1;
+
+          if (state.search.isEnabled) state.search.isPending = true;
 
           cmdRun(cmds._inspectorTabs);
         }
@@ -3359,9 +3383,7 @@
     const searchIsEnabled = state.search.isEnabled;
     const searchIsPending = state.search.isPending;
     const searchIsForLogs =
-      searchIsEnabled &&
-      state.inspector.isEnabled &&
-      state.inspector.currentTab === 'Logs';
+      searchIsEnabled && state.search.startedOn === 'logs';
     let reapplySearch = false;
 
     /**
