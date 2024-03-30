@@ -1,3 +1,18 @@
+# [1.9.0](https://github.com/will-moss/isaiah/compare/1.8.0...1.9.0) (2024-03-30)
+
+
+### Bug Fixes
+
+* **client:** added check to prevent running logs' copy when logs are empty ([ccf9ff7](https://github.com/will-moss/isaiah/commit/ccf9ff76af3ee360c0db823a3684d2faac73a431))
+* **client:** added missing automatic inspector refresh on search while typing ([d6a25f9](https://github.com/will-moss/isaiah/commit/d6a25f9031ea9012edcd8d0b63757626f5121afa))
+* **client:** fixed mouse navigation between different tabs while performing search ([558aaf4](https://github.com/will-moss/isaiah/commit/558aaf45c2a2545246f87a9f81aaaedf421aa156))
+* **client:** fixed mouse navigation when performing search ([93d706c](https://github.com/will-moss/isaiah/commit/93d706c645d4de6e72522f23eeafcc8180caeabd))
+
+
+### Features
+
+* **client:** added support for searching through log lines ([c5d3cf8](https://github.com/will-moss/isaiah/commit/c5d3cf823ee44a9f21f3ba317e96ca975b55ba13))
+
 # [1.8.0](https://github.com/will-moss/isaiah/compare/1.7.0...1.8.0) (2024-03-29)
 
 
