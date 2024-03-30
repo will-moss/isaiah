@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 	_os "will-moss/isaiah/server/_internal/os"
 	"will-moss/isaiah/server/_internal/process"
 	"will-moss/isaiah/server/_internal/tty"
@@ -30,6 +31,7 @@ type Container struct {
 	Name     string
 	Image    string
 	Ports    []types.Port
+	Created  int64
 }
 
 // Represent an  array of Docker containers
@@ -188,6 +190,7 @@ func ContainersList(client *client.Client) Containers {
 		container.State = information.State
 		container.Image = information.Image
 		container.Ports = information.Ports
+		container.Created = information.Created
 
 		inspection, err := client.ContainerInspect(context.Background(), information.ID)
 		if err == nil {
@@ -292,6 +295,9 @@ func (containers Containers) ToRows(columns []string) ui.Rows {
 				}
 			case "Image":
 				_entry["value"] = container.Image
+			case "Created":
+				_entry["value"] = fmt.Sprintf("%d", container.Created)
+				_entry["representation"] = time.Unix(container.Created, 0).Format("2006-01-02")
 			}
 
 			flat = append(flat, _entry)
