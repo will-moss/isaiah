@@ -80,7 +80,7 @@ Isaiah has all these features implemented :
 - Support for custom CSS theming (with variables for colors already defined)
 - Support for keyboard navigation
 - Support for mouse navigation
-- Support for quick search through Docker resources
+- Support for search through Docker resources and container logs
 - Support for customizable user settings (line-wrap, timestamps, prompt, etc.)
 - Support for custom Docker Host / Context.
 - Support for extensive configuration with `.env`
