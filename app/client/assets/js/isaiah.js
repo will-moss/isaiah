@@ -3214,8 +3214,10 @@
           // prettier-ignore
           const [_part, _key] = tabHeader.getAttribute('data-navigate').split('.');
           if (_key !== state.navigation.currentTab) {
-            if (state.search.isEnabled) cmdRun(cmds._clearSearch);
             if (state.inspector.isEnabled) cmdRun(cmds._exitInspect);
+            if (_key !== state.navigation.previousTab) {
+              if (state.search.isEnabled) cmdRun(cmds._clearSearch);
+            }
             state.navigation.currentTab = _key;
           }
 
