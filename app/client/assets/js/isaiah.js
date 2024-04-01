@@ -837,12 +837,14 @@
     hgetSearchControl().classList.remove('is-active');
 
     // 2. Build every tab
-    html = _state.tabs.map(renderTab).join('');
-    hgetScreen('dashboard').querySelector('.left').innerHTML = html;
+    if (!_state.isFullyEmpty) {
+      html = _state.tabs.map(renderTab).join('');
+      hgetScreen('dashboard').querySelector('.left').innerHTML = html;
 
-    // 3. Build inspector
-    html = renderInspector(_state.inspector);
-    hgetScreen('dashboard').querySelector('.right').innerHTML = html;
+      // 3. Build inspector
+      html = renderInspector(_state.inspector);
+      hgetScreen('dashboard').querySelector('.right').innerHTML = html;
+    }
 
     // 4. Build current popup
     if (state.popup) {
@@ -864,65 +866,72 @@
       else if (_state.tty.isEnabled) html = renderTty(_state.tty);
       // 4.5. Popup - Help
       else if (_state.popup === 'help') html = renderHelp();
+      // 4.6. Popup - Overview
+      else if (_state.overview.isEnabled)
+        html = renderOverview(_state.overview);
 
       hgetPopupContainer().innerHTML = html;
     }
 
     // 5. Show search control
-    if (_state.search.isEnabled) hgetSearchControl().classList.add('is-active');
+    if (!_state.isFullyEmpty) {
+      if (_state.search.isEnabled)
+        hgetSearchControl().classList.add('is-active');
+    }
 
     // 6. Set focus on DOM elements
 
     // 6.1. Set focus on inspector
-    if (
-      _state.inspector.isEnabled &&
-      (!_state.search.isEnabled || _state.search.isPending)
-    )
-      hgetTab('inspector').classList.add('is-active');
+    if (!_state.isFullyEmpty) {
+      if (
+        _state.inspector.isEnabled &&
+        (!_state.search.isEnabled || _state.search.isPending)
+      )
+        hgetTab('inspector').classList.add('is-active');
 
-    // 6.1.1. Scroll horizontally on the inspector
-    hgetTab('inspector').querySelector('.tab-content').scrollLeft =
-      _state.inspector.horizontalScroll;
+      // 6.1.1. Scroll horizontally on the inspector
+      hgetTab('inspector').querySelector('.tab-content').scrollLeft =
+        _state.inspector.horizontalScroll;
 
-    // 6.1.2. Scroll vertically on the inspector
-    hgetTab('inspector').querySelector('.tab-content').scrollTop =
-      _state.inspector.verticalScroll;
+      // 6.1.2. Scroll vertically on the inspector
+      hgetTab('inspector').querySelector('.tab-content').scrollTop =
+        _state.inspector.verticalScroll;
 
-    // 6.1.3. Scroll down the inspector if it's for logs
-    if (_state.inspector.content.length > 0) {
-      if (_state.inspector.content[0].Type === 'lines') {
-        const _inspector = hgetTab('inspector');
-        const _content = _inspector.querySelector('.tab-content');
-        _content.scrollTo(
-          _state.inspector.horizontalScroll,
-          _content.scrollHeight
-        );
+      // 6.1.3. Scroll down the inspector if it's for logs
+      if (_state.inspector.content.length > 0) {
+        if (_state.inspector.content[0].Type === 'lines') {
+          const _inspector = hgetTab('inspector');
+          const _content = _inspector.querySelector('.tab-content');
+          _content.scrollTo(
+            _state.inspector.horizontalScroll,
+            _content.scrollHeight
+          );
+        }
       }
-    }
 
-    // 6.2. Set focus on tab
-    if (
-      _state.navigation.currentTab &&
-      (!_state.search.isEnabled || _state.search.isPending)
-    ) {
-      hgetTab(_state.navigation.currentTab).classList.add('is-active');
+      // 6.2. Set focus on tab
+      if (
+        _state.navigation.currentTab &&
+        (!_state.search.isEnabled || _state.search.isPending)
+      ) {
+        hgetTab(_state.navigation.currentTab).classList.add('is-active');
 
-      // 6.2.1. Set focus on row - Tab
-      const currentRow = hgetTabRow(
-        _state.navigation.currentTab,
-        _state.navigation.currentTabsRows[_state.navigation.currentTab]
-      );
-      currentRow.classList.add('is-active');
-      currentRow.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        // 6.2.1. Set focus on row - Tab
+        const currentRow = hgetTabRow(
+          _state.navigation.currentTab,
+          _state.navigation.currentTabsRows[_state.navigation.currentTab]
+        );
+        currentRow.classList.add('is-active');
+        currentRow.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
-      /*
-       * Disabled part - Works for panels, but not for inspector
-       *                 Should be reworked for handling any type of
-       *                 content
-       *                 Native scroll is used in place
-       */
+        /*
+         * Disabled part - Works for panels, but not for inspector
+         *                 Should be reworked for handling any type of
+         *                 content
+         *                 Native scroll is used in place
+         */
 
-      /*
+        /*
         // 5.2.2. Update current tab scroll indicator
         const currentTab = hgetTab(_state.navigation.currentTab);
         const currentTabContent = currentTab.querySelector('.tab-content');
@@ -960,6 +969,7 @@
           }
         }
       */
+      }
     }
 
     // 6.3. Set focus on menu
@@ -972,42 +982,44 @@
         ).classList.add('is-active');
     }
 
-    // 6.4. Set focus on tty
-    if (_state.tty.isEnabled && _state.tty.lines.length > 0) {
-      const ttyInput = hgetTtyInput();
-      if (ttyInput) {
-        ttyInput.focus();
-        ttyInput.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (!_state.isFullyEmpty) {
+      // 6.4. Set focus on tty
+      if (_state.tty.isEnabled && _state.tty.lines.length > 0) {
+        const ttyInput = hgetTtyInput();
+        if (ttyInput) {
+          ttyInput.focus();
+          ttyInput.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
-        // 6.4.1. Focus end of input
-        setTimeout(() => {
-          ttyInput.selectionStart = ttyInput.selectionEnd =
-            ttyInput.value.length;
-        }, _state._delays.default / 2);
+          // 6.4.1. Focus end of input
+          setTimeout(() => {
+            ttyInput.selectionStart = ttyInput.selectionEnd =
+              ttyInput.value.length;
+          }, _state._delays.default / 2);
+        }
       }
-    }
 
-    // 6.5. Set focus on prompt input
-    if (_state.prompt.isEnabled && _state.prompt.input.isEnabled) {
-      // Dev-only (lack of input happens when the server spontaneously tells us we're authenticated)
-      // (hence the need for checking it)
-      if (hgetPromptInput()) hgetPromptInput().focus();
-    }
+      // 6.5. Set focus on prompt input
+      if (_state.prompt.isEnabled && _state.prompt.input.isEnabled) {
+        // Dev-only (lack of input happens when the server spontaneously tells us we're authenticated)
+        // (hence the need for checking it)
+        if (hgetPromptInput()) hgetPromptInput().focus();
+      }
 
-    // 6.6. Set focus on search input
-    if (_state.search.isEnabled && !_state.search.isPending) {
-      hgetSearchInput().focus();
-    }
-    // 6.6.1. Unfocus search input when pending
-    if (_state.search.isEnabled && _state.search.isPending) {
-      hgetSearchInput().blur();
-    }
+      // 6.6. Set focus on search input
+      if (_state.search.isEnabled && !_state.search.isPending) {
+        hgetSearchInput().focus();
+      }
+      // 6.6.1. Unfocus search input when pending
+      if (_state.search.isEnabled && _state.search.isPending) {
+        hgetSearchInput().blur();
+      }
 
-    // 6.7. Set flag on previous/current tab for the "focus" layout
-    if (_state.navigation.currentTab)
-      hgetTab(_state.navigation.currentTab).classList.add('is-current');
-    else if (_state.navigation.previousTab)
-      hgetTab(_state.navigation.previousTab).classList.add('is-current');
+      // 6.7. Set flag on previous/current tab for the "focus" layout
+      if (_state.navigation.currentTab)
+        hgetTab(_state.navigation.currentTab).classList.add('is-current');
+      else if (_state.navigation.previousTab)
+        hgetTab(_state.navigation.previousTab).classList.add('is-current');
+    }
 
     // 7. Set helper
     if (!_state.search.isEnabled)
@@ -1136,6 +1148,11 @@
      * @type {boolean}
      */
     isLoading: false,
+
+    /**
+     * @type {boolean}
+     */
+    isFullyEmpty: false,
 
     /**
      * @returns {boolean}
@@ -1526,6 +1543,25 @@
       state.inspector.isEnabled &&
       !state.search.isEnabled &&
       ['confirm'].includes(cmd)
+    )
+      return false;
+
+    // Prevent anything other than popups and confirmation when fully empty
+    if (
+      state.isFullyEmpty &&
+      ![
+        'scrollUp',
+        'scrollDown',
+        'confirm',
+        'reject',
+        'quit',
+        'agent',
+        'host',
+        'parameters',
+        'shell',
+        'message',
+        'prompt',
+      ].includes(cmd)
     )
       return false;
 
@@ -3445,12 +3481,17 @@
 
     switch (notification.Category) {
       case 'init':
-        state.tabs = notification.Content.Tabs;
-        state.navigation.currentTab = state.tabs[0].Key;
-        state.navigation.currentTabsRows = state.tabs.reduce(
-          (a, b) => ({ ...a, [b.Key]: 1 }),
-          {}
-        );
+        if (notification.Content.Tabs) {
+          state.tabs = notification.Content.Tabs;
+          state.navigation.currentTab = state.tabs[0].Key;
+          state.navigation.currentTabsRows = state.tabs.reduce(
+            (a, b) => ({ ...a, [b.Key]: 1 }),
+            {}
+          );
+          state.isFullyEmpty = false;
+        } else {
+          state.isFullyEmpty = true;
+        }
 
         // Update agents list only on the very first init
         if (state.communication.availableAgents.length === 0)
@@ -3469,7 +3510,7 @@
         }
 
         state.isLoading = false;
-        cmdRun(cmds._inspectorTabs);
+        if (!state.isFullyEmpty) cmdRun(cmds._inspectorTabs);
         break;
 
       case 'auth':
