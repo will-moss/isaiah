@@ -2527,6 +2527,8 @@
      * Public - Display the remove menu of the highlighted resource
      */
     remove: function () {
+      state.menu.key = 'menu';
+
       websocketSend({
         action: `${sgetCurrentTabKey().slice(0, -1)}.menu.remove`,
         args: { Resource: sgetCurrentRow() },
