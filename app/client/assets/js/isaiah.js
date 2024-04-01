@@ -1043,11 +1043,9 @@
 
       let fullIndicator = _state.communication.currentAgent || 'Master';
       if (_state.communication.currentHost)
-        fullIndicator = `${fullIndicator} (${_state.communication.currentHost})`;
+        fullIndicator = `${fullIndicator} (<button data-action="host">${_state.communication.currentHost}</button>)`;
 
-      hgetConnectionIndicator(
-        'communication-target'
-      ).textContent = fullIndicator;
+      hgetConnectionIndicator('communication-target').innerHTML = fullIndicator;
     }
 
     // 10. Reset mobile controls' visibility
