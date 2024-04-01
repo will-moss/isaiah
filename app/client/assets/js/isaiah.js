@@ -2995,6 +2995,13 @@
       )
         state.search.startedOn = 'logs';
     },
+
+    /**
+     * Public - On click - Focus the search input
+     */
+    focusSearch: function () {
+      hgetSearchInput().focus();
+    },
   };
 
   // === Variables
@@ -3515,7 +3522,8 @@
                 : t
             );
             state.navigation.currentTabsRows[notification.Content.Tab.Key] = 1;
-            reapplySearch = true;
+
+            if (searchIsEnabled) reapplySearch = true;
           } else {
             state.tabs = state.tabs.filter(
               (t) => t.Key !== notification.Content.Tab.Key
@@ -3550,7 +3558,7 @@
                 state.inspector.content.push(
                   ...notification.Content.Inspector.Content
                 );
-              else
+              else if (searchIsEnabled && searchIsForLogs)
                 state.search.previousRows.push(
                   ...notification.Content.Inspector.Content
                 );
@@ -3560,12 +3568,10 @@
               if (!searchIsEnabled || !searchIsForLogs)
                 state.inspector.content =
                   notification.Content.Inspector.Content;
-              else
+              else if (searchIsEnabled && searchIsForLogs)
                 state.search.previousRows =
                   notification.Content.Inspector.Content;
             }
-
-            reapplySearch = true;
           }
         }
 
@@ -3677,11 +3683,9 @@
       renderApp(state);
 
       // Reapply search when search was enabled prior and new data was received
-      return;
       if (searchIsEnabled && reapplySearch) {
         if (!searchIsForLogs && searchIsPending)
           cmdRun(cmds._performSearch, true);
-        else cmdRun(cmds._performSearch);
       }
     }
   };
