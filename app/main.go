@@ -121,14 +121,14 @@ func performVerifications() error {
 				return fmt.Errorf("Failed Verification : docker_hosts file isn't properly formatted. Line : -> %s", line)
 			}
 
-			c, err := client.NewClientWithOpts(client.WithHost(parts[1]))
-			if err != nil {
-				return fmt.Errorf("Failed Verification : Access to Docker host -> %s", err)
+			c, _err := client.NewClientWithOpts(client.WithHost(parts[1]))
+			if _err != nil {
+				return fmt.Errorf("Failed Verification : Access to Docker host -> %s", _err)
 			}
 
-			_, err = c.Ping(context.Background())
-			if err != nil {
-				return fmt.Errorf("Failed Verification : Access to Docker host -> %s", err)
+			_, _err = c.ServerVersion(context.Background())
+			if _err != nil {
+				return fmt.Errorf("Failed Verification : Retrieving version from Docker host -> %s", _err)
 			}
 
 			c.Close()
