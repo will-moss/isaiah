@@ -1502,17 +1502,17 @@
     // Prevent running anything other than submit while unauthenticated
     if (!state.isAuthenticated && !['confirm'].includes(cmd)) return false;
 
-    // Force yes/no on prompts && messages
+    // Force yes/no on prompts & messages & search
     if (
       (state.prompt.isEnabled ||
         state.message.isEnabled ||
         (state.search.isEnabled && !state.search.isPending) ||
         (state.popup && !state.isMenuIng)) &&
-      !['confirm', 'reject', 'quit'].includes(cmd)
+      !['confirm', 'reject', 'quit', 'ttyQuit'].includes(cmd)
     )
       return false;
 
-    // Force yes/no/arrows on menus,
+    // Force yes/no/arrows on menus
     if (
       state.isMenuIng &&
       !['scrollUp', 'scrollDown', 'confirm', 'reject', 'quit'].includes(cmd)
