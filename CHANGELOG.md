@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/will-moss/isaiah/compare/1.11.0...1.11.1) (2024-04-04)
+
+
+### Bug Fixes
+
+* **authentication:** fixed broken authentication due to default authentication hash set ([f784f79](https://github.com/will-moss/isaiah/commit/f784f79d3e5d7bc7823ea6f436976e6b4c2ccbab))
+
 # [1.11.0](https://github.com/will-moss/isaiah/compare/1.10.0...1.11.0) (2024-04-04)
 
 
