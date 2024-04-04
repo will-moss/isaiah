@@ -164,6 +164,17 @@ func ImagesList(client *client.Client) Images {
 	return images
 }
 
+// Count the number of Docker images
+func ImagesCount(client *client.Client) int {
+	reader, err := client.ImageList(context.Background(), types.ImageListOptions{All: true})
+
+	if err != nil {
+		return 0
+	}
+
+	return len(reader)
+}
+
 // Prune unused Docker images
 func ImagesPrune(client *client.Client) error {
 	args := filters.NewArgs(filters.KeyValuePair{Key: "dangling", Value: "false"})

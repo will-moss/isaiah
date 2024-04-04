@@ -95,6 +95,17 @@ func NetworksList(client *client.Client) Networks {
 	return networks
 }
 
+// Count the number of Docker networks
+func NetworksCount(client *client.Client) int {
+	images, err := client.NetworkList(context.Background(), types.NetworkListOptions{})
+
+	if err != nil {
+		return 0
+	}
+
+	return len(images)
+}
+
 // Prune unused Docker networks
 func NetworksPrune(client *client.Client) error {
 	_, err := client.NetworksPrune(context.Background(), filters.Args{})
