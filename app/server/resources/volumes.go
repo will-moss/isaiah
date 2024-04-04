@@ -114,6 +114,17 @@ func VolumesList(client *client.Client) Volumes {
 	return volumes
 }
 
+// Count the number of Docker volumes
+func VolumesCount(client *client.Client) int {
+	reader, err := client.VolumeList(context.Background(), volume.ListOptions{})
+
+	if err != nil {
+		return 0
+	}
+
+	return len(reader.Volumes)
+}
+
 // Prune unused Docker volumes
 func VolumesPrune(client *client.Client) error {
 	_, err := client.VolumesPrune(context.Background(), filters.Args{})

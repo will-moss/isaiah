@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"strings"
 	"will-moss/isaiah/server/_internal/tty"
+
+	"github.com/shirou/gopsutil/mem"
 )
 
 // Alias for os.GetEnv, with support for fallback value, and boolean normalization
@@ -54,7 +56,7 @@ func GetFullEnv() map[string]string {
 	return structured
 }
 
-// Open a shell on the system, and update the provided channels with 
+// Open a shell on the system, and update the provided channels with
 // status / errors as they happen
 func OpenShell(tty *tty.TTY, channelErrors chan error, channelUpdates chan string) {
 	cmd := GetEnv("TTY_SERVER_COMMAND")
@@ -73,4 +75,16 @@ func OpenShell(tty *tty.TTY, channelErrors chan error, channelUpdates chan strin
 		process.Wait()
 		channelUpdates <- "exited"
 	}
+}
+
+// Alias for mem.VirtualMemory, swallowing the potential error
+func VirtualMemory() *mem.VirtualMemoryStat {
+	v, err := mem.VirtualMemory()
+
+	if err != nil {
+		v := mem.VirtualMemoryStat{Total: 0, Used: 0, Available: 0}
+		return &v
+	}
+
+	return v
 }

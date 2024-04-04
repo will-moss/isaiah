@@ -729,6 +729,10 @@
              </div>
              <div class="row is-not-interactive"></div>
              <div class="row is-not-interactive">
+               <span class="cell">O        </span>
+               <span class="cell">show overview</span>
+             </div>
+             <div class="row is-not-interactive">
                <span class="cell">S        </span>
                <span class="cell">open system shell</span>
              </div>
@@ -778,6 +782,93 @@
                <span class="cell">q        </span>
                <span class="cell">cancel/close/quit</span>
              </div>
+          </div>
+        </div>
+      </div>
+  `;
+
+  /**
+   * @param {Overview} overview
+   * @returns {string}
+   */
+  const renderOverview = (overview) => `
+      <div class="popup for-overview">
+        <div class="tab is-active">
+          <span class="tab-title">
+            Overview
+          </span>
+          <div class="tab-content">
+          ${overview.Instances.map(
+            (i) => `
+             <div
+               data-role="${i.Server.Role}"
+               data-name="${i.Server.Name}"
+               class="row"
+             >
+               <div class="row-logo">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 0 0-.12-1.03l-2.268-9.64a3.375 3.375 0 0 0-3.285-2.602H7.923a3.375 3.375 0 0 0-3.285 2.602l-2.268 9.64a4.5 4.5 0 0 0-.12 1.03v.228m19.5 0a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3m19.5 0a3 3 0 0 0-3-3H5.25a3 3 0 0 0-3 3m16.5 0h.008v.008h-.008v-.008Zm-3 0h.008v.008h-.008v-.008Z" /> </svg>
+               </div>
+               <div class="row-content">
+                 <div class="row-summary">
+                   <p>
+                     ${i.Server.Role === 'Agent' ? ' <i>Agent</i>' : ''}
+                     ${i.Server.Name} (Docker ${i.Docker.Version})
+                     <em>
+                       ${
+                         (i.Docker.Host.includes('://')
+                           ? i.Docker.Host.split('://')[1]
+                           : i.Docker.Host
+                         ).split(':')[0]
+                       }
+                     </em>
+                   </p>
+                 </div>
+                 <div class="row-information">
+                   <div class="row-information-box for-containers">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /> </svg>
+                     <span>${i.Resources.Containers.Count} Containers</span>
+                   </div>
+                   <div class="row-information-box for-volumes">
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" /> </svg>
+                   <span>${i.Resources.Volumes.Count} Volumes</span>
+                   </div>
+                   <div class="row-information-box for-images">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /> </svg>
+                     <span>${i.Resources.Images.Count} Images</span>
+                   </div>
+                   <div class="row-information-box for-networks">
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" /> </svg>
+                     <span>${i.Resources.Networks.Count} Networks</span>
+                   </div>
+
+                   ${
+                     i.Server.Host.startsWith('unix://') ||
+                     (i.Server.Host === '' &&
+                       i.Docker.Host.startsWith('unix://'))
+                       ? `
+                         <div class="row-information-specs">
+                           <div class="row-information-box">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 0 0 2.25-2.25V6.75a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 6.75v10.5a2.25 2.25 0 0 0 2.25 2.25Zm.75-12h9v9h-9v-9Z" /> </svg>
+                             <span>${i.Server.CountCPU} CPU</span>
+                           </div>
+                           <div class="row-information-box">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" /> </svg>
+                             <span>
+                               ${(
+                                 i.Server.AmountRAM /
+                                 (1024 * 1024 * 1024)
+                               ).toFixed(0)} GB RAM
+                             </span>
+                           </div>
+                         </div>
+                        `
+                       : '<span class="row-filler">Remote host</span>'
+                   }
+                 </div>
+               </div>
+             </div>
+          `
+          ).join('')}
           </div>
         </div>
       </div>
@@ -980,6 +1071,13 @@
           _state.popup,
           _state.navigation.currentMenuRow
         ).classList.add('is-active');
+
+      // 6.3.2. Set focus on row - Overview
+      if (_state.overview.isEnabled)
+        hgetPopupRow(
+          _state.popup,
+          _state.navigation.currentMenuRow
+        ).classList.add('is-active');
     }
 
     if (!_state.isFullyEmpty) {
@@ -997,14 +1095,16 @@
           }, _state._delays.default / 2);
         }
       }
+    }
 
-      // 6.5. Set focus on prompt input
-      if (_state.prompt.isEnabled && _state.prompt.input.isEnabled) {
-        // Dev-only (lack of input happens when the server spontaneously tells us we're authenticated)
-        // (hence the need for checking it)
-        if (hgetPromptInput()) hgetPromptInput().focus();
-      }
+    // 6.5. Set focus on prompt input
+    if (_state.prompt.isEnabled && _state.prompt.input.isEnabled) {
+      // Dev-only (lack of input happens when the server spontaneously tells us we're authenticated)
+      // (hence the need for checking it)
+      if (hgetPromptInput()) hgetPromptInput().focus();
+    }
 
+    if (!_state.isFullyEmpty) {
       // 6.6. Set focus on search input
       if (_state.search.isEnabled && !_state.search.isPending) {
         hgetSearchInput().focus();
@@ -1116,15 +1216,18 @@
   /**
    * Send an object as a JSON string over Websocket
    * @param {object} o
+   * @param {boolean} skipAutoForward
    */
-  const websocketSend = (o) => {
+  const websocketSend = (o, skipAutoForward = false) => {
     const copy = { ...o };
 
-    if (state.communication.currentAgent)
-      copy.Agent = state.communication.currentAgent;
+    if (!skipAutoForward) {
+      if (state.communication.currentAgent)
+        copy.Agent = state.communication.currentAgent;
 
-    if (state.communication.currentHost)
-      copy.Host = state.communication.currentHost;
+      if (state.communication.currentHost)
+        copy.Host = state.communication.currentHost;
+    }
 
     wsSocket.send(JSON.stringify(copy));
   };
@@ -1155,7 +1258,7 @@
     /**
      * @type {boolean}
      */
-    isFullyEmpty: false,
+    isFullyEmpty: true,
 
     /**
      * @returns {boolean}
@@ -1163,9 +1266,15 @@
     get isMenuIng() {
       return (
         state.popup &&
-        ['menu', 'bulk', 'theme', 'agent', 'host', 'parameters'].includes(
-          state.popup
-        )
+        [
+          'menu',
+          'bulk',
+          'theme',
+          'agent',
+          'host',
+          'parameters',
+          'overview',
+        ].includes(state.popup)
       );
     },
 
@@ -1234,7 +1343,7 @@
     helper: 'default',
 
     /**
-     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"theme"|"agent"|'host'|'parameters'}
+     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"overview"|"theme"|"agent"|'host'|'parameters'}
      */
     popup: null,
 
@@ -1269,12 +1378,17 @@
       /**
        * @type {boolean}
        */
-      enableTimestampDisplay: true,
+      enableTimestampDisplay: false,
 
       /**
        * @type {boolean}
        */
       enableMenuPrompt: true,
+
+      /**
+       * @type {boolean}
+       */
+      enableOverviewOnLaunch: false,
     },
 
     /**
@@ -1453,6 +1567,43 @@
        */
       default: 250,
     },
+
+    /**
+     * @typedef Overview
+     * @property {boolean} isEnabled
+     * @property {Array<Instance>} Instances
+     */
+
+    /**
+     * @typedef Instance
+     * @property {object} Docker
+     * @property {string} Docker.Version
+     * @property {string} Docker.Host
+     * @property {object} Resources
+     * @property {object} Resources.Containers
+     * @property {number} Resources.Containers.Count
+     * @property {object} Resources.Images
+     * @property {number} Resources.Images.Count
+     * @property {object} Resources.Volumes
+     * @property {number} Resources.Volumes.Count
+     * @property {object} Resources.Networks
+     * @property {number} Resources.Networks.Count
+     * @property {object} Server
+     * @property {string} Server.Host
+     * @property {string} Server.Name
+     * @property {string} Server.Role
+     * @property {number} Server.CountCPU
+     * @property {number} Server.AmountRAM
+     * @property {Array<string>} Server.Agents
+     */
+
+    /**
+     * @type Overview
+     */
+    overview: {
+      isEnabled: false,
+      Instances: [],
+    },
   };
 
   // === State-related handy methods
@@ -1537,6 +1688,7 @@
         'parameters',
         'agent',
         'host',
+        'overview',
       ].includes(cmd)
     )
       return false;
@@ -1561,9 +1713,10 @@
         'agent',
         'host',
         'parameters',
-        'shell',
+        'shellSystem',
         'message',
         'prompt',
+        'overview',
       ].includes(cmd)
     )
       return false;
@@ -1686,6 +1839,15 @@
     _clearMenu: function () {
       state.menu.actions = [];
       state.menu.key = null;
+    },
+
+    /**
+     * Private - Clear overview
+     */
+    _clearOverview: function () {
+      state.overview.isEnabled = false;
+      state.overview.Instances = [];
+      cmdRun(cmds._clearPopup);
     },
 
     /**
@@ -2108,17 +2270,7 @@
         return;
       }
 
-      if (state.prompt.isEnabled) {
-        cmdRun(cmds._clearPrompt);
-        return;
-      }
-
-      if (state.message.isEnabled) {
-        cmdRun(cmds._clearMessage);
-        return;
-      }
-
-      cmdRun(cmds._clearPopup);
+      cmdRun(cmds.reject);
     },
 
     /**
@@ -2194,7 +2346,11 @@
       }
 
       // Menu / Bulk confirm (run action)
-      if (state.isMenuIng && state.navigation.currentMenuRow > 0) {
+      if (
+        state.isMenuIng &&
+        state.navigation.currentMenuRow > 0 &&
+        !state.overview.isEnabled
+      ) {
         // prettier-ignore
         const row = hgetPopupRow(state.popup, state.navigation.currentMenuRow);
         const attributes = row.dataset;
@@ -2257,6 +2413,39 @@
         return;
       }
 
+      // Overview confirm
+      if (
+        state.isMenuIng &&
+        state.navigation.currentMenuRow > 0 &&
+        state.overview.isEnabled
+      ) {
+        // prettier-ignore
+        const availableRows = state.overview.Instances;
+
+        if (availableRows.length === 1) {
+          cmdRun(cmds._clearOverview);
+          cmdRun(cmds._init);
+          return;
+        }
+
+        const row = hgetPopupRow(state.popup, state.navigation.currentMenuRow);
+        const attributes = row.dataset;
+
+        // Case when : Multi-agents
+        if (state.communication.availableAgents.length > 0) {
+          if (attributes.role === 'Agent')
+            cmdRun(cmds._pickAgent, { Label: attributes.name });
+          else cmdRun(cmds._pickAgent, { Label: 'Master' });
+        }
+        // Case when : Multi-hosts
+        else if (state.overview.Instances.length > 0) {
+          cmdRun(cmds._pickHost, { Label: attributes.name });
+        }
+
+        cmdRun(cmds._clearOverview);
+        return;
+      }
+
       // Search confirm
       if (state.search.isEnabled) {
         const isForLogs =
@@ -2297,6 +2486,7 @@
      */
     reject: function () {
       if (!state.isAuthenticated) return;
+      if (state.overview.isEnabled && state.isFullyEmpty) return;
 
       if (state.prompt.isEnabled) {
         cmdRun(cmds._clearPrompt);
@@ -2305,6 +2495,11 @@
 
       if (state.message.isEnabled) {
         cmdRun(cmds._clearMessage);
+        return;
+      }
+
+      if (state.overview.isEnabled) {
+        cmdRun(cmds._clearOverview);
         return;
       }
 
@@ -2486,12 +2681,24 @@
      */
     scrollDown: function () {
       // Menu - Next row
-      if (state.isMenuIng) {
+      if (state.isMenuIng && !state.overview.isEnabled) {
         const availableRows = state.menu.actions;
         state.navigation.currentMenuRow += 1;
 
         // +1 is added to account for the extra "cancel" option
         if (state.navigation.currentMenuRow > availableRows.length + 1)
+          state.navigation.currentMenuRow = 1;
+
+        return;
+      }
+
+      // Overview - Next row
+      if (state.isMenuIng && state.overview.isEnabled) {
+        const availableRows = state.overview.Instances;
+        state.navigation.currentMenuRow += 1;
+
+        // +1 is added to account for the extra "cancel" option
+        if (state.navigation.currentMenuRow > availableRows.length)
           state.navigation.currentMenuRow = 1;
 
         return;
@@ -2529,13 +2736,25 @@
      */
     scrollUp: function () {
       // Menu - Previous row
-      if (state.isMenuIng) {
+      if (state.isMenuIng && !state.overview.isEnabled) {
         const availableRows = state.menu.actions;
         state.navigation.currentMenuRow -= 1;
 
         // +1 is added to account for the extra "cancel" option
         if (state.navigation.currentMenuRow < 1)
           state.navigation.currentMenuRow = availableRows.length + 1;
+
+        return;
+      }
+
+      // Overview - Previous row
+      if (state.isMenuIng && state.overview.isEnabled) {
+        const availableRows = state.overview.Instances;
+        state.navigation.currentMenuRow -= 1;
+
+        // +1 is added to account for the extra "cancel" option
+        if (state.navigation.currentMenuRow < 1)
+          state.navigation.currentMenuRow = availableRows.length;
 
         return;
       }
@@ -3041,6 +3260,33 @@
     focusSearch: function () {
       hgetSearchInput().focus();
     },
+
+    /**
+     * Public - Request a global overview from the server
+     */
+    overview: function () {
+      // When no other Agent exist
+      if (state.communication.availableAgents.length === 0)
+        websocketSend({ action: `overview` });
+      // When current Agent is Master, and other Agents exist
+      else if (
+        !state.communication.currentAgent &&
+        state.communication.availableAgents.length > 0
+      ) {
+        websocketSend({ action: `overview` });
+        for (const agent of state.communication.availableAgents)
+          websocketSend({ action: `overview`, Agent: agent }, true);
+      }
+      // When current Agent isn't Master, and other Agents exist
+      else if (
+        state.communication.currentAgent &&
+        state.communication.availableAgents.length > 0
+      ) {
+        websocketSend({ action: `overview` }, true);
+        for (const agent of state.communication.availableAgents)
+          websocketSend({ action: `overview`, Agent: agent }, true);
+      }
+    },
   };
 
   // === Variables
@@ -3129,6 +3375,7 @@
     w: 'browser',
     h: 'hub',
     G: 'github',
+    O: 'overview',
 
     // Misc
     '?': 'help',
@@ -3424,9 +3671,19 @@
         cmdRun(cmds.reject);
       // 4.3. If menuing, and clicked inside the menu, run the 3. scenario (assumption: we clicked a span inside a row)
       else {
-        const tabContent = target.parentNode.parentNode;
-        const tabRow = target.parentNode;
-        const rowIndex = Array.from(tabContent.children).indexOf(tabRow) + 1;
+        // Clicked inside Overview's menu
+        let tabContent, tabRow, rowIndex;
+        if (target.classList.contains('row')) {
+          tabContent = target.parentNode;
+          tabRow = target;
+          rowIndex = Array.from(tabContent.children).indexOf(tabRow) + 1;
+        }
+        // Clicked inside regular menu
+        else {
+          tabContent = target.parentNode.parentNode;
+          tabRow = target.parentNode;
+          rowIndex = Array.from(tabContent.children).indexOf(tabRow) + 1;
+        }
 
         state.navigation.currentMenuRow = rowIndex;
         cmdRun(cmds.confirm);
@@ -3504,7 +3761,12 @@
         // Update hosts list only on the very first init
         if (state.communication.availableHosts.length === 0) {
           state.communication.availableHosts = notification.Content.Hosts || [];
-          if (state.communication.availableHosts.length > 0) {
+
+          // When the host was picked using the "Overview" pane, don't re-run an init sequence
+          if (
+            state.communication.availableHosts.length > 0 &&
+            !state.communication.currentHost
+          ) {
             state.communication.currentHost =
               state.communication.availableHosts[0];
 
@@ -3541,7 +3803,9 @@
               setTimeout(() => {
                 cmdRun(cmds._clearMessage);
                 state.isAuthenticated = true;
-                cmdRun(cmds._init);
+                if (state.settings.enableOverviewOnLaunch)
+                  cmdRun(cmds.overview);
+                else cmdRun(cmds._init);
               }, state._delays.forAuthentication);
             }
             // Dev-only
@@ -3549,7 +3813,8 @@
               cmdRun(cmds._clearMessage);
               cmdRun(cmds._clearPrompt);
               state.isAuthenticated = true;
-              cmdRun(cmds._init);
+              if (state.settings.enableOverviewOnLaunch) cmdRun(cmds.overview);
+              else cmdRun(cmds._init);
             }
           }
         }
@@ -3626,6 +3891,34 @@
           state.communication.availableAgents = notification.Content.Agents || [];
           state.communication.currentAgent = null;
           cmdRun(cmds._init);
+        }
+
+        if ('Overview' in notification.Content) {
+          state.isLoading = false;
+
+          // Case when : First launch with multiple Hosts
+          if (
+            state.isFullyEmpty &&
+            notification.Content.Overview.Instances.length === 1 &&
+            notification.Content.Overview.Instances[0].Server.Hosts &&
+            state.communication.availableHosts.length === 0
+          ) {
+            state.communication.availableHosts = [
+              ...notification.Content.Overview.Instances[0].Server.Hosts,
+            ];
+            cmdRun(cmds.overview);
+            return;
+          }
+
+          // prettier-ignore
+          state.overview.Instances = [
+            ...state.overview.Instances, ...notification.Content.Overview.Instances,
+          ];
+          state.overview.isEnabled = true;
+          state.navigation.currentMenuRow = 1;
+          state.helper = state.isFullyEmpty ? 'overview' : 'picker';
+          cmdRun(cmds._showPopup, 'overview');
+          break;
         }
 
         state.isLoading = false;
@@ -3751,7 +4044,6 @@
   // === Entry Point
   // ===
   window.addEventListener('load', () => {
-    window.xxx = state;
     // 0. Append custom.css stylesheet
     document
       .getElementsByTagName('head')[0]
@@ -3767,6 +4059,10 @@
     state.settings.enableTimestampDisplay = lsGet(
       'enableTimestampDisplay',
       false
+    );
+    state.settings.enableOverviewOnLaunch = lsGet(
+      'enableOverviewOnLaunch',
+      true
     );
 
     // 2. Connect to server (first execution loop)

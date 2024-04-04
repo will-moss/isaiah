@@ -203,6 +203,17 @@ func ContainersList(client *client.Client) Containers {
 	return containers
 }
 
+// Count the number of Docker containers
+func ContainersCount(client *client.Client) int {
+	containers, err := client.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+
+	if err != nil {
+		return 0
+	}
+
+	return len(containers)
+}
+
 // Stop all Docker containers
 func ContainersStop(client *client.Client, monitor process.LongTaskMonitor, args map[string]interface{}) {
 	containers := ContainersList(client)

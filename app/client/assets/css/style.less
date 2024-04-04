@@ -6,6 +6,7 @@
 @import './components.less';
 
 @width-mobile: 960px;
+@width-medium-mobile: 620px;
 @width-small-mobile: 440px;
 
 * {
@@ -189,9 +190,13 @@ html {
             display: flex;
           }
 
+          @media screen and (max-width: @width-medium-mobile) {
+            max-width: 420px;
+            overflow-x: auto;
+          }
+
           @media screen and (max-width: @width-small-mobile) {
             max-width: 240px;
-            overflow-x: auto;
           }
 
           button {
@@ -252,6 +257,12 @@ html {
           }
           &.for-communication-target {
             margin-right: 8px;
+
+            &.is-active {
+              @media screen and (max-width: @width-mobile) {
+                display: none;
+              }
+            }
           }
           &.is-active {
             display: flex;
@@ -503,6 +514,126 @@ html {
     &.for-help {
       .tab-content {
         max-height: 630px;
+      }
+    }
+
+    &.for-overview {
+      width: 860px;
+
+      @media screen and (max-width: @width-mobile) {
+        width: 95%;
+      }
+
+      .row {
+        height: 96px;
+        display: flex;
+        align-items: center;
+        padding-left: 16px;
+
+        > * {
+          pointer-events: none;
+        }
+
+        .row-logo {
+          width: 48px;
+          height: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
+        .row-content {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          padding-left: 16px;
+          padding-right: 24px;
+          flex-grow: 1;
+          height: 100%;
+          justify-content: center;
+          gap: 12px;
+
+          .row-summary {
+            display: flex;
+            align-items: center;
+            width: 100%;
+
+            p {
+              display: flex;
+              width: 100%;
+
+              i {
+                color: var(--color-terminal-accent-alternative);
+                font-style: normal;
+                margin-right: 8px;
+              }
+
+              em {
+                color: var(--color-terminal-accent-alternative);
+                margin-left: auto;
+              }
+
+              @media screen and (max-width: @width-medium-mobile) {
+                flex-direction: column;
+                gap: 12px;
+
+                i {
+                  display: contents;
+                }
+                em {
+                  margin: unset;
+                }
+              }
+            }
+          }
+
+          .row-information {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 16px;
+
+            @media screen and (max-width: @width-medium-mobile) {
+              display: none;
+            }
+
+            .row-information-box {
+              display: flex;
+              align-items: center;
+              gap: 4px;
+
+              @media screen and (max-width: @width-mobile) {
+                &.for-networks,
+                &.for-volumes {
+                  display: none;
+                }
+              }
+            }
+
+            .row-information-box svg {
+              width: 18px;
+            }
+
+            .row-information-box span {
+              font-size: 10.5pt;
+            }
+          }
+
+          .row-information-specs {
+            margin-left: auto;
+            display: flex;
+            gap: 18px;
+
+            @media screen and (max-width: @width-medium-mobile) {
+              display: none;
+            }
+          }
+
+          .row-filler {
+            margin-left: auto;
+          }
+        }
       }
     }
 

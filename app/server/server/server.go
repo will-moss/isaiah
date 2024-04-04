@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"runtime"
 	"slices"
 	"strings"
 	_client "will-moss/isaiah/server/_internal/client"
@@ -20,10 +22,11 @@ import (
 
 // Represent the current server
 type Server struct {
-	Melody *melody.Melody
-	Docker *client.Client
-	Agents AgentsArray
-	Hosts  HostsArray
+	Melody          *melody.Melody
+	Docker          *client.Client
+	Agents          AgentsArray
+	Hosts           HostsArray
+	CurrentHostName string
 }
 
 // Represent a command handler, used only _internally
@@ -185,6 +188,102 @@ func (server *Server) runCommand(session _session.GenericSession, command ui.Com
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
 			break
 		}
+
+	// Command : Get a global overview of the server and all other hosts / nodes
+	case "overview":
+		overview := ui.Overview{Instances: make(ui.OverviewInstanceArray, 0)}
+
+		serverName := "Master"
+		if _os.GetEnv("SERVER_ROLE") == "Agent" {
+			serverName = _os.GetEnv("AGENT_NAME")
+		}
+
+		// Case when : Standalone
+		if _os.GetEnv("MULTI_HOST_ENABLED") != "TRUE" && len(server.Agents) == 0 {
+			dockerVersion, _ := server.Docker.ServerVersion(context.Background())
+			instance := ui.OverviewInstance{
+				Server: ui.OverviewServer{
+					CountCPU:  runtime.NumCPU(),
+					AmountRAM: _os.VirtualMemory().Total,
+					Name:      serverName,
+					Role:      _os.GetEnv("SERVER_ROLE"),
+				},
+				Docker: ui.OverviewDocker{
+					Version: dockerVersion.Version,
+					Host:    server.Docker.DaemonHost(),
+				},
+				Resources: ui.OverviewResources{
+					Containers: ui.JSON{"Count": resources.ContainersCount(server.Docker)},
+					Images:     ui.JSON{"Count": resources.ImagesCount(server.Docker)},
+					Volumes:    ui.JSON{"Count": resources.VolumesCount(server.Docker)},
+					Networks:   ui.JSON{"Count": resources.NetworksCount(server.Docker)},
+				},
+			}
+			overview.Instances = append(overview.Instances, instance)
+		} else if _os.GetEnv("MULTI_HOST_ENABLED") != "TRUE" && len(server.Agents) > 0 {
+			// Case when : Multi-agent
+
+			// First : Append current server
+			dockerVersion, _ := server.Docker.ServerVersion(context.Background())
+			instance := ui.OverviewInstance{
+				Server: ui.OverviewServer{
+					CountCPU:  runtime.NumCPU(),
+					AmountRAM: _os.VirtualMemory().Total,
+					Name:      serverName,
+					Role:      _os.GetEnv("SERVER_ROLE"),
+					Agents:    server.Agents.ToStrings(),
+				},
+				Docker: ui.OverviewDocker{
+					Version: dockerVersion.Version,
+					Host:    server.Docker.DaemonHost(),
+				},
+				Resources: ui.OverviewResources{
+					Containers: ui.JSON{"Count": resources.ContainersCount(server.Docker)},
+					Images:     ui.JSON{"Count": resources.ImagesCount(server.Docker)},
+					Volumes:    ui.JSON{"Count": resources.VolumesCount(server.Docker)},
+					Networks:   ui.JSON{"Count": resources.NetworksCount(server.Docker)},
+				},
+			}
+			overview.Instances = append(overview.Instances, instance)
+
+			// After : Do nothing more, the client will request an overview from each agent
+
+		} else if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" {
+			// Case when : Multi-host
+			originalHost := server.CurrentHostName
+			for _, h := range server.Hosts {
+				server.SetHost(h[0])
+
+				dockerVersion, _ := server.Docker.ServerVersion(context.Background())
+				instance := ui.OverviewInstance{
+					Server: ui.OverviewServer{
+						Name: h[0],
+						Host: h[1],
+						Role: "Master",
+					},
+					Docker: ui.OverviewDocker{
+						Version: dockerVersion.Version,
+						Host:    server.Docker.DaemonHost(),
+					},
+					Resources: ui.OverviewResources{
+						Containers: ui.JSON{"Count": resources.ContainersCount(server.Docker)},
+						Images:     ui.JSON{"Count": resources.ImagesCount(server.Docker)},
+						Volumes:    ui.JSON{"Count": resources.VolumesCount(server.Docker)},
+						Networks:   ui.JSON{"Count": resources.NetworksCount(server.Docker)},
+					},
+				}
+
+				if strings.HasPrefix(h[1], "unix://") {
+					instance.Server.CountCPU = runtime.NumCPU()
+					instance.Server.AmountRAM = _os.VirtualMemory().Total
+				}
+
+				overview.Instances = append(overview.Instances, instance)
+			}
+			server.SetHost(originalHost)
+		}
+
+		server.SendNotification(session, ui.NotificationData(ui.NP{Content: ui.JSON{"Overview": overview}}))
 
 	// Command : Not found
 	default:
@@ -348,4 +447,5 @@ func (s *Server) SetHost(name string) {
 	}
 
 	s.Docker = _client.NewClientWithOpts(client.WithHost(correspondingHost[1]))
+	s.CurrentHostName = name
 }
