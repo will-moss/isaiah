@@ -1,3 +1,21 @@
+# [1.11.0](https://github.com/will-moss/isaiah/compare/1.10.0...1.11.0) (2024-04-04)
+
+
+### Bug Fixes
+
+* **client:** fixed a bug causing the shell to be non-exitable on mobile due to too-strict controls ([ec7b8e3](https://github.com/will-moss/isaiah/commit/ec7b8e32a5f4c426e48800ef1c17e23635cec169))
+* **client:** fixed a case when the menu tab's header would show undefined (during a remove action) ([9386db3](https://github.com/will-moss/isaiah/commit/9386db371229687593fca34e8625b80dcb0350c4))
+* **client:** fixed app rendering when absolutely no data was gathered from the Docker server daemon ([f2adfc7](https://github.com/will-moss/isaiah/commit/f2adfc71213b66359f82e50780a6b40ac6f4f6f3))
+* **client:** improved mouse navigation while searching, and fixed an infinite loop scenario ([ce71f59](https://github.com/will-moss/isaiah/commit/ce71f59deab088f891dd9575328df5172b456172))
+* **server:** fixed a bug causing Isaiah to believe a remote host is accessible, while Docker isn't ([69e8495](https://github.com/will-moss/isaiah/commit/69e8495936ee7fcb0870f868b7fc91c9a46b19de))
+
+
+### Features
+
+* **client:** added ability to click on the agent's name to trigger the agent picker ([99dc276](https://github.com/will-moss/isaiah/commit/99dc276815d32756b3d53291fe320e63dc3064e8))
+* **client:** added ability to pick a host by clicking on the host's name in the lower right corner ([f6bd54c](https://github.com/will-moss/isaiah/commit/f6bd54c7c835e951506902bdaf5aa5c071a475b3))
+* **project:** added support for an Overview panel showing the server, hosts, and agents all at once ([5e831e5](https://github.com/will-moss/isaiah/commit/5e831e5ad2dba3880d204c99320cc519acf2fd4f))
+
 # [1.10.0](https://github.com/will-moss/isaiah/compare/1.9.0...1.10.0) (2024-03-30)
 
 
