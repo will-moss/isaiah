@@ -1041,7 +1041,12 @@
         'is-active'
       );
 
-      let fullIndicator = _state.communication.currentAgent || 'Master';
+      let fullIndicator =
+        _state.communication.availableAgents.length > 0
+          ? `<button data-action="agent">${
+              _state.communication.currentAgent || 'Master'
+            }</button>`
+          : 'Master';
       if (_state.communication.currentHost)
         fullIndicator = `${fullIndicator} (<button data-action="host">${_state.communication.currentHost}</button>)`;
 
