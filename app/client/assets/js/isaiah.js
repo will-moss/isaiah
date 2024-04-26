@@ -1195,6 +1195,11 @@
     if (_state.settings.enableLogLinesWrap)
       if (_state.inspector.currentTab === 'Logs')
         hgetTab('inspector').classList.add('no-wrap');
+
+    // 12.2. Log lines stripped background
+    if (_state.settings.enableLogLinesStrippedBackground)
+      if (_state.inspector.currentTab === 'Logs')
+        hgetTab('inspector').classList.add('stripped-background');
   };
 
   // === Websocket-related methods
@@ -1389,6 +1394,11 @@
        * @type {boolean}
        */
       enableOverviewOnLaunch: false,
+
+      /**
+       * @type {boolean}
+       */
+      enableLogLinesStrippedBackground: true,
     },
 
     /**
@@ -4056,6 +4066,10 @@
     state.appearance.currentTheme = lsGet('theme', 'default');
     state.settings.enableMenuPrompt = lsGet('enableMenuPrompt', true);
     state.settings.enableLogLinesWrap = lsGet('enableLogLinesWrap', false);
+    state.settings.enableLogLinesStrippedBackground = lsGet(
+      'enableLogLinesStrippedBackground',
+      true
+    );
     state.settings.enableTimestampDisplay = lsGet(
       'enableTimestampDisplay',
       false

@@ -379,10 +379,6 @@ html {
             white-space: nowrap;
             line-height: 185%;
             min-width: unset;
-
-            &:nth-child(2n + 1) {
-              background: var(--color-terminal-log-row-alternative);
-            }
           }
 
           &.no-wrap {
@@ -391,6 +387,14 @@ html {
             }
             .row.is-textual {
               white-space: wrap;
+            }
+          }
+
+          &.stripped-background {
+            .row.is-textual {
+              &:nth-child(2n + 1) {
+                background: var(--color-terminal-log-row-alternative);
+              }
             }
           }
         }
