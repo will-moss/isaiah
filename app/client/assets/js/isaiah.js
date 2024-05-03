@@ -105,6 +105,21 @@
       ''
     );
 
+  /**
+   * Turn a given method into a debounced version of it
+   * @param {Function} fn
+   * @param {int} delay
+   */
+  const debounce = (fn, delay) => {
+    let timeoutId = null;
+    return (...args) => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        fn(...args);
+      }, delay);
+    };
+  };
+
   // === Handy HTML-querying methods
 
   /**
@@ -189,6 +204,11 @@
    * @returns {HTMLElement}
    */
   const hgetPromptInput = () => q('#prompt-input');
+
+  /**
+   * @returns {HTMLElement}
+   */
+  const hgetJumpInput = () => q('#jump-input');
 
   /**
    * @returns {HTMLElement}
@@ -733,6 +753,11 @@
                <span class="cell">show overview</span>
              </div>
              <div class="row is-not-interactive">
+               <span class="cell">J        </span>
+               <span class="cell">jump to any resource</span>
+             </div>
+             <div class="row is-not-interactive"></div>
+             <div class="row is-not-interactive">
                <span class="cell">S        </span>
                <span class="cell">open system shell</span>
              </div>
@@ -744,6 +769,7 @@
                <span class="cell">G        </span>
                <span class="cell">open project on Github</span>
              </div>
+             <div class="row is-not-interactive"></div>
              <div class="row is-not-interactive">
                <span class="cell">T        </span>
                <span class="cell">open theme picker</span>
@@ -875,6 +901,53 @@
   `;
 
   /**
+   * @param {Jump} jump
+   * @returns {string}
+   */
+  const renderJump = (jump) => `
+      <div class="popup for-jump">
+        <div class="tab is-active">
+          <span class="tab-title">
+            Jump
+          </span>
+          <div class="tab-content">
+            <div class="jump-input-wrapper">
+              <input 
+                id="jump-input" 
+                type="text"
+                placeholder="Type the name of a resource"
+                value="${jump.search ? jump.search : ''}"
+              />
+            </div>
+            <div class="jump-results">
+              ${
+                !jump.search
+                  ? `<p><i>Start typing, and results will appear</i></p>`
+                  : jump.results.length === 0
+                  ? `<p class="no-result-message"><i>No resource found</i></p>`
+                  : jump.results
+                      .map(
+                        (r) =>
+                          `
+                          <div 
+                            class="jump-result row" 
+                            data-jump="${r.ParentKey}.${r.ID || r.Name}"
+                          >
+                            <span>${r.Parent}</span>
+                            &gt;
+                            <span>${r.Name}</span>
+                          </div>
+                        `
+                      )
+                      .join('')
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+  `;
+
+  /**
    * Main rendering function, responsible for updating the DOM
    * from scratch, using the supplied _state argument
    *
@@ -960,6 +1033,8 @@
       // 4.6. Popup - Overview
       else if (_state.overview.isEnabled)
         html = renderOverview(_state.overview);
+      // 4.7. Popup - Jump
+      else if (_state.jump.isEnabled) html = renderJump(_state.jump);
 
       hgetPopupContainer().innerHTML = html;
     }
@@ -1078,6 +1153,18 @@
           _state.popup,
           _state.navigation.currentMenuRow
         ).classList.add('is-active');
+
+      // 6.3.3. Set focus on row - Jump
+      if (_state.jump.isEnabled && _state.jump.results.length > 0) {
+        hgetPopupRow(
+          _state.popup,
+          _state.navigation.currentMenuRow
+        ).classList.add('is-active');
+        hgetPopupRow(
+          _state.popup,
+          _state.navigation.currentMenuRow
+        ).scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      }
     }
 
     if (!_state.isFullyEmpty) {
@@ -1119,6 +1206,18 @@
         hgetTab(_state.navigation.currentTab).classList.add('is-current');
       else if (_state.navigation.previousTab)
         hgetTab(_state.navigation.previousTab).classList.add('is-current');
+    }
+
+    // 6.8. Set focus on jump input
+    if (_state.jump.isEnabled) {
+      const jumpInput = hgetJumpInput();
+      jumpInput.focus();
+
+      // 6.8.1. Focus end of input
+      window.requestAnimationFrame(() => {
+        jumpInput.selectionStart = jumpInput.selectionEnd =
+          jumpInput.value.length;
+      });
     }
 
     // 7. Set helper
@@ -1187,6 +1286,8 @@
         hgetMobileControl('agent').classList.add('is-active');
       if (_state.communication.availableHosts.length > 0)
         hgetMobileControl('host').classList.add('is-active');
+      hgetMobileControl('overview').classList.add('is-active');
+      hgetMobileControl('jump').classList.add('is-active');
     }
 
     // 12. Apply extra user settings if any
@@ -1279,6 +1380,7 @@
           'host',
           'parameters',
           'overview',
+          'jump',
         ].includes(state.popup)
       );
     },
@@ -1348,7 +1450,7 @@
     helper: 'default',
 
     /**
-     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"overview"|"theme"|"agent"|'host'|'parameters'}
+     * @type {"menu"|"bulk"|"prompt"|"message"|"tty"|"help"|"overview"|"theme"|"agent"|"host"|"parameters"|"jump"}
      */
     popup: null,
 
@@ -1551,6 +1653,22 @@
       previousRows: [],
     },
 
+    /**
+     * @typedef {object} Jump
+     * @property {boolean} isEnabled
+     * @property {string} search
+     * @property {Array<Row>} results
+     */
+
+    /**
+     * @type {Jump}
+     */
+    jump: {
+      isEnabled: false,
+      search: null,
+      results: [],
+    },
+
     _delays: {
       /**
        * @type {number}
@@ -1749,7 +1867,7 @@
     const isPrivate = cmdString[0] === '_';
     const isAllowed = isPrivate ? true : cmdAllowed(cmdString);
 
-    // console.log(cmdString, isAllowed);
+    console.log(cmdString, isAllowed);
 
     if (!isAllowed) return;
 
@@ -1757,6 +1875,10 @@
 
     renderApp(state);
   };
+
+  const debouncedCmdRun = debounce((cmd, ...args) => {
+    cmdRun(cmd, ...args);
+  }, state._delays.default);
 
   // === Commands
 
@@ -1857,6 +1979,16 @@
     _clearOverview: function () {
       state.overview.isEnabled = false;
       state.overview.Instances = [];
+      cmdRun(cmds._clearPopup);
+    },
+
+    /**
+     * Private - Clear jump
+     */
+    _clearJump: function () {
+      state.jump.isEnabled = false;
+      state.jump.search = null;
+      state.jump.results = [];
       cmdRun(cmds._clearPopup);
     },
 
@@ -2205,7 +2337,7 @@
     },
 
     /**
-     * Private - Perform search
+     * Private - Perform search (local one)
      * @param {boolean} resetOriginalRows
      */
     _performSearch: function (resetOriginalRows = false) {
@@ -2264,6 +2396,32 @@
       } else {
         state.inspector.content = [...filteredRows];
       }
+    },
+
+    _performJumpSearch: function () {
+      const { search } = state.jump;
+
+      if (!search) {
+        state.jump.results = [];
+        return;
+      }
+
+      const resources = state.tabs
+        .map((t) =>
+          t.Rows.map((r) => ({ ...r, Parent: t.Title, ParentKey: t.Key }))
+        )
+        .flat();
+      let identifiedResources = resources.filter((r) =>
+        r._representation
+          .map((f) => f.value)
+          .join('|')
+          .toLowerCase()
+          .includes(search.toLowerCase())
+      );
+      state.jump.results = [...identifiedResources];
+      state.navigation.currentMenuRow = 1;
+
+      // pass
     },
 
     /**
@@ -2359,7 +2517,8 @@
       if (
         state.isMenuIng &&
         state.navigation.currentMenuRow > 0 &&
-        !state.overview.isEnabled
+        !state.overview.isEnabled &&
+        !state.jump.isEnabled
       ) {
         // prettier-ignore
         const row = hgetPopupRow(state.popup, state.navigation.currentMenuRow);
@@ -2456,6 +2615,30 @@
         return;
       }
 
+      // Jump confirm
+      if (
+        state.isMenuIng &&
+        state.navigation.currentMenuRow > 0 &&
+        state.jump.isEnabled
+      ) {
+        if (state.jump.results.length === 0) return;
+
+        // prettier-ignore
+        const currentResult = { ...state.jump.results[state.navigation.currentMenuRow - 1] };
+
+        cmdRun(cmds._clearJump);
+
+        state.navigation.currentTab = currentResult.ParentKey;
+        state.navigation.currentTabsRows[currentResult.ParentKey] =
+          sgetCurrentTab().Rows.findIndex((r) =>
+            r.ID ? r.ID === currentResult.ID : r.Name === currentResult.Name
+          ) + 1;
+
+        cmdRun(cmds._inspectorTabs);
+
+        return;
+      }
+
       // Search confirm
       if (state.search.isEnabled) {
         const isForLogs =
@@ -2510,6 +2693,11 @@
 
       if (state.overview.isEnabled) {
         cmdRun(cmds._clearOverview);
+        return;
+      }
+
+      if (state.jump.isEnabled) {
+        cmdRun(cmds._clearJump);
         return;
       }
 
@@ -2691,7 +2879,11 @@
      */
     scrollDown: function () {
       // Menu - Next row
-      if (state.isMenuIng && !state.overview.isEnabled) {
+      if (
+        state.isMenuIng &&
+        !state.overview.isEnabled &&
+        !state.jump.isEnabled
+      ) {
         const availableRows = state.menu.actions;
         state.navigation.currentMenuRow += 1;
 
@@ -2707,7 +2899,17 @@
         const availableRows = state.overview.Instances;
         state.navigation.currentMenuRow += 1;
 
-        // +1 is added to account for the extra "cancel" option
+        if (state.navigation.currentMenuRow > availableRows.length)
+          state.navigation.currentMenuRow = 1;
+
+        return;
+      }
+
+      // Jump - Next row
+      if (state.isMenuIng && state.jump.isEnabled) {
+        const availableRows = state.jump.results;
+        state.navigation.currentMenuRow += 1;
+
         if (state.navigation.currentMenuRow > availableRows.length)
           state.navigation.currentMenuRow = 1;
 
@@ -2746,7 +2948,11 @@
      */
     scrollUp: function () {
       // Menu - Previous row
-      if (state.isMenuIng && !state.overview.isEnabled) {
+      if (
+        state.isMenuIng &&
+        !state.overview.isEnabled &&
+        !state.jump.isEnabled
+      ) {
         const availableRows = state.menu.actions;
         state.navigation.currentMenuRow -= 1;
 
@@ -2762,7 +2968,17 @@
         const availableRows = state.overview.Instances;
         state.navigation.currentMenuRow -= 1;
 
-        // +1 is added to account for the extra "cancel" option
+        if (state.navigation.currentMenuRow < 1)
+          state.navigation.currentMenuRow = availableRows.length;
+
+        return;
+      }
+
+      // Jump - Previous row
+      if (state.isMenuIng && state.jump.isEnabled) {
+        const availableRows = state.jump.results;
+        state.navigation.currentMenuRow -= 1;
+
         if (state.navigation.currentMenuRow < 1)
           state.navigation.currentMenuRow = availableRows.length;
 
@@ -3297,6 +3513,15 @@
           websocketSend({ action: `overview`, Agent: agent }, true);
       }
     },
+
+    /**
+     * Public - Jump to any resource
+     */
+    jump: function () {
+      state.jump.isEnabled = true;
+      state.helper = 'jump';
+      cmdRun(cmds._showPopup, 'jump');
+    },
   };
 
   // === Variables
@@ -3390,6 +3615,7 @@
     // Misc
     '?': 'help',
     '/': 'search',
+    J: 'jump',
 
     // Appearance
     '+': 'nextLayout', // Next layout
@@ -3424,6 +3650,13 @@
       return;
     }
 
+    if (state.jump.isEnabled) {
+      // Menu navigation
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(evt.key))
+        evt.preventDefault();
+      else return;
+    }
+
     if (evt.metaKey) return;
 
     let { key } = evt;
@@ -3441,10 +3674,15 @@
   /**
    * Called every time the user releases a key up
    * on their keyboard. Will exclusively be handled during
-   * search, as it requires live input and off-by-one characters
-   * wouldn't work
+   * search and jump, as it requires live input and
+   * off-by-one characters wouldn't work
    */
   const listenerKeyUp = (evt) => {
+    if (state.jump.isEnabled) {
+      listenerJumpKeyUp(evt);
+      return;
+    }
+
     if (!state.search.isEnabled) return;
     if (state.search.isPending) return;
 
@@ -3541,6 +3779,45 @@
 
     state.search.query = hgetSearchInput().value;
     cmdRun(cmds._performSearch);
+  };
+
+  /**
+   * Called every time the user presses a key up
+   * on their keyboard, while in jump mode. Will
+   * allow the user to input data using any key, while
+   * Escape and Enter will be used to Leave/Confirm the
+   * mode, along with arrows keys for navigation
+   */
+  const listenerJumpKeyUp = (evt) => {
+    if (evt.metaKey) return;
+
+    const { key } = evt;
+
+    if (!key) return;
+
+    // Cancel / Confirm
+    if (['Escape', 'Enter'].includes(key)) {
+      cmdRun(cmds[kbMap[key]]);
+      return;
+    }
+
+    // Normal input
+    if (key.length === 1 && /[a-zA-Z0-9-_ ]/.test(key)) {
+      // No need to update if search hasn't changed
+      if (state.jump.search === hgetJumpInput().value) return;
+
+      state.jump.search = hgetJumpInput().value;
+      debouncedCmdRun(cmds._performJumpSearch);
+    }
+
+    // Erase
+    if (['Backspace', 'Delete'].includes(key)) {
+      state.jump.search = hgetJumpInput().value;
+      debouncedCmdRun(cmds._performJumpSearch);
+      return;
+    }
+
+    return;
   };
 
   /**
@@ -3666,6 +3943,22 @@
       cmdRun(cmds.confirm);
     }
 
+    // 4. Explicit jump via data-jump attribute (e.g. data-jump="images.great-author/wonderful-image")
+    else if (target.hasAttribute('data-jump')) {
+      const [tabKey, resourceID] = target.getAttribute('data-jump').split('.');
+      cmdRun(cmds._clearJump);
+
+      state.navigation.currentTab = tabKey;
+      state.navigation.currentTabsRows[tabKey] =
+        sgetCurrentTab().Rows.findIndex((r) =>
+          r.ID ? r.ID === resourceID : r.Name === resourceID
+        ) + 1;
+
+      cmdRun(cmds._inspectorTabs);
+
+      return;
+    }
+
     // 4. Clicked anywhere else
     else {
       // 4.0. If tty-ing, focus the tty input
@@ -3674,12 +3967,18 @@
         return;
       }
 
-      // 4.1. If any popup is activated, while not menuing and not tty-ing, dismiss it
+      // 4.1. If jump-ing, focus the jump input
+      if (state.jump.isEnabled) {
+        hgetJumpInput().focus();
+        return;
+      }
+
+      // 4.2. If any popup is activated, while not menuing and not tty-ing, dismiss it
       if (!state.isMenuIng && state.popup) cmdRun(cmds.reject);
-      // 4.2. If menuing, and clicked outside the menu, dismiss it
+      // 4.3. If menuing, and clicked outside the menu, dismiss it
       else if (state.isMenuIng && target.classList.contains('popup-layer'))
         cmdRun(cmds.reject);
-      // 4.3. If menuing, and clicked inside the menu, run the 3. scenario (assumption: we clicked a span inside a row)
+      // 4.4. If menuing, and clicked inside the menu, run the 3. scenario (assumption: we clicked a span inside a row)
       else {
         // Clicked inside Overview's menu
         let tabContent, tabRow, rowIndex;
@@ -4088,5 +4387,7 @@
 
     // 4. Set mouse listener (third execution loop)
     window.addEventListener('click', listenerMouseClick);
+
+    window.xxx = state;
   });
 })(window);
