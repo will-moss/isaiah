@@ -403,6 +403,7 @@ Using this interface, you can toggle the following options based on your prefere
 | `enableLogLinesWrap`    | Whether log lines streamed from Docker containers should be wrapped (as opposed to extend beyond your screen). |
 | `enableTimestampDisplay`| Whether log lines' timestamps coming from Docker containers should be displayed. |
 | `enableOverviewOnLaunch`| Whether an overview panel should show first before anything when launching Isaiah in your browser. |
+| `enableLogLinesStrippedBackground`| Whether alternated log lines should have a brighter background to enhance readability. |
 
 > Note : You must have Isaiah open in your browser and be authenticated to access these options. Once set up, these options will be saved to your localStorage.
 
