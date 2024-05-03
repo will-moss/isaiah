@@ -511,6 +511,59 @@ html {
       }
     }
 
+    &.for-jump {
+      width: 630px;
+
+      @media screen and (max-width: @width-mobile) {
+        width: 95%;
+      }
+
+      .tab-content {
+        .jump-input-wrapper {
+          padding-left: 8px;
+
+          input {
+            border: 0;
+            background: transparent;
+            color: var(--color-terminal-base);
+            caret-color: var(--color-terminal-base);
+            outline: 0;
+            width: 90%;
+          }
+        }
+
+        .jump-results {
+          padding-left: 8px;
+          margin-top: 8px;
+          max-height: 185px;
+          overflow: auto;
+
+          .no-result-message {
+            color: var(--color-terminal-warning);
+          }
+
+          .jump-result {
+            padding-left: 0;
+
+            // Tab
+            span:nth-child(1) {
+              color: var(--color-terminal-accent);
+              margin-right: 4px;
+            }
+
+            // Resource name
+            span:nth-child(2) {
+              margin-left: 4px;
+            }
+
+            span {
+              pointer-events: none;
+            }
+          }
+        }
+      }
+    }
+
     &.for-message[data-category='authentication'] {
       width: 435px;
     }
