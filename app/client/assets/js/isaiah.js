@@ -4387,7 +4387,5 @@
 
     // 4. Set mouse listener (third execution loop)
     window.addEventListener('click', listenerMouseClick);
-
-    window.xxx = state;
   });
 })(window);
