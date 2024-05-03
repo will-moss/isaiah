@@ -1,3 +1,16 @@
+# [1.12.0](https://github.com/will-moss/isaiah/compare/1.11.1...1.12.0) (2024-05-03)
+
+
+### Bug Fixes
+
+* **overview:** added mobile control for the overview feature ([ccdf2e5](https://github.com/will-moss/isaiah/commit/ccdf2e5d5446ed36963adf8c5e0e8c45b5914261))
+
+
+### Features
+
+* **client:** added an option to enable the user to choose between raw log lines and stripped ones ([b31102b](https://github.com/will-moss/isaiah/commit/b31102bdfd5c1b06d5b84678a213c8ad076ad08d))
+* **client:** added jump feature (type the name of any resource, and quickly jump to it) ([92fea15](https://github.com/will-moss/isaiah/commit/92fea15cb7e5b86add01bebb83e3263016749352))
+
 ## [1.11.1](https://github.com/will-moss/isaiah/compare/1.11.0...1.11.1) (2024-04-04)
 
 
