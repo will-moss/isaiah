@@ -931,11 +931,18 @@
                           `
                           <div 
                             class="jump-result row" 
-                            data-jump="${r.ParentKey}.${r.ID || r.Name}"
+                            data-jump="${r.Host ? `${r.Host}.` : ''}${
+                            r.ParentKey
+                          }.${r.ID || r.Name}"
                           >
-                            <span>${r.Parent}</span>
+                            ${
+                              r.Host
+                                ? `<span class="for-host">(${r.Host})</span>`
+                                : ''
+                            }
+                            <span class="for-tab">${r.Parent}</span>
                             &gt;
-                            <span>${r.Name}</span>
+                            <span class="for-resource">${r.Name}</span>
                           </div>
                         `
                       )
@@ -1628,7 +1635,7 @@
       currentHost: null,
 
       /**
-       * @type {string}
+       * @type {Array<string>}
        */
       availableHosts: [],
     },
@@ -1658,6 +1665,8 @@
      * @property {boolean} isEnabled
      * @property {string} search
      * @property {Array<Row>} results
+     * @property {Array<Row>} remoteResources
+     * @property {Row} backlog
      */
 
     /**
@@ -1667,6 +1676,8 @@
       isEnabled: false,
       search: null,
       results: [],
+      remoteResources: [],
+      backlog: null,
     },
 
     _delays: {
@@ -1989,6 +2000,7 @@
       state.jump.isEnabled = false;
       state.jump.search = null;
       state.jump.results = [];
+      state.jump.remoteResources = [];
       cmdRun(cmds._clearPopup);
     },
 
@@ -2411,6 +2423,7 @@
           t.Rows.map((r) => ({ ...r, Parent: t.Title, ParentKey: t.Key }))
         )
         .flat();
+
       let identifiedResources = resources.filter((r) =>
         r._representation
           .map((f) => f.value)
@@ -2418,10 +2431,20 @@
           .toLowerCase()
           .includes(search.toLowerCase())
       );
+
+      if (state.jump.remoteResources.length > 0)
+        identifiedResources.push(
+          ...state.jump.remoteResources.filter((r) =>
+            r._representation
+              .map((f) => f.value)
+              .join('|')
+              .toLowerCase()
+              .includes(search.toLowerCase())
+          )
+        );
+
       state.jump.results = [...identifiedResources];
       state.navigation.currentMenuRow = 1;
-
-      // pass
     },
 
     /**
@@ -2627,6 +2650,12 @@
         const currentResult = { ...state.jump.results[state.navigation.currentMenuRow - 1] };
 
         cmdRun(cmds._clearJump);
+
+        if (currentResult.Host) {
+          state.jump.backlog = currentResult;
+          cmdRun(cmds._pickHost, { Label: currentResult.Host });
+          return;
+        }
 
         state.navigation.currentTab = currentResult.ParentKey;
         state.navigation.currentTabsRows[currentResult.ParentKey] =
@@ -3521,6 +3550,13 @@
       state.jump.isEnabled = true;
       state.helper = 'jump';
       cmdRun(cmds._showPopup, 'jump');
+
+      // When other hosts exist
+      if (state.communication.availableHosts.length > 0) {
+        for (const host of state.communication.availableHosts)
+          if (host !== state.communication.currentHost)
+            websocketSend({ action: `enumerate`, Host: host }, true);
+      }
     },
   };
 
@@ -3943,10 +3979,26 @@
       cmdRun(cmds.confirm);
     }
 
-    // 4. Explicit jump via data-jump attribute (e.g. data-jump="images.great-author/wonderful-image")
+    // 4. Explicit jump via data-jump attribute (e.g. data-jump="[host.]images.great-author/wonderful-image")
     else if (target.hasAttribute('data-jump')) {
-      const [tabKey, resourceID] = target.getAttribute('data-jump').split('.');
+      const parts = target.getAttribute('data-jump').split('.');
       cmdRun(cmds._clearJump);
+
+      let host, tabKey, resourceID;
+      if (parts.length === 2) {
+        tabKey = parts[0];
+        resourceID = parts[1];
+      } else if (parts.length === 3) {
+        host = parts[0];
+        tabKey = parts[1];
+        resourceID = parts[2];
+      }
+
+      if (host) {
+        state.jump.backlog = { ParentKey: tabKey, ID: resourceID, Host: host };
+        cmdRun(cmds._pickHost, { Label: host });
+        return;
+      }
 
       state.navigation.currentTab = tabKey;
       state.navigation.currentTabsRows[tabKey] =
@@ -4081,6 +4133,18 @@
 
             cmdRun(cmds._init);
           }
+        }
+
+        // Jump to the picked resource if previously Jumped to a new host
+        if (state.jump.backlog) {
+          state.navigation.currentTab = state.jump.backlog.ParentKey;
+          state.navigation.currentTabsRows[state.jump.backlog.ParentKey] =
+            sgetCurrentTab().Rows.findIndex((r) =>
+              r.ID
+                ? r.ID === state.jump.backlog.ID
+                : r.Name === state.jump.backlog.Name
+            ) + 1;
+          state.jump.backlog = null;
         }
 
         state.isLoading = false;
@@ -4227,6 +4291,22 @@
           state.navigation.currentMenuRow = 1;
           state.helper = state.isFullyEmpty ? 'overview' : 'picker';
           cmdRun(cmds._showPopup, 'overview');
+          break;
+        }
+
+        if ('Enumeration' in notification.Content) {
+          state.jump.remoteResources.push(
+            ...notification.Content.Enumeration.map((t) =>
+              t.Rows.map((r) => ({
+                ...r,
+                Host: notification.Content.Host,
+                Parent: t.Title,
+                ParentKey: t.Key,
+              }))
+            ).flat()
+          );
+          state.isLoading = false;
+          cmdRun(cmds._performJumpSearch);
           break;
         }
 

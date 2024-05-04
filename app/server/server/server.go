@@ -76,8 +76,7 @@ func (server *Server) SendNotification(session _session.GenericSession, notifica
 // Same as handler.RunCommand
 func (server *Server) runCommand(session _session.GenericSession, command ui.Command) {
 	switch command.Action {
-	// Command : Initialization
-	case "init":
+	case "init", "enumerate":
 		var tabs []ui.Tab
 
 		containers := resources.ContainersList(server.Docker)
@@ -111,11 +110,20 @@ func (server *Server) runCommand(session _session.GenericSession, command ui.Com
 			tabs = append(tabs, ui.Tab{Key: "networks", Title: "Networks", Rows: rows, SortBy: _os.GetEnv("SORTBY_NETWORKS")})
 		}
 
-		server.SendNotification(
-			session,
-			ui.NotificationInit(ui.NotificationParams{
-				Content: ui.JSON{"Tabs": tabs, "Agents": agents, "Hosts": hosts},
-			}))
+		if command.Action == "init" {
+			server.SendNotification(
+				session,
+				ui.NotificationInit(ui.NotificationParams{
+					Content: ui.JSON{"Tabs": tabs, "Agents": agents, "Hosts": hosts},
+				}))
+		} else if command.Action == "enumerate" {
+			// `enumerate` is used only in the context of the `Jump` command
+			server.SendNotification(
+				session,
+				ui.NotificationData(ui.NotificationParams{
+					Content: ui.JSON{"Enumeration": tabs, "Host": command.Host},
+				}))
+		}
 
 	// Command : Agent-only - Clear TTY / Stream
 	case "clear":
