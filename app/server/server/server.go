@@ -326,8 +326,7 @@ func (server *Server) Handle(session _session.GenericSession, message ...[]byte)
 						"Message":     "Your are now authenticated",
 					},
 				},
-			}),
-			)
+			}))
 		}
 
 		// Normal case : Do nothing
