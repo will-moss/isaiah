@@ -213,6 +213,11 @@
   /**
    * @returns {HTMLElement}
    */
+  const hgetJumpResults = () => q('.jump-results');
+
+  /**
+   * @returns {HTMLElement}
+   */
   const hgetSearchControl = () => q('.search-control');
 
   /**
@@ -912,46 +917,50 @@
           </span>
           <div class="tab-content">
             <div class="jump-input-wrapper">
-              <input 
-                id="jump-input" 
+              <input
+                id="jump-input"
                 type="text"
                 placeholder="Type the name of a resource"
                 value="${jump.search ? jump.search : ''}"
               />
             </div>
             <div class="jump-results">
-              ${
-                !jump.search
-                  ? `<p><i>Start typing, and results will appear</i></p>`
-                  : jump.results.length === 0
-                  ? `<p class="no-result-message"><i>No resource found</i></p>`
-                  : jump.results
-                      .map(
-                        (r) =>
-                          `
-                          <div 
-                            class="jump-result row" 
-                            data-jump="${r.Host ? `${r.Host}.` : ''}${
-                            r.ParentKey
-                          }.${r.ID || r.Name}"
-                          >
-                            ${
-                              r.Host
-                                ? `<span class="for-host">(${r.Host})</span>`
-                                : ''
-                            }
-                            <span class="for-tab">${r.Parent}</span>
-                            &gt;
-                            <span class="for-resource">${r.Name}</span>
-                          </div>
-                        `
-                      )
-                      .join('')
-              }
+              ${renderJumpResults(jump)}
             </div>
           </div>
         </div>
       </div>
+  `;
+
+  /**
+   * @param {Jump} jump
+   * @returns {string}
+   */
+  const renderJumpResults = (jump) => `
+      ${
+        !jump.search
+          ? `<p><i>Start typing, and results will appear</i></p>`
+          : jump.results.length === 0
+          ? `<p class="no-result-message"><i>No resource found</i></p>`
+          : jump.results
+              .map(
+                (r) =>
+                  `
+                  <div
+                    class="jump-result row"
+                    data-jump="${r.Host ? `${r.Host}.` : ''}${r.ParentKey}.${
+                    r.ID || r.Name
+                  }"
+                  >
+                    ${r.Host ? `<span class="for-host">(${r.Host})</span>` : ''}
+                    <span class="for-tab">${r.Parent}</span>
+                    &gt;
+                    <span class="for-resource">${r.Name}</span>
+                  </div>
+                `
+              )
+              .join('')
+      }
   `;
 
   /**
@@ -992,10 +1001,13 @@
     hgetScreen('dashboard').querySelector('.right').innerHTML = '';
 
     // 1.3. Erase popup
-    hgetPopupContainer().innerHTML = '';
+    // 1.3.1. Re-use the popup when in Jump mode, as opposed to erasing it
+    if (!_state.jump.isEnabled) hgetPopupContainer().innerHTML = '';
 
     // 1.4. Hide popup layer
-    hgetPopupContainer().classList.remove('is-active');
+    // 1.4.1. Re-use the popup when in Jump mode, as opposed to erasing it
+    if (!_state.jump.isEnabled)
+      hgetPopupContainer().classList.remove('is-active');
 
     // 1.5. Hide helper
     if (e('.help.is-active'))
@@ -1041,9 +1053,20 @@
       else if (_state.overview.isEnabled)
         html = renderOverview(_state.overview);
       // 4.7. Popup - Jump
-      else if (_state.jump.isEnabled) html = renderJump(_state.jump);
+      else if (_state.jump.isEnabled) {
+        // 4.7.1. Perform partial re-render on subsequent render, to avoid regenerating the input while typing
+        if (_state.jump.search) {
+          html = renderJumpResults(_state.jump);
+          hgetJumpResults().innerHTML = html;
+        }
+        // 4.7.2. Perform full re-render on first opening ( = no search performed yet )
+        else {
+          html = renderJump(_state.jump);
+          hgetPopupContainer().innerHTML = html;
+        }
+      }
 
-      hgetPopupContainer().innerHTML = html;
+      if (!_state.jump.isEnabled) hgetPopupContainer().innerHTML = html;
     }
 
     // 5. Show search control
@@ -1217,14 +1240,7 @@
 
     // 6.8. Set focus on jump input
     if (_state.jump.isEnabled) {
-      const jumpInput = hgetJumpInput();
-      jumpInput.focus();
-
-      // 6.8.1. Focus end of input
-      window.requestAnimationFrame(() => {
-        jumpInput.selectionStart = jumpInput.selectionEnd =
-          jumpInput.value.length;
-      });
+      if (!_state.jump.search) hgetJumpInput().focus();
     }
 
     // 7. Set helper
@@ -3688,8 +3704,7 @@
 
     if (state.jump.isEnabled) {
       // Menu navigation
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(evt.key))
-        evt.preventDefault();
+      if (['ArrowUp', 'ArrowDown'].includes(evt.key)) evt.preventDefault();
       else return;
     }
 
