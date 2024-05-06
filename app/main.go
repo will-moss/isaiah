@@ -218,7 +218,7 @@ func main() {
 		// Load embed assets as a filesystem
 		serverRoot := _fs.Sub(clientAssets, "client")
 
-		// Set up static file serving for the CSS theming
+		// HTTP - Set up static file serving for the CSS theming
 		http.HandleFunc("/assets/css/custom.css", func(w http.ResponseWriter, r *http.Request) {
 			if _, err := os.Stat("custom.css"); errors.Is(err, os.ErrNotExist) {
 				w.WriteHeader(200)
@@ -230,7 +230,7 @@ func main() {
 
 		// Use on-disk assets rather than embedded ones when in development
 		if _os.GetEnv("DEV_ENABLED") != "TRUE" {
-			// Set up static file serving for all the front-end files
+			// HTTP - Set up static file serving for all the front-end files
 			http.Handle("/", http.StripPrefix("/", http.FileServer(http.FS(serverRoot))))
 		} else {
 			http.Handle("/", http.FileServer(http.Dir("./client")))
@@ -245,6 +245,30 @@ func main() {
 	// WS - Handle first user connecion
 	_server.Melody.HandleConnect(func(session *melody.Session) {
 		session.Set("id", uuid.NewString())
+
+		// Handle Forward Proxy Header Authentication if enabled
+		if _os.GetEnv("FORWARD_PROXY_AUTHENTICATION_ENABLED") == "TRUE" {
+			requiredHeaderKey := _os.GetEnv("FORWARD_PROXY_AUTHENTICATION_HEADER_KEY")
+			requiredHeaderValue := _os.GetEnv("FORWARD_PROXY_AUTHENTICATION_HEADER_VALUE")
+
+			suppliedHeaderValue := session.Request.Header.Get(requiredHeaderKey)
+
+			if suppliedHeaderValue != "" {
+				if requiredHeaderValue == "*" || suppliedHeaderValue == requiredHeaderValue {
+					session.Set("authenticated", true)
+					_server.SendNotification(session, ui.NotificationAuth(ui.NP{
+						Type: ui.TypeSuccess,
+						Content: ui.JSON{
+							"Authentication": ui.JSON{
+								"Spontaneous": true,
+								"Message":     "Your are now authenticated",
+							},
+						},
+					}))
+				}
+			}
+		}
+
 		_server.Handle(session)
 	})
 
