@@ -34,6 +34,7 @@
 - [Multi-host deployment](#multi-host-deployment)
   * [General information](#general-information-1)
   * [Setup](#setup-1)
+- [Forward Proxy Authentication / Trusted SSO](#forward-proxy-authentication--trusted-sso)
 - [Configuration](#configuration)
 - [Theming](#theming)
 - [Troubleshoot](#troubleshoot)
@@ -74,6 +75,7 @@ Isaiah has all these features implemented :
     - Inspect (full configuration)
 - Built-in automatic Docker host discovery
 - Built-in authentication by master password (supplied raw or sha256-hashed)
+- Built-in authentication by forward proxy authentication headers (e.g. Authelia / Trusted SSO)
 - Built-in terminal emulator (with support for opening a shell on the server)
 - Responsive for Desktop, Tablet, and Mobile
 - Support for multiple layouts
@@ -347,6 +349,62 @@ Second, please create a `docker_hosts` file next to Isaiah's executable, using t
 Finally, launch Isaiah on the Master host, and you should see logs indicating whether connection with remote hosts was established.
 Eventually, you will see `Master` with `The name of your host` in the lower right corner of your screen.
 
+## Forward Proxy Authentication / Trusted SSO
+
+If you wish to deploy Isaiah behind a secure proxy or authentication portal, you must configure Forward Proxy Authentication.
+
+This will enable you to :
+- Log in, once and for all, into your authentication portal.
+- Connect to Isaiah without having to type your `AUTHENTICATION_SECRET` every time.
+- Protect Isaiah using your authentication proxy rather than the current mechanism (cleartext / hashed password).
+- Manage the access to Isaiah from your authentication portal rather than through your `.env` configuration.
+
+Before proceeding, please ensure the following :
+- Your proxy supports HTTP/2 and Websockets.
+- Your proxy can communicate with Isaiah on the network.
+- Your proxy forwards authentication headers to Isaiah (but not to the browser).
+
+<blockquote>
+  <br />
+  For example, if you're using Nginx Proxy Manager (NPM), you should do the following :
+  <br /><br />
+  <ul>
+    <li>In the tab "Details"</li>
+    <ul>
+      <li>Tick the box "Websockets support"</li>
+      <li>Tick the box "HTTP/2 support"</li>
+      <li>Tick the box "Block common exploits"</li>
+      <li>Tick the box "Force SSL"</li>
+   </ul>
+   <br />
+   <li>In the tab "Advanced"</li>
+   <ul>
+      <li>In your custom location block, add the lines :</li>
+      <ul>
+        <li>proxy_set_header Upgrade $http_upgrade;</li>
+        <li>proxy_set_header Connection "upgrade";</li>
+      </ul>
+    </ul>
+  </ul>
+  <br />
+</blockquote>
+
+Then, configure Isaiah using the following variables :
+- Set `FORWARD_PROXY_AUTHENTICATION_ENABLED` to `true`.
+- Set `FORWARD_PROXY_AUTHENTICATION_HEADER_KEY` to the name of the forwarded authentication header your proxy sends to Isaiah.
+- Set `FORWARD_PROXY_AUTHENTICATION_HEADER_VALUE` to the value of the header that Isaiah should expect (or use `*` if all values are accepted).
+
+> By default, Isaiah is configured to work with Authelia out of the box. Hence, you can just set `FORWARD_PROXY_AUTHENTICATION_ENABLED` to `true` and be done with it.
+
+If everything was properly set up, you will encounter the following flow :
+- Navigate to `isaiah.your-domain.tld`.
+- Get redirected to `authentication-portal.your-domain.tld`.
+- Fill in your credentials.
+- Authentication was successful.
+- Get redirected to `isaiah.your-domain.tld`.
+- Isaiah **does not** prompt you for the password, you're automatically logged in.
+
+
 ## Configuration
 
 To run Isaiah, you will need to set the following environment variables in a `.env` file located next to your executable :
@@ -383,6 +441,9 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `MASTER_SECRET`         | `string`  | For multi-node deployments only. The secret password used to authenticate on the Master node. Note that it should equal the `AUTHENTICATION_SECRET` setting on the Master node. | Empty        |
 | `AGENT_NAME`            | `string`  | For multi-node deployments only. The name associated with the Agent node as it is displayed on the web interface. It should be unique for each Agent. | Empty        |
 | `MULTI_HOST_ENABLED`    | `boolean` | Whether Isaiah should be run in multi-host mode. When enabled, make sure to have your `docker_hosts` file next to the executable. | False        |
+| `FORWARD_PROXY_AUTHENTICATION_ENABLED`    | `boolean` | Whether Isaiah should accept authentication headers from a forward proxy. | False        |
+| `FORWARD_PROXY_AUTHENTICATION_HEADER_KEY` | `string` | The name of the authentication header sent by the forward proxy after a succesful authentication. | Remote-User        |
+| `FORWARD_PROXY_AUTHENTICATION_HEADER_VALUE` | `string` | The value accepted by Isaiah for the authentication header. Using `*` means that all values are accepted (except emptiness). This parameter can be used to enforce that only a specific user or group can access Isaiah (e.g. `admins` or `john`). | * |
 
 > **Note :** Boolean values are case-insensitive, and can be represented via "ON" / "OFF" / "TRUE" / "FALSE" / 0 / 1.
 
