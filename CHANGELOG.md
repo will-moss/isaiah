@@ -1,3 +1,15 @@
+# [1.14.0](https://github.com/will-moss/isaiah/compare/1.13.0...1.14.0) (2024-05-06)
+
+
+### Bug Fixes
+
+* **jump:** rewrote part of the jump feature to prevent loss of key presses and improve search ([f28c33a](https://github.com/will-moss/isaiah/commit/f28c33a8c613ad4893df9a957c7c15305d9ab93c))
+
+
+### Features
+
+* **security:** added support for forward proxy authentication (e.g. with Authelia) ([6485734](https://github.com/will-moss/isaiah/commit/6485734aaded6de388a5c1482efe13bc99b3fce0))
+
 # [1.12.0](https://github.com/will-moss/isaiah/compare/1.11.1...1.12.0) (2024-05-03)
 
 
