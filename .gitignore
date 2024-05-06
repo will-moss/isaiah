@@ -15,6 +15,7 @@ go.work
 .vimrc
 .aliases
 tmp
+private
 dist/
 node_modules/
 app/package.json
