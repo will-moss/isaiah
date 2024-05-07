@@ -429,25 +429,7 @@
 
     html += `<div class="tab-content">`;
     if (tab.Rows.length > 0) {
-      html += renderRows(
-        !tab.SortBy
-          ? tab.Rows
-          : tab.Rows.sort((a, b) => {
-              const inReverse = tab.SortBy.startsWith('-');
-              const key = inReverse ? tab.SortBy.slice(1) : tab.SortBy;
-
-              let val1 = a[key];
-              let val2 = b[key];
-              const comparisonType = getGeneralType(!val1 ? val2 : val1);
-
-              if (comparisonType === 'string')
-                return !inReverse
-                  ? val1.localeCompare(val2)
-                  : val2.localeCompare(val1);
-              else if (comparisonType === 'numeric')
-                return !inReverse ? val1 - val2 : val2 - val1;
-            })
-      );
+      html += renderRows(tab.Rows);
     }
     html += `</div>`;
 
@@ -1894,7 +1876,7 @@
     const isPrivate = cmdString[0] === '_';
     const isAllowed = isPrivate ? true : cmdAllowed(cmdString);
 
-    console.log(cmdString, isAllowed);
+    // console.log(cmdString, isAllowed);
 
     if (!isAllowed) return;
 
@@ -4125,6 +4107,28 @@
             {}
           );
           state.isFullyEmpty = false;
+
+          // Perform sort if applicable
+          state.tabs = state.tabs.map((tab) => ({
+            ...tab,
+            Rows: !tab.SortBy
+              ? tab.Rows
+              : tab.Rows.toSorted((a, b) => {
+                  const inReverse = tab.SortBy.startsWith('-');
+                  const key = inReverse ? tab.SortBy.slice(1) : tab.SortBy;
+
+                  let val1 = a[key];
+                  let val2 = b[key];
+                  const comparisonType = getGeneralType(!val1 ? val2 : val1);
+
+                  if (comparisonType === 'string')
+                    return !inReverse
+                      ? val1.localeCompare(val2)
+                      : val2.localeCompare(val1);
+                  else if (comparisonType === 'numeric')
+                    return !inReverse ? val1 - val2 : val2 - val1;
+                }),
+          }));
         } else {
           state.isFullyEmpty = true;
         }
