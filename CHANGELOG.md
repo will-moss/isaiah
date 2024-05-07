@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/will-moss/isaiah/compare/1.14.0...1.14.1) (2024-05-07)
+
+
+### Bug Fixes
+
+* **client:** fixed the Jump feature by fixing the code responsible for sorting resources ([5b67363](https://github.com/will-moss/isaiah/commit/5b6736376925da5f48c6b909564c91901d37a331))
+
 # [1.14.0](https://github.com/will-moss/isaiah/compare/1.13.0...1.14.0) (2024-05-06)
 
 
