@@ -715,27 +715,6 @@ html {
   }
 }
 
-// Mobile blocker
-.mobile-blocker {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 99;
-  pointer-events: none;
-  background: var(--color-terminal-background);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-
-  p {
-    padding: 0 24px;
-    line-height: 125%;
-  }
-
-  @media screen and (min-width: 920px) {
-    display: none;
-  }
+*.has-accent {
+  color: var(--color-terminal-accent) !important;
 }

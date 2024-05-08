@@ -756,6 +756,10 @@
                <span class="cell">G        </span>
                <span class="cell">open project on Github</span>
              </div>
+             <div class="row is-not-interactive">
+               <span class="cell">V        </span>
+               <span class="cell">show version</span>
+             </div>
              <div class="row is-not-interactive"></div>
              <div class="row is-not-interactive">
                <span class="cell">T        </span>
@@ -3556,9 +3560,27 @@
             websocketSend({ action: `enumerate`, Host: host }, true);
       }
     },
+
+    /**
+     * Public - Display current version
+     */
+    version: function () {
+      state.message.category = 'report';
+      state.message.type = 'success';
+      state.message.title = 'Version';
+      state.message.content = `You are currently running the version <em class="has-accent">${VERSION}</em> of Isaiah.`;
+      state.message.isEnabled = true;
+      state.helper = 'message';
+      cmdRun(cmds._showPopup, 'message');
+    },
   };
 
   // === Variables
+
+  /**
+   * @type {string}
+   */
+  const VERSION = '-VERSION-';
 
   /**
    * @type {string}
@@ -3650,6 +3672,7 @@
     '?': 'help',
     '/': 'search',
     J: 'jump',
+    V: 'version',
 
     // Appearance
     '+': 'nextLayout', // Next layout
