@@ -1489,7 +1489,7 @@
       /**
        * @type {boolean}
        */
-      enableLogLinesWrap: false,
+      enableLogLinesWrap: true,
 
       /**
        * @type {boolean}
@@ -1504,12 +1504,17 @@
       /**
        * @type {boolean}
        */
-      enableOverviewOnLaunch: false,
+      enableOverviewOnLaunch: true,
 
       /**
        * @type {boolean}
        */
       enableLogLinesStrippedBackground: true,
+
+      /**
+       * @type {boolean}
+       */
+      enableJumpFuzzySearch: true,
     },
 
     /**
@@ -2438,24 +2443,55 @@
         )
         .flat();
 
-      let identifiedResources = resources.filter((r) =>
-        r._representation
-          .map((f) => f.value)
-          .join('|')
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      );
+      let identifiedResources = [];
 
-      if (state.jump.remoteResources.length > 0)
-        identifiedResources.push(
-          ...state.jump.remoteResources.filter((r) =>
-            r._representation
-              .map((f) => f.value)
-              .join('|')
-              .toLowerCase()
-              .includes(search.toLowerCase())
-          )
+      // Default search
+      if (!state.settings.enableJumpFuzzySearch)
+        identifiedResources = resources.filter((r) =>
+          r._representation
+            .map((f) => f.value)
+            .join('|')
+            .toLowerCase()
+            .includes(search.toLowerCase())
         );
+      // Fuzzy search
+      else {
+        const options = {
+          keys: ['Name'],
+          isCaseSensitive: false,
+          ignoreLocation: true,
+          threshold: 0.3,
+        };
+        const fuse = new Fuse(resources, options);
+        const results = fuse.search(search.toLowerCase());
+        identifiedResources = results.map((r) => r.item);
+      }
+
+      // Remote search
+      if (state.jump.remoteResources.length > 0)
+        if (!state.settings.enableJumpFuzzySearch)
+          // Default
+          identifiedResources.push(
+            ...state.jump.remoteResources.filter((r) =>
+              r._representation
+                .map((f) => f.value)
+                .join('|')
+                .toLowerCase()
+                .includes(search.toLowerCase())
+            )
+          );
+        // Fuzzy
+        else {
+          const options = {
+            keys: ['Name'],
+            isCaseSensitive: false,
+            ignoreLocation: true,
+            threshold: 0.3,
+          };
+          const fuse = new Fuse(state.jump.remoteResources, options);
+          const results = fuse.search(search.toLowerCase());
+          identifiedResources.push(...results.map((r) => r.item));
+        }
 
       state.jump.results = [...identifiedResources];
       state.navigation.currentMenuRow = 1;
@@ -4502,21 +4538,24 @@
       );
 
     // 1. Load user settings if any
-    state.appearance.currentTheme = lsGet('theme', 'default');
-    state.settings.enableMenuPrompt = lsGet('enableMenuPrompt', true);
-    state.settings.enableLogLinesWrap = lsGet('enableLogLinesWrap', false);
-    state.settings.enableLogLinesStrippedBackground = lsGet(
-      'enableLogLinesStrippedBackground',
-      true
-    );
-    state.settings.enableTimestampDisplay = lsGet(
-      'enableTimestampDisplay',
-      false
-    );
-    state.settings.enableOverviewOnLaunch = lsGet(
-      'enableOverviewOnLaunch',
-      true
-    );
+    // prettier-ignore
+    {
+      state.appearance.currentTheme = lsGet('theme', 'default');
+      state.settings.enableMenuPrompt = lsGet('enableMenuPrompt', true);
+      state.settings.enableLogLinesWrap = lsGet('enableLogLinesWrap', false);
+      state.settings.enableLogLinesStrippedBackground = lsGet('enableLogLinesStrippedBackground', true);
+      state.settings.enableTimestampDisplay = lsGet('enableTimestampDisplay', false);
+      state.settings.enableOverviewOnLaunch = lsGet('enableOverviewOnLaunch', true);
+      state.settings.enableJumpFuzzySearch = lsGet('enableJumpFuzzySearch', true);
+    }
+
+    // 1.1. Load fuzzy-search library if enabled by the user
+    if (state.settings.enableJumpFuzzySearch) {
+      const script = document.createElement('script');
+      script.type = `text/javascript`;
+      script.src = `/assets/js/lib.fuse.min.js`;
+      document.head.appendChild(script);
+    }
 
     // 2. Connect to server (first execution loop)
     websocketConnect();
