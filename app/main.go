@@ -274,8 +274,8 @@ func main() {
 
 	// WS - Handle user commands
 	_server.Melody.HandleMessage(func(session *melody.Session, message []byte) {
-		// go _server.Handle(session, message)
-		_server.Handle(session, message)
+		go _server.Handle(session, message)
+		// _server.Handle(session, message)
 	})
 
 	// WS - Handle user disconnection
