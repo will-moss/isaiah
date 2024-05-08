@@ -661,6 +661,7 @@ Big thanks to the individuals / teams behind these projects :
 - [Heroicons](https://github.com/tailwindlabs/heroicons) : For the great icons.
 - [Melody](https://github.com/olahol/melody) : For the awesome Websocket implementation in Go.
 - [GoReleaser](https://github.com/goreleaser/goreleaser) : For the amazing release tool.
+- [Fuse](https://github.com/krisk/fuse) : For the amazing fuzzy-search library.
 - The countless others!
 
 And don't forget to mention Isaiah if it makes your life easier!
