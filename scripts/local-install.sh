@@ -22,6 +22,11 @@ npx --yes babel ./client/assets/js/isaiah.js --out-file ./client/assets/js/isaia
 # Minify JS
 npx --yes terser ./client/assets/js/isaiah.js -o ./client/assets/js/isaiah.js
 
+# Append a version parameter to the main JS & CSS linked files to prevent caching
+VERSION=$(git describe --tags --abbrev=0)
+sed -i.bak "s/isaiah.js/isaiah.js?v=$VERSION/" ./client/index.html
+sed -i.bak "s/style.css/style.css?v=$VERSION/" ./client/index.html
+
 # Build the app
 go build -o isaiah main.go
 
@@ -29,6 +34,9 @@ go build -o isaiah main.go
 rm -f ./client/assets/css/tmp.css
 rm -f ./client/assets/css/style.css
 mv ./client/assets/js/isaiah.backup.js ./client/assets/js/isaiah.js
+
+# Remove backup files
+rm -f ./client/index.html.bak
 
 DESTINATION="/usr/bin"
 if [ -d "/usr/local/bin" ]; then
