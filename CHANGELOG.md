@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/will-moss/isaiah/compare/1.14.1...1.15.0) (2024-05-08)
+
+
+### Features
+
+* **client:** added a Version command to display the current version of Isaiah in the browser ([93725d1](https://github.com/will-moss/isaiah/commit/93725d1327fb595fb0c316ba4bdb270fb7c2dff0))
+
 ## [1.14.1](https://github.com/will-moss/isaiah/compare/1.14.0...1.14.1) (2024-05-07)
 
 
