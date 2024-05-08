@@ -1,3 +1,13 @@
+# [1.16.0](https://github.com/will-moss/isaiah/compare/1.15.0...1.16.0) (2024-05-08)
+
+
+### Features
+
+* **client:** you can now pull the highlighted image without having to type anything ([16b9186](https://github.com/will-moss/isaiah/commit/16b918626af34d546f9e4301f644e9798e69c752))
+* **jump:** added support for fuzzy-searching, with option to enable/disable it ([db4b2f7](https://github.com/will-moss/isaiah/commit/db4b2f70c2b068c108e86080885d6d04ebe923e7))
+* **jump:** you can now cancel the jump action or confirm it without waiting for remote hosts search ([08b4bf9](https://github.com/will-moss/isaiah/commit/08b4bf9d55f71630cce4798671f519ce6a21822d))
+* **server:** enabled native Goroutines to improve performance and enable anticipated cancels ([e20e02f](https://github.com/will-moss/isaiah/commit/e20e02f56cfac7376c8175f56fcea2ed8b13ef60))
+
 # [1.15.0](https://github.com/will-moss/isaiah/compare/1.14.1...1.15.0) (2024-05-08)
 
 
