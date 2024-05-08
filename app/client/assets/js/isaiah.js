@@ -2179,11 +2179,20 @@
      * @param {string} args.Image
      */
     _imagePull: function (args) {
-      if (!args.Image || args.Image.length === 0) return;
-      websocketSend({
-        action: 'image.pull',
-        args: { Image: args.Image },
-      });
+      // No text typed -> Use the current image's name
+      if (!args.Image || args.Image.length === 0) {
+        const currentImage = sgetCurrentRow();
+        websocketSend({
+          action: 'image.pull',
+          args: { Image: `${currentImage.Name}:${currentImage.Version}` },
+        });
+      }
+      // Else -> Use the user-supplied name
+      else
+        websocketSend({
+          action: 'image.pull',
+          args: { Image: args.Image },
+        });
     },
 
     /**
@@ -3202,7 +3211,8 @@
         input: {
           isEnabled: true,
           name: 'Image',
-          placeholder: '[repository/]name[:tag]',
+          placeholder:
+            '[repository/]name[:tag] -- Leave empty to pull the current image',
         },
         callback: cmds._imagePull,
       });
