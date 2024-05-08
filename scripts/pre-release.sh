@@ -25,3 +25,4 @@ npx --yes terser ./client/assets/js/isaiah.js -o ./client/assets/js/isaiah.js
 VERSION=$(git describe --tags --abbrev=0)
 sed -i.bak "s/isaiah.js/isaiah.js?v=$VERSION/" ./client/index.html
 sed -i.bak "s/style.css/style.css?v=$VERSION/" ./client/index.html
+sed -i.bak "s/-VERSION-/$VERSION/" ./client/assets/js/isaiah.js

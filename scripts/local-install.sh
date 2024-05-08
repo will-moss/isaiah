@@ -26,6 +26,7 @@ npx --yes terser ./client/assets/js/isaiah.js -o ./client/assets/js/isaiah.js
 VERSION=$(git describe --tags --abbrev=0)
 sed -i.bak "s/isaiah.js/isaiah.js?v=$VERSION/" ./client/index.html
 sed -i.bak "s/style.css/style.css?v=$VERSION/" ./client/index.html
+sed -i.bak "s/-VERSION-/$VERSION/" ./client/assets/js/isaiah.js
 
 # Build the app
 go build -o isaiah main.go
@@ -37,6 +38,7 @@ mv ./client/assets/js/isaiah.backup.js ./client/assets/js/isaiah.js
 
 # Remove backup files
 rm -f ./client/index.html.bak
+rm -f ./client/assets/js/isaiah.js.bak
 
 DESTINATION="/usr/bin"
 if [ -d "/usr/local/bin" ]; then
