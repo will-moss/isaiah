@@ -1794,7 +1794,10 @@
     if (!state.isConnected) return false;
 
     // Prevent running anything while loading
-    if (state.isLoading) return false;
+    if (state.isLoading) {
+      // Except in jump mode
+      if (!state.jump.isEnabled) return false;
+    }
 
     // Prevent running anything other than submit while unauthenticated
     if (!state.isAuthenticated && !['confirm'].includes(cmd)) return false;
@@ -2664,6 +2667,7 @@
           sgetCurrentTab().Rows.findIndex((r) =>
             r.ID ? r.ID === currentResult.ID : r.Name === currentResult.Name
           ) + 1;
+        state.isLoading = false;
 
         cmdRun(cmds._inspectorTabs);
 
@@ -2729,6 +2733,7 @@
 
       if (state.jump.isEnabled) {
         cmdRun(cmds._clearJump);
+        state.isLoading = false;
         return;
       }
 
@@ -4337,6 +4342,9 @@
         }
 
         if ('Enumeration' in notification.Content) {
+          // Jump can be disabled if we chose a local resource before enumeration finished
+          if (!state.jump.isEnabled) return;
+
           state.jump.remoteResources.push(
             ...notification.Content.Enumeration.map((t) =>
               t.Rows.map((r) => ({
