@@ -956,6 +956,8 @@
    * @param {state} _state
    */
   const renderApp = (_state) => {
+    if (_state.shouldStopRendering) return;
+
     let html;
 
     // -1. Set app's theme
@@ -1374,6 +1376,11 @@
      * @type {boolean}
      */
     isFullyEmpty: true,
+
+    /**
+     * @type {boolean}
+     */
+    shouldStopRendering: false,
 
     /**
      * @returns {boolean}
@@ -1891,6 +1898,9 @@
     // console.log(cmdString, isAllowed);
 
     if (!isAllowed) return;
+
+    // Any allowed command will deactivate the render-blocker
+    state.shouldStopRendering = false;
 
     cmd(...args);
 
@@ -2468,7 +2478,7 @@
       }
 
       // Remote search
-      if (state.jump.remoteResources.length > 0)
+      if (state.jump.remoteResources.length > 0) {
         if (!state.settings.enableJumpFuzzySearch)
           // Default
           identifiedResources.push(
@@ -2492,6 +2502,7 @@
           const results = fuse.search(search.toLowerCase());
           identifiedResources.push(...results.map((r) => r.item));
         }
+      }
 
       state.jump.results = [...identifiedResources];
       state.navigation.currentMenuRow = 1;
@@ -4126,6 +4137,21 @@
   };
 
   /**
+   * Called every time the user moves their mouse.
+   * This listener is responsible only for allowing
+   * the user to interrupt the rendering loop when
+   * hovering the Inspector's Logs, so they can select text
+   * and not lose it on every render loop
+   */
+  const listenerMouseMove = (evt) => {
+    if (state.inspector.currentTab !== 'Logs') return;
+
+    const inspector = hgetTab('inspector');
+
+    state.shouldStopRendering = inspector.matches(':hover') ? true : false;
+  };
+
+  /**
    * Called when the browser has succesfully established a
    * Websocket connection with the server
    */
@@ -4312,6 +4338,7 @@
           state.menu.actions = notification.Content.Actions;
           state.navigation.currentMenuRow = 1;
           state.helper = 'menu';
+          state.isLoading = false;
 
           cmdRun(cmds._showPopup, 'menu');
         }
@@ -4566,5 +4593,6 @@
 
     // 4. Set mouse listener (third execution loop)
     window.addEventListener('click', listenerMouseClick);
+    window.addEventListener('mousemove', listenerMouseMove);
   });
 })(window);
