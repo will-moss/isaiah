@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/will-moss/isaiah/compare/1.17.1...1.18.0) (2024-05-10)
+
+
+### Features
+
+* **client:** added a check against Github to display the latest version available when V is pressed ([c9d8e15](https://github.com/will-moss/isaiah/commit/c9d8e15df87e157c8783240d43d73e7073890674))
+
 ## [1.17.1](https://github.com/will-moss/isaiah/compare/1.17.0...1.17.1) (2024-05-10)
 
 
