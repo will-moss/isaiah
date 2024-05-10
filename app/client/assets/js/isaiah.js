@@ -3643,8 +3643,8 @@
 
           state.message.content +=
             d.tag_name === VERSION
-              ? `<br />It is the most recent version released.`
-              : `<br />The more recent version <em class="has-accent">${latestVersion}</em> is available.`;
+              ? `<span class="line-break"></span>It is the most recent version available.`
+              : `<span class="line-break"></span>The more recent version <em class="has-accent">${latestVersion}</em> is available.`;
 
           cmdRun(cmds._render);
         });
