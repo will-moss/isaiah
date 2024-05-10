@@ -1,3 +1,10 @@
+## [1.17.1](https://github.com/will-moss/isaiah/compare/1.17.0...1.17.1) (2024-05-10)
+
+
+### Bug Fixes
+
+* **client:** added a control to prevent interferences with logs' text selection and mouse clicks ([ede576e](https://github.com/will-moss/isaiah/commit/ede576ee36743f27926010cdcc549cabbc5353bc))
+
 # [1.17.0](https://github.com/will-moss/isaiah/compare/1.16.0...1.17.0) (2024-05-10)
 
 
