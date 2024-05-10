@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/will-moss/isaiah/compare/1.16.0...1.17.0) (2024-05-10)
+
+
+### Features
+
+* **client:** you can now select and copy logs with your mouse, without losing selection on refresh ([1aa3c53](https://github.com/will-moss/isaiah/commit/1aa3c53089d72313925080a00927541ddbf57a6b))
+
 # [1.16.0](https://github.com/will-moss/isaiah/compare/1.15.0...1.16.0) (2024-05-08)
 
 
