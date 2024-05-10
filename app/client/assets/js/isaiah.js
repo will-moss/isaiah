@@ -3635,6 +3635,19 @@
       state.message.isEnabled = true;
       state.helper = 'message';
       cmdRun(cmds._showPopup, 'message');
+
+      fetch(`https://api.github.com/repos/will-moss/isaiah/releases/latest`)
+        .then((r) => r.json())
+        .then((d) => {
+          const latestVersion = d.tag_name;
+
+          state.message.content +=
+            d.tag_name === VERSION
+              ? `<br />It is the most recent version released.`
+              : `<br />The more recent version <em class="has-accent">${latestVersion}</em> is available.`;
+
+          cmdRun(cmds._render);
+        });
     },
   };
 
