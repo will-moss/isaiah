@@ -1900,7 +1900,8 @@
     if (!isAllowed) return;
 
     // Any allowed command will deactivate the render-blocker
-    state.shouldStopRendering = false;
+    if (!['_render', '_enterInspect', 'confirm'].includes(cmdString))
+      state.shouldStopRendering = false;
 
     cmd(...args);
 
