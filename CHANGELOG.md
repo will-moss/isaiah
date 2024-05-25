@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/will-moss/isaiah/compare/1.18.0...1.19.0) (2024-05-25)
+
+
+### Features
+
+* **style:** increased the line-break's height in the version popup ([ba3e17b](https://github.com/will-moss/isaiah/commit/ba3e17b843c1afa412273262dbe47f0dcdc795e3))
+
 # [1.18.0](https://github.com/will-moss/isaiah/compare/1.17.1...1.18.0) (2024-05-10)
 
 
