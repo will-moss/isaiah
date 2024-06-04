@@ -4154,11 +4154,11 @@
    * Called every time the user moves their mouse.
    * This listener is responsible only for allowing
    * the user to interrupt the rendering loop when
-   * hovering the Inspector's Logs, so they can select text
+   * hovering the Inspector, so they can select text
    * and not lose it on every render loop
    */
   const listenerMouseMove = (evt) => {
-    if (state.inspector.currentTab !== 'Logs') return;
+    // if (state.inspector.currentTab !== 'Logs') return;
 
     const inspector = hgetTab('inspector');
 
