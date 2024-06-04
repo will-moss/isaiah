@@ -1,3 +1,15 @@
+# [1.20.0](https://github.com/will-moss/isaiah/compare/1.19.0...1.20.0) (2024-06-04)
+
+
+### Bug Fixes
+
+* **server:** the client won't hang anymore when trying to retrieve stats from a Created Container ([d89bd8a](https://github.com/will-moss/isaiah/commit/d89bd8a272104679db9e84381ceddba25896077f)), closes [#3](https://github.com/will-moss/isaiah/issues/3)
+
+
+### Features
+
+* **client:** extended the hover render-blocking mechanism to all of the inspector's tabs ([520118f](https://github.com/will-moss/isaiah/commit/520118f5ea864146474a295069e40c416dd596c9)), closes [#3](https://github.com/will-moss/isaiah/issues/3)
+
 # [1.19.0](https://github.com/will-moss/isaiah/compare/1.18.0...1.19.0) (2024-05-25)
 
 
