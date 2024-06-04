@@ -546,7 +546,7 @@ func (c Container) GetTop(client *client.Client) (ui.Table, error) {
 
 // Inspector - Retrieve the stats of the Docker container
 func (c Container) GetStats(client *client.Client) (ui.InspectorContent, error) {
-	if c.State == "exited" {
+	if c.State == "exited" || c.State == "created" {
 		return ui.InspectorContent{
 			ui.InspectorContentPart{
 				Type:    "table",
