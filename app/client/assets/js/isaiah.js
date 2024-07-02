@@ -4158,9 +4158,9 @@
    * and not lose it on every render loop
    */
   const listenerMouseMove = (evt) => {
-    // if (state.inspector.currentTab !== 'Logs') return;
-
     const inspector = hgetTab('inspector');
+
+    if (!inspector) return;
 
     state.shouldStopRendering = inspector.matches(':hover') ? true : false;
   };
