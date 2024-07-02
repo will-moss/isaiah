@@ -1,3 +1,10 @@
+## [1.20.1](https://github.com/will-moss/isaiah/compare/1.20.0...1.20.1) (2024-07-02)
+
+
+### Bug Fixes
+
+* **client:** added a check to prevent Javascript errors while the Inspector is still not loaded ([ba83ceb](https://github.com/will-moss/isaiah/commit/ba83ceb606cd2add630c9f1dbe199a0246fefc27))
+
 # [1.20.0](https://github.com/will-moss/isaiah/compare/1.19.0...1.20.0) (2024-06-04)
 
 
