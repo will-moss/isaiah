@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/will-moss/isaiah/compare/1.20.1...1.21.0) (2024-07-16)
+
+
+### Features
+
+* **preferences:** added support for server-based preferences, rather than client-based ([b4c6aad](https://github.com/will-moss/isaiah/commit/b4c6aade5e822ff1e8d433f5866e9ab952373fc7)), closes [#4](https://github.com/will-moss/isaiah/issues/4)
+
 ## [1.20.1](https://github.com/will-moss/isaiah/compare/1.20.0...1.20.1) (2024-07-02)
 
 
