@@ -23,6 +23,7 @@ func (Authentication) RunCommand(server *Server, session _session.GenericSession
 					"Authentication": ui.JSON{
 						"Message": "Your are now authenticated",
 					},
+					"Preferences": server.GetPreferences(),
 				},
 			}))
 			break
@@ -82,6 +83,7 @@ func (Authentication) RunCommand(server *Server, session _session.GenericSession
 					"Authentication": ui.JSON{
 						"Message": "Your are now authenticated",
 					},
+					"Preferences": server.GetPreferences(),
 				},
 			}),
 		)

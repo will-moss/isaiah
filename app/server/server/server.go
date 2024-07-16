@@ -114,7 +114,11 @@ func (server *Server) runCommand(session _session.GenericSession, command ui.Com
 			server.SendNotification(
 				session,
 				ui.NotificationInit(ui.NotificationParams{
-					Content: ui.JSON{"Tabs": tabs, "Agents": agents, "Hosts": hosts},
+					Content: ui.JSON{
+						"Tabs":   tabs,
+						"Agents": agents,
+						"Hosts":  hosts,
+					},
 				}))
 		} else if command.Action == "enumerate" {
 			// `enumerate` is used only in the context of the `Jump` command
@@ -325,6 +329,7 @@ func (server *Server) Handle(session _session.GenericSession, message ...[]byte)
 						"Spontaneous": true,
 						"Message":     "Your are now authenticated",
 					},
+					"Preferences": server.GetPreferences(),
 				},
 			}))
 		}
@@ -455,4 +460,15 @@ func (s *Server) SetHost(name string) {
 
 	s.Docker = _client.NewClientWithOpts(client.WithHost(correspondingHost[1]))
 	s.CurrentHostName = name
+}
+
+func (s *Server) GetPreferences() ui.Preferences {
+	var preferences = make(ui.Preferences, 0)
+	for k, v := range _os.GetFullEnv() {
+		if strings.HasPrefix(k, "CLIENT_PREFERENCE_") {
+			preferences[k] = v
+		}
+	}
+
+	return preferences
 }
