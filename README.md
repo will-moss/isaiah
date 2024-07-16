@@ -444,6 +444,7 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `FORWARD_PROXY_AUTHENTICATION_ENABLED`    | `boolean` | Whether Isaiah should accept authentication headers from a forward proxy. | False        |
 | `FORWARD_PROXY_AUTHENTICATION_HEADER_KEY` | `string` | The name of the authentication header sent by the forward proxy after a succesful authentication. | Remote-User        |
 | `FORWARD_PROXY_AUTHENTICATION_HEADER_VALUE` | `string` | The value accepted by Isaiah for the authentication header. Using `*` means that all values are accepted (except emptiness). This parameter can be used to enforce that only a specific user or group can access Isaiah (e.g. `admins` or `john`). | * |
+| `CLIENT_PREFERENCE_XXX` | `string` | Please read [this troubleshooting paragraph](#the-web-interface-does-not-save-my-preferences). These settings enable you to define your client preferences on the server, for when your browser can't use the `localStorage` due to limitations, or private browsing. | Empty |
 
 > **Note :** Boolean values are case-insensitive, and can be represented via "ON" / "OFF" / "TRUE" / "FALSE" / 0 / 1.
 
@@ -570,7 +571,7 @@ In this case, please edit the `TTY_SERVER_COMMAND` and `TTY_CONTAINER_COMMAND` s
 #### The connection with the remote server randomly stops or restarts
 
 This is a known incident that happens when the Websocket server receives a data message that exceeds its maximum read size.
-You should be able to fix that by updating the `SERVER_MAX_READ_SIZE` setting to a higher value (default is 1024 bytes).
+You should be able to fix that by updating the `SERVER_MAX_READ_SIZE` setting to a higher value (default is 100,000 bytes).
 This operation shouldn't cause any problem or impact performances.
 
 #### I can neither click nor use the keyboard, nothing happens
@@ -595,6 +596,27 @@ If you haven't already, please read about the `SERVER_MAX_READ_SIZE` setting in 
 That incident occurs when the Websocket messages sent from the client to the server are too big.
 The server's reaction to overly large messages sent over Websocket is to close the connection with the client.
 When that happens, Isaiah (as a client in your browser) automatically reopens a connection with the server, hence explaining the "crash-restart" cycle.
+
+#### The web interface does not save my preferences
+
+First, please ensure that your browser supports the `localStorage` API.
+
+Second, please ensure that you're not using the `private browsing` or `incognito` or `anonymous browsing` mode. This mode will
+turn off the `localStorage`, hence disabling the user preferences saved by Isaiah in your browser.
+
+If you wish to use Isaiah inside a private browser window while still having your preferences stored somewhere, use the
+`CLIENT_PREFERENCE_XXX` settings in your deployment. These settings will be stored server-side, and understood by your browser
+without ever using `localStorage`, hence circumventing the limitation of the private browsing mode.
+
+All the preferences described in the second table of [Configuration](#configuration) are available server-side, using their uppercased-underscore counterpart.
+See below :
+- `theme` becomes `CLIENT_PREFERENCE_THEME`
+- `enableOverviewOnLaunch` becomes `CLIENT_PREFERENCE_ENABLE_OVERVIEW_ON_LAUNCH`
+- `enableMenuPrompt` becomes `CLIENT_PREFERENCE_ENABLE_MENU_PROMPT`
+- `enableLogLinesWrap` becomes `CLIENT_PREFERENCE_ENABLE_LOG_LINES_WRAP`
+- `enableJumpFuzzySearch` becomes `CLIENT_PREFERENCE_ENABLE_JUMP_FUZZY_SEARCH`
+- `enableTimestampDisplay` becomes `CLIENT_PREFERENCE_ENABLE_TIMESTAMP_DISPLAY`
+- `enableLogLinesStrippedBackground` becomes `CLIENT_PREFERENCE_ENABLE_LOG_LINES_STRIPPED_BACKGROUND`
 
 #### A feature that works on desktop is missing from the mobile user interface
 
