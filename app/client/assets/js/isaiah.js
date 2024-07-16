@@ -68,6 +68,13 @@
   };
 
   /**
+   * Determine whether a key-value association exists in the localStorage
+   * @param {string} key
+   * @returns {boolean}
+   */
+  const lsExists = (key) => (localStorage.getItem(key) === null ? false : true);
+
+  /**
    * Retrieve a value from localStorage, with support for booleans and default value
    * @param {string} key
    * @param {*} d
@@ -84,7 +91,7 @@
   /**
    * Determine the general type of a variable
    * @param {*} v
-   * @returns {'string'|'numeric'|'date'}
+   * @returns {'string'|'numeric'}
    */
   const getGeneralType = (v) => {
     if (typeof v !== 'string') v = v.toString();
@@ -4285,6 +4292,32 @@
         break;
 
       case 'auth':
+        // Load server-sent preferences if any
+        if ('Preferences' in notification.Content) {
+          for (const entry of Object.entries(
+            notification.Content.Preferences
+          )) {
+            // Camelize the the original key
+            const newKey = entry[0]
+              .replace('CLIENT_PREFERENCE_', '')
+              .toLowerCase()
+              .replace(/[^a-zA-Z0-9]+(.)/g, (m, chr) => chr.toUpperCase());
+
+            // Turn the stringified value into a typed variable
+            let newValue = null;
+            if (['true', '1', 'on'].includes(entry[1].toLowerCase()))
+              newValue = true;
+            else if (['false', '0', 'off'].includes(entry[1].toLowerCase()))
+              newValue = false;
+            else newValue = entry[1];
+
+            // Update the current preferences if unset
+            if (!lsExists(newKey))
+              if (newKey !== 'theme') state.settings[newKey] = newValue;
+              else state.appearance.currentTheme = newValue;
+          }
+        }
+
         if ('Authentication' in notification.Content) {
           state.message.category = 'authentication';
           state.message.type = notification.Type;
