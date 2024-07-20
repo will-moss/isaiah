@@ -110,7 +110,7 @@ func (Volumes) RunCommand(server *Server, session _session.GenericSession, comma
 					Content: ui.JSON{
 						"Message": "It seems that you're running Docker on MacOS. On this operating system" +
 							" Docker works inside a virtual machine, and therefore volumes can't be accessed" +
-							" directly"},
+							" directly."},
 				}),
 			)
 			break
@@ -122,10 +122,8 @@ func (Volumes) RunCommand(server *Server, session _session.GenericSession, comma
 				ui.NotificationError(ui.NP{
 					Content: ui.JSON{
 						"Message": "It seems that you're running Isaiah inside a Docker container." +
-							" In this case, external volumes can't be accessed directly unless" +
-							" they are mounted on the current Docker container as well." +
-							" If this is the case, you can open a regular shell using S" +
-							" and navigate to your volume's (bind) mountpoint",
+							" In this case, external volumes can't be accessed directly because" +
+							" Isaiah is bound to its container and it can't access the volumes on your hosting system.",
 					},
 				}),
 			)

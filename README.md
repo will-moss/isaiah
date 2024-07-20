@@ -568,6 +568,9 @@ Ultimately, please also note that in a multi-node / multi-host setup, the extra 
 The default commands used to spawn a shell, although being more or less standard, may not fit your environment.
 In this case, please edit the `TTY_SERVER_COMMAND` and `TTY_CONTAINER_COMMAND` settings to define a command that works better in your setup.
 
+Also, please note that if you have deployed Isaiah using Docker, trying to open a system shell (`S` key) will not work.
+Isaiah being confined to its Docker container, it won't be able to open a shell out of it (on your hosting system).
+
 #### The connection with the remote server randomly stops or restarts
 
 This is a known incident that happens when the Websocket server receives a data message that exceeds its maximum read size.
