@@ -1,3 +1,10 @@
+## [1.21.1](https://github.com/will-moss/isaiah/compare/1.21.0...1.21.1) (2024-07-20)
+
+
+### Bug Fixes
+
+* **shell:** disabled system shell feature when inside a Docker container, and added documentation ([af61d3b](https://github.com/will-moss/isaiah/commit/af61d3bf38dc5a1ce7686c57ed9c8d2e90f93132))
+
 # [1.21.0](https://github.com/will-moss/isaiah/compare/1.20.1...1.21.0) (2024-07-16)
 
 
