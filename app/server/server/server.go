@@ -149,6 +149,20 @@ func (server *Server) runCommand(session _session.GenericSession, command ui.Com
 
 	// Command : Open shell on the server
 	case "shell":
+		if _os.GetEnv("DOCKER_RUNNING") == "TRUE" {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a Docker container." +
+							" In this case, opening a system shell isn't available because" +
+							" Isaiah is bound to its container and it can't access the shell on your hosting system.",
+					},
+				}),
+			)
+			break
+		}
+
 		terminal := tty.New(_io.CustomWriter{WriteFunction: func(p []byte) {
 			server.SendNotification(
 				session,
