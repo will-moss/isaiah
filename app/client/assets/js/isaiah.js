@@ -3220,6 +3220,19 @@
     },
 
     /**
+     * Public - Container-only - Update
+     */
+    update: function () {
+      console.log('called');
+      if (sgetCurrentTabKey() !== 'containers') return;
+
+      websocketSend({
+        action: `container.update`,
+        args: { Resource: sgetCurrentRow() },
+      });
+    },
+
+    /**
      * Public - Container-only - Exec shell
      */
     shellContainer: function () {
@@ -3741,6 +3754,7 @@
     s: 'stop',
     r: 'run_restart',
     m: 'rename',
+    u: 'update',
     E: 'shellContainer',
     S: 'shellSystem',
     R: 'reload',

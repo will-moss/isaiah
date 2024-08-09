@@ -53,7 +53,7 @@ Isaiah is a self-hostable service that enables you to manage all your Docker res
 Isaiah has all these features implemented :
 - For containers :
     - Bulk stop, Bulk remove, Prune
-    - Remove, Pause, Unpause, Restart, Rename, Open in browser
+    - Remove, Pause, Unpause, Restart, Rename, Update, Open in browser
     - Open a shell inside the container (from your browser)
     - Inspect (live logs, stats, env, full configuration, top)
 - For images :
