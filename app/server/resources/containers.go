@@ -18,6 +18,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/fatih/structs"
@@ -101,6 +102,13 @@ func ContainerSingleActions() []ui.MenuAction {
 			Command:          "rename",
 			RequiresResource: false,
 			RunLocally:       true,
+		},
+		ui.MenuAction{
+			Key:              "u",
+			Label:            "update container",
+			Command:          "container.update",
+			Prompt:           "(Experimental) This will kill the current container, pull the newest image, and create a new container with the same configuration. Do you want to proceed?",
+			RequiresResource: true,
 		},
 		ui.MenuAction{
 			Key:              "E",
@@ -428,6 +436,69 @@ func (c Container) GetBrowserUrl(client *client.Client) (string, error) {
 func (c Container) Rename(client *client.Client, newName string) error {
 	err := client.ContainerRename(context.Background(), c.ID, newName)
 	return err
+}
+
+func (c Container) Update(client *client.Client) error {
+	inspection, err := c.Inspect(client)
+
+	if err != nil {
+		return err
+	}
+
+	err = c.Stop(client)
+
+	if err != nil {
+		return err
+	}
+
+	err = c.Remove(client, true, false)
+
+	if err != nil {
+		return err
+	}
+
+	task := process.LongTask{
+		Function: ImagePull,
+		Args:     map[string]interface{}{"Image": inspection.Config.Image},
+		OnStep:   func(update string) {},
+		OnError: func(_err error) {
+			err = _err
+		},
+		OnDone: func() {},
+	}
+	task.RunSync(client)
+
+	if err != nil {
+		return err
+	}
+
+	response, err := client.ContainerCreate(
+		context.Background(),
+		inspection.Config,
+		inspection.HostConfig,
+		&network.NetworkingConfig{
+			EndpointsConfig: inspection.NetworkSettings.Networks,
+		},
+		nil,
+		inspection.Name,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// Start the container
+	err = client.ContainerStart(
+		context.Background(),
+		response.ID,
+		types.ContainerStartOptions{},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Inspector - Retrieve the logs written by the Docker container

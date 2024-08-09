@@ -352,6 +352,24 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 				Follow:  "containers.list",
 			}))
 
+	// Single - Update
+	case "container.update":
+		var container resources.Container
+		mapstructure.Decode(command.Args["Resource"], &container)
+		err := container.Update(server.Docker)
+
+		if err != nil {
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+			break
+		}
+
+		server.SendNotification(
+			session,
+			ui.NotificationSuccess(ui.NP{
+				Content: ui.JSON{"Message": "Your container was succesfully updated"},
+				Follow:  "containers.list",
+			}))
+
 	// Single - Get inspector tabs
 	case "container.inspect.tabs":
 		server.SendNotification(
