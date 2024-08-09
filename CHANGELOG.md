@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/will-moss/isaiah/compare/1.21.1...1.22.0) (2024-08-09)
+
+
+### Features
+
+* **project:** added support for updating a container (down, pull, up) ([d42ca7b](https://github.com/will-moss/isaiah/commit/d42ca7bc780cca040878e7281030e0e5d3c339c6))
+
 ## [1.21.1](https://github.com/will-moss/isaiah/compare/1.21.0...1.21.1) (2024-07-20)
 
 
