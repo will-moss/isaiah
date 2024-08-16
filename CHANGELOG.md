@@ -1,3 +1,11 @@
+# [1.23.0](https://github.com/will-moss/isaiah/compare/1.22.0...1.23.0) (2024-08-16)
+
+
+### Features
+
+* **project:** added full support for Docker stacks (docker-compose projects) ([4becb31](https://github.com/will-moss/isaiah/commit/4becb31a62fa8f3d048298c50c49dce263daa444))
+* **project:** added support for editing containers (down, edit the docker run command, recreate) ([834d024](https://github.com/will-moss/isaiah/commit/834d0246f44352431e2a2010b65205b87dfeca79))
+
 # [1.22.0](https://github.com/will-moss/isaiah/compare/1.21.1...1.22.0) (2024-08-09)
 
 
