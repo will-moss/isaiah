@@ -16,6 +16,7 @@ import (
 	"will-moss/isaiah/server/resources"
 	"will-moss/isaiah/server/ui"
 
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/olahol/melody"
 )
@@ -79,35 +80,59 @@ func (server *Server) runCommand(session _session.GenericSession, command ui.Com
 	case "init", "enumerate":
 		var tabs []ui.Tab
 
-		containers := resources.ContainersList(server.Docker)
+		tabs_enabled := strings.Split(strings.ToLower(_os.GetEnv("TABS_ENABLED")), ",")
+
+		containers := resources.ContainersList(server.Docker, filters.Args{})
 		images := resources.ImagesList(server.Docker)
 		volumes := resources.VolumesList(server.Docker)
 		networks := resources.NetworksList(server.Docker)
+		stacks := resources.StacksList(server.Docker)
 		agents := server.Agents.ToStrings()
 		hosts := server.Hosts.ToStrings()
+
+		if len(stacks) > 0 {
+			columns := strings.Split(_os.GetEnv("COLUMNS_STACKS"), ",")
+			rows := stacks.ToRows(columns)
+
+			if slices.Contains(tabs_enabled, "stacks") {
+				tabs = append(tabs, ui.Tab{Key: "stacks", Title: "Stacks", Rows: rows, SortBy: _os.GetEnv("SORTBY_STACKS")})
+			}
+		}
 
 		if len(containers) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_CONTAINERS"), ",")
 			rows := containers.ToRows(columns)
-			tabs = append(tabs, ui.Tab{Key: "containers", Title: "Containers", Rows: rows, SortBy: _os.GetEnv("SORTBY_CONTAINERS")})
+
+			if slices.Contains(tabs_enabled, "containers") {
+				tabs = append(tabs, ui.Tab{Key: "containers", Title: "Containers", Rows: rows, SortBy: _os.GetEnv("SORTBY_CONTAINERS")})
+			}
 		}
 
 		if len(images) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_IMAGES"), ",")
 			rows := images.ToRows(columns)
-			tabs = append(tabs, ui.Tab{Key: "images", Title: "Images", Rows: rows, SortBy: _os.GetEnv("SORTBY_IMAGES")})
+
+			if slices.Contains(tabs_enabled, "images") {
+				tabs = append(tabs, ui.Tab{Key: "images", Title: "Images", Rows: rows, SortBy: _os.GetEnv("SORTBY_IMAGES")})
+			}
 		}
 
 		if len(volumes) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_VOLUMES"), ",")
 			rows := volumes.ToRows(columns)
-			tabs = append(tabs, ui.Tab{Key: "volumes", Title: "Volumes", Rows: rows, SortBy: _os.GetEnv("SORTBY_VOLUMES")})
+
+			if slices.Contains(tabs_enabled, "volumes") {
+				tabs = append(tabs, ui.Tab{Key: "volumes", Title: "Volumes", Rows: rows, SortBy: _os.GetEnv("SORTBY_VOLUMES")})
+			}
 		}
 
 		if len(networks) > 0 {
 			columns := strings.Split(_os.GetEnv("COLUMNS_NETWORKS"), ",")
 			rows := networks.ToRows(columns)
-			tabs = append(tabs, ui.Tab{Key: "networks", Title: "Networks", Rows: rows, SortBy: _os.GetEnv("SORTBY_NETWORKS")})
+
+			if slices.Contains(tabs_enabled, "networks") {
+				tabs = append(tabs, ui.Tab{Key: "networks", Title: "Networks", Rows: rows, SortBy: _os.GetEnv("SORTBY_NETWORKS")})
+			}
 		}
 
 		if command.Action == "init" {
@@ -448,6 +473,8 @@ func (server *Server) Handle(session _session.GenericSession, message ...[]byte)
 			h = Volumes{}
 		case strings.HasPrefix(command.Action, "network"):
 			h = Networks{}
+		case strings.HasPrefix(command.Action, "stack"):
+			h = Stacks{}
 		case strings.HasPrefix(command.Action, "agent"):
 			h = Agents{}
 		default:

@@ -515,9 +515,16 @@
           case 'lines':
             if (Array.isArray(inspectorPart.Content))
               for (const line of inspectorPart.Content)
-                html += `<div class="row is-textual is-not-interactive">${line}</div>`;
+                // prettier-ignore
+                html += `<div class="row is-textual is-not-interactive">${removeEscapeSequences(line)}</div>`;
             else
-              html += `<div class="row is-textual is-not-interactive">${inspectorPart.Content}</div>`;
+              // prettier-ignore
+              html += `<div class="row is-textual is-not-interactive">${removeEscapeSequences(inspectorPart.Content)}</div>`;
+            break;
+
+          case 'code':
+            // prettier-ignore
+            html += `<pre><code class="language-yaml">${inspectorPart.Content.join('\n')}</code></pre>`;
             break;
         }
 
@@ -548,14 +555,42 @@
    * @returns {string}
    */
   const renderPrompt = (prompt) => {
-    const classname = prompt.isForAuthentication ? 'for-login' : '';
+    let classname = prompt.isForAuthentication ? 'for-login' : '';
     const title = prompt.input.isEnabled ? 'Input' : 'Confirm';
+
+    // prettier-ignore
     const body = prompt.input.isEnabled
-      ? `<div class="cell">${prompt.input.name}:</div><input placeholder="${
-          prompt.input.placeholder
-        } "type="${
-          prompt.isForAuthentication ? 'password' : 'text'
-        }" id="prompt-input"/>`
+      ? `<div class="cell">${prompt.input.name}${prompt.input.type === 'input' ? ':' : ''}</div>
+         ${
+           prompt.input.type === 'input'
+             ? `<input 
+                  id="prompt-input"
+                  placeholder="${prompt.input.placeholder}"
+                  type="${prompt.isForAuthentication ? 'password' : 'text'}"
+                  ${prompt.input.defaultValue ? `value="${prompt.input.defaultValue}"` : ''}
+               />`
+             : `<pre><code class="hljs language-yaml">${prompt.input.defaultValue ? prompt.input.defaultValue : ''}</code></pre>
+                <textarea 
+                  id="prompt-input"
+                  class="textarea" 
+                  placeholder="${prompt.input.placeholder}" 
+                  spellcheck="false"
+                  oninput="const block = this.parentNode.querySelector('pre code');
+                           block.innerHTML = this.value;
+                           if ( this.value[this.value.length - 1] == '\\n' )
+                            block.innerHTML += ' ';
+                           block.parentNode.scrollTop = this.scrollTop;
+                           block.scrollLeft = this.scrollLeft;
+                           if (window.hljs) { 
+                            block.removeAttribute('data-highlighted');
+                            hljs.highlightElement(block);
+                          }"
+                  onscroll="const block = this.parentNode.querySelector('pre');
+                            block.scrollTop = this.scrollTop;
+                            block.querySelector('code').scrollLeft = this.scrollLeft;
+                          "
+                >${prompt.input.defaultValue ? prompt.input.defaultValue : ''}</textarea>`
+         }`
       : `<p class="request">${prompt.text}</p>`;
 
     return `
@@ -563,7 +598,11 @@
         <div class="tab is-active">
           <span class="tab-title">${title}</span>
           <div class="tab-content">
-            <div class="row is-not-interactive is-textual">
+            <div class="row ${
+              prompt.input.isEnabled && prompt.input.type === 'input'
+                ? 'is-not-interactive'
+                : 'is-for-code'
+            } is-textual">
               ${body}
             </div>
           </div>
@@ -751,6 +790,10 @@
                <span class="cell">jump to any resource</span>
              </div>
              <div class="row is-not-interactive"></div>
+             <div class="row is-not-interactive">
+               <span class="cell">C        </span>
+               <span class="cell">create new stack</span>
+             </div>
              <div class="row is-not-interactive">
                <span class="cell">S        </span>
                <span class="cell">open system shell</span>
@@ -1319,6 +1362,10 @@
     if (_state.settings.enableLogLinesStrippedBackground)
       if (_state.inspector.currentTab === 'Logs')
         hgetTab('inspector').classList.add('stripped-background');
+
+    // 12.3. Highlight code
+    if (_state.settings.enableSyntaxHighlight)
+      if (window.hljs) hljs.highlightAll();
   };
 
   // === Websocket-related methods
@@ -1423,6 +1470,8 @@
      * @property {boolean} isEnabled
      * @property {string} placeholder
      * @property {string} name
+     * @property {'input'|'textarea'} type
+     * @property {string} defaultValue
      */
 
     /**
@@ -1430,7 +1479,13 @@
      */
     prompt: {
       text: null,
-      input: { isEnabled: false, name: null, placeholder: null },
+      input: {
+        isEnabled: false,
+        name: null,
+        placeholder: null,
+        type: 'input',
+        defaultValue: null,
+      },
       callback: null,
       callbackArgs: [],
       isEnabled: false,
@@ -1529,6 +1584,11 @@
        * @type {boolean}
        */
       enableJumpFuzzySearch: true,
+
+      /**
+       * @type {boolean}
+       */
+      enableSyntaxHighlight: true,
     },
 
     /**
@@ -1962,6 +2022,8 @@
         isEnabled: false,
         placeholder: null,
         name: null,
+        type: 'input',
+        defaultValue: null,
       };
       state.prompt.isForAuthentication = args.isForAuthentication || false;
 
@@ -1993,7 +2055,13 @@
       state.prompt.callbackArgs = [];
       state.prompt.isEnabled = false;
       state.prompt.isForAuthentication = false;
-      state.prompt.input = { isEnabled: false, name: null, placeholder: null };
+      state.prompt.input = {
+        isEnabled: false,
+        name: null,
+        placeholder: null,
+        type: 'input',
+        defaultValue: null,
+      };
 
       if (!state.inspector.wasEnabled) {
         state.navigation.currentTab = state.navigation.previousTab;
@@ -2286,6 +2354,7 @@
           isEnabled: true,
           name: 'Password',
           placeholder: 'Please fill in your server secret',
+          type: 'input',
         },
         isForAuthentication: true,
         callback: cmds._authenticate,
@@ -2447,6 +2516,9 @@
       }
     },
 
+    /**
+     * Private - Perform jump search (across all resources, local and remote)
+     */
     _performJumpSearch: function () {
       const { search } = state.jump;
 
@@ -2514,6 +2586,86 @@
 
       state.jump.results = [...identifiedResources];
       state.navigation.currentMenuRow = 1;
+    },
+
+    /**
+     * Private - Create a new stack based on a docker-compose.yml input
+     * @param {object} args
+     * @param {string} args._ (new stack's docker-compose.yml content)
+     */
+    _createStack: function (args) {
+      const content = Object.values(args)[0];
+
+      if (!content) return;
+
+      websocketSend({
+        action: `stack.create`,
+        args: { Content: content },
+      });
+    },
+
+    /**
+     * Private - Edit an existing stack based on a new docker-compose.yml input
+     * @param {object} args
+     * @param {string} args._ (updated stack's docker-compose.yml content)
+     */
+    _editStack: function (args) {
+      const content = Object.values(args)[0];
+
+      if (!content) return;
+
+      if (state.settings.enableMenuPrompt) {
+        cmdRun(cmds._clearPrompt);
+        setTimeout(() => {
+          cmdRun(cmds._showPrompt, {
+            text:
+              'The content of your docker-compose.yml file will be overwritten. Proceed?',
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: `stack.edit`,
+                args: { Content: content, Resource: sgetCurrentRow() },
+              },
+            ],
+          });
+        }, state._delays.default);
+      } else
+        websocketSend({
+          action: `stack.edit`,
+          args: { Content: content, Resource: sgetCurrentRow() },
+        });
+    },
+
+    /**
+     * Private - Edit an existing container based on a new docker run command
+     * @param {object} args
+     * @param {string} args._ (updated stack's docker-compose.yml content)
+     */
+    _editContainer: function (args) {
+      const content = Object.values(args)[0];
+
+      if (!content) return;
+
+      if (state.settings.enableMenuPrompt) {
+        cmdRun(cmds._clearPrompt);
+        setTimeout(() => {
+          cmdRun(cmds._showPrompt, {
+            text:
+              'Your container will be killed, and recreated with this new command. Proceed?',
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: `container.edit`,
+                args: { Content: content, Resource: sgetCurrentRow() },
+              },
+            ],
+          });
+        }, state._delays.default);
+      } else
+        websocketSend({
+          action: `container.edit`,
+          args: { Content: content, Resource: sgetCurrentRow() },
+        });
     },
 
     /**
@@ -3109,38 +3261,79 @@
 
     /**
      * Public - Display the remove menu of the highlighted resource
+     * Public - Stack-only - Down the stack
      */
-    remove: function () {
-      state.menu.key = 'menu';
+    remove_down: function () {
+      const currentTabKey = sgetCurrentTabKey();
 
-      websocketSend({
-        action: `${sgetCurrentTabKey().slice(0, -1)}.menu.remove`,
-        args: { Resource: sgetCurrentRow() },
-      });
+      if (currentTabKey !== 'stacks') {
+        state.menu.key = 'menu';
+
+        websocketSend({
+          action: `${sgetCurrentTabKey().slice(0, -1)}.menu.remove`,
+          args: { Resource: sgetCurrentRow() },
+        });
+      } else {
+        if (state.settings.enableMenuPrompt)
+          cmdRun(cmds._showPrompt, {
+            text: 'Are you sure you want to down this stack?',
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: `stack.down`,
+                args: { Resource: sgetCurrentRow() },
+              },
+            ],
+          });
+        else
+          websocketSend({
+            action: `stack.down`,
+            args: { Resource: sgetCurrentRow() },
+          });
+      }
     },
 
     /**
      * Public - Container-only - Pause/Unpause
      */
     pause: function () {
-      if (sgetCurrentTabKey() !== 'containers') return;
+      const currentTabKey = sgetCurrentTabKey();
 
-      if (state.settings.enableMenuPrompt)
-        cmdRun(cmds._showPrompt, {
-          text: 'Are you sure you want to pause/unpause this container?',
-          callback: cmds._wsSend,
-          callbackArgs: [
-            {
-              action: `container.pause`,
-              args: { Resource: sgetCurrentRow() },
-            },
-          ],
-        });
-      else
-        websocketSend({
-          action: `container.pause`,
-          args: { Resource: sgetCurrentRow() },
-        });
+      if (currentTabKey === 'containers') {
+        if (state.settings.enableMenuPrompt)
+          cmdRun(cmds._showPrompt, {
+            text: 'Are you sure you want to pause/unpause this container?',
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: `container.pause`,
+                args: { Resource: sgetCurrentRow() },
+              },
+            ],
+          });
+        else
+          websocketSend({
+            action: `container.pause`,
+            args: { Resource: sgetCurrentRow() },
+          });
+      } else if (currentTabKey === 'stacks') {
+        if (state.settings.enableMenuPrompt)
+          cmdRun(cmds._showPrompt, {
+            text: 'Are you sure you want to pause/unpause this stack?',
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: `stack.pause`,
+                args: { Resource: sgetCurrentRow() },
+              },
+            ],
+          });
+        else
+          websocketSend({
+            action: `stack.pause`,
+            args: { Resource: sgetCurrentRow() },
+          });
+      }
     },
 
     /**
@@ -3171,6 +3364,7 @@
      * Public
      * - Container-only - Restart
      * - Image-only - Run
+     * - Stack-only - Restart
      */
     run_restart: function () {
       const currentTabKey = sgetCurrentTabKey();
@@ -3198,9 +3392,28 @@
             isEnabled: true,
             name: 'Name',
             placeholder: 'Please fill in a name for the new container',
+            type: 'input',
           },
           callback: cmds._imageRun,
         });
+      else if (currentTabKey === 'stacks') {
+        if (state.settings.enableMenuPrompt)
+          cmdRun(cmds._showPrompt, {
+            text: 'Are you sure you want to restart this stack?',
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: `stack.restart`,
+                args: { Resource: sgetCurrentRow() },
+              },
+            ],
+          });
+        else
+          websocketSend({
+            action: `stack.restart`,
+            args: { Resource: sgetCurrentRow() },
+          });
+      }
     },
 
     /**
@@ -3214,22 +3427,60 @@
           isEnabled: true,
           name: 'Name',
           placeholder: 'Please fill in a new name for the container',
+          type: 'input',
         },
         callback: cmds._containerRename,
       });
     },
 
     /**
-     * Public - Container-only - Update
+     * Public - Stack-only - Update
      */
     update: function () {
-      console.log('called');
-      if (sgetCurrentTabKey() !== 'containers') return;
-
+      if (sgetCurrentTabKey() !== 'stacks') return;
       websocketSend({
-        action: `container.update`,
+        action: `stack.update`,
         args: { Resource: sgetCurrentRow() },
       });
+    },
+
+    /**
+     * Public - Container-only - Update
+     * Public - Stack-only - Up
+     */
+    update_up: function () {
+      const currentTabKey = sgetCurrentTabKey();
+
+      if (currentTabKey === 'containers') {
+        websocketSend({
+          action: `container.update`,
+          args: { Resource: sgetCurrentRow() },
+        });
+      } else if (currentTabKey === 'stacks') {
+        websocketSend({
+          action: `stack.up`,
+          args: { Resource: sgetCurrentRow() },
+        });
+      }
+    },
+
+    /**
+     * Public - Container-only - Edit configuration
+     * Public - Stack-only - Edit configuration
+     */
+    edit: function () {
+      const currentTabKey = sgetCurrentTabKey();
+
+      if (currentTabKey === 'stacks')
+        websocketSend({
+          action: `stack.edit.prepare`,
+          args: { Resource: sgetCurrentRow() },
+        });
+      else if (currentTabKey === 'containers')
+        websocketSend({
+          action: `container.edit.prepare`,
+          args: { Resource: sgetCurrentRow() },
+        });
     },
 
     /**
@@ -3281,6 +3532,7 @@
           name: 'Image',
           placeholder:
             '[repository/]name[:tag] -- Leave empty to pull the current image',
+          type: 'input',
         },
         callback: cmds._imagePull,
       });
@@ -3310,6 +3562,22 @@
      */
     github: function () {
       window.open(`https://github.com/will-moss/isaiah/?from=instance`);
+    },
+
+    /**
+     * Public - Create a new stack (prompt for a docker-compose.yml file)
+     */
+    createStack: function () {
+      cmdRun(cmds._showPrompt, {
+        input: {
+          isEnabled: true,
+          name: 'Create a new stack',
+          placeholder:
+            'Please fill in the content of your docker-compose.yml file',
+          type: 'textarea',
+        },
+        callback: cmds._createStack,
+      });
     },
 
     /**
@@ -3749,12 +4017,14 @@
 
     // Sub commands
     q: 'quit',
-    d: 'remove',
+    d: 'remove_down',
     p: 'pause',
     s: 'stop',
     r: 'run_restart',
     m: 'rename',
-    u: 'update',
+    e: 'edit',
+    u: 'update_up',
+    U: 'update',
     E: 'shellContainer',
     S: 'shellSystem',
     R: 'reload',
@@ -3764,6 +4034,7 @@
     h: 'hub',
     G: 'github',
     O: 'overview',
+    C: 'createStack',
 
     // Misc
     '?': 'help',
@@ -3898,7 +4169,7 @@
   const listenerPromptInputKeyDown = (evt) => {
     if (evt.metaKey) return;
 
-    const { key } = evt;
+    let { key } = evt;
 
     if (!key || !(key in kbMap)) return;
 
@@ -3906,6 +4177,10 @@
 
     // Only allow Escape and Enter
     if (!['Escape', 'Enter'].includes(key)) return;
+
+    // If using "Shift + Enter" in a textarea, ignore it
+    if (key === 'Enter' && evt.shiftKey && evt.target.tagName === 'TEXTAREA')
+      return;
 
     evt.stopPropagation();
     evt.preventDefault();
@@ -4142,12 +4417,27 @@
         return;
       }
 
-      // 4.2. If any popup is activated, while not menuing and not tty-ing, dismiss it
-      if (!state.isMenuIng && state.popup) cmdRun(cmds.reject);
+      // 4.2. If any popup is activated, while not menuing and not tty-ing and not prompt-ing, dismiss it
+      if (!state.isMenuIng && !state.prompt.isEnabled && state.popup)
+        cmdRun(cmds.reject);
       // 4.3. If menuing, and clicked outside the menu, dismiss it
       else if (state.isMenuIng && target.classList.contains('popup-layer'))
         cmdRun(cmds.reject);
-      // 4.4. If menuing, and clicked inside the menu, run the 3. scenario (assumption: we clicked a span inside a row)
+      // 4.4. If prompt-ing, and clicked outside the prompt, dismiss it
+      else if (
+        state.prompt.isEnabled &&
+        target.classList.contains('popup-layer')
+      )
+        cmdRun(cmds.reject);
+      // 4.5. If prompt-ing, and clicked inside the prompt, focus it and prevent rendering (to prevent input data loss)
+      else if (
+        state.prompt.isEnabled &&
+        !target.classList.contains('popup-layer')
+      ) {
+        hgetPromptInput().focus();
+        return;
+      }
+      // 4.6. If menuing, and clicked inside the menu, run the 3. scenario (assumption: we clicked a span inside a row)
       else {
         // Clicked inside Overview's menu
         let tabContent, tabRow, rowIndex;
@@ -4517,17 +4807,32 @@
         break;
 
       case 'prompt':
-        cmdRun(cmds._showPrompt, {
-          text: notification.Content.Message,
-          callback: cmds._wsSend,
-          callbackArgs: [
-            {
-              action: notification.Content.Command,
-              args: { Resource: sgetCurrentRow() },
-            },
-          ],
-        });
         state.isLoading = false;
+        if (
+          'RunLocalCommand' in notification.Content &&
+          'Input' in notification.Content
+        )
+          cmdRun(cmds._showPrompt, {
+            callback: cmds[notification.Content.Command],
+            input: {
+              isEnabled: true,
+              name: notification.Content.Input.Name,
+              defaultValue: notification.Content.Input.DefaultValue,
+              type: notification.Content.Input.Type,
+              placeholder: notification.Content.Input.Placeholder,
+            },
+          });
+        else
+          cmdRun(cmds._showPrompt, {
+            text: notification.Content.Message,
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: notification.Content.Command,
+                args: { Resource: sgetCurrentRow() },
+              },
+            ],
+          });
         break;
 
       case 'tty':
@@ -4635,6 +4940,7 @@
       state.settings.enableTimestampDisplay = lsGet('enableTimestampDisplay', false);
       state.settings.enableOverviewOnLaunch = lsGet('enableOverviewOnLaunch', true);
       state.settings.enableJumpFuzzySearch = lsGet('enableJumpFuzzySearch', true);
+      state.settings.enableSyntaxHighlight = lsGet('enableSyntaxHighlight', true);
     }
 
     // 1.1. Load fuzzy-search library if enabled by the user
@@ -4643,6 +4949,26 @@
       script.type = `text/javascript`;
       script.src = `/assets/js/lib.fuse.min.js`;
       document.head.appendChild(script);
+    }
+
+    // 1.2. Load code-highlight library if enabled by the user
+    if (state.settings.enableSyntaxHighlight) {
+      const script = document.createElement('script');
+      script.type = `text/javascript`;
+      script.src = `/assets/js/lib.highlight.min.js`;
+      document.head.appendChild(script);
+
+      const style = document.createElement('link');
+      style.rel = 'stylesheet';
+      style.href = `/assets/css/lib.highlight.min.css`;
+      document.head.appendChild(style);
+
+      script.addEventListener('load', () => {
+        const lang = document.createElement('script');
+        lang.type = `text/javascript`;
+        lang.src = `/assets/js/lib.highlight.yaml.min.js`;
+        document.head.appendChild(lang);
+      });
     }
 
     // 2. Connect to server (first execution loop)

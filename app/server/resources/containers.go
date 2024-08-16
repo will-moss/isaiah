@@ -3,8 +3,11 @@ package resources
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"os"
+	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -23,6 +26,8 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/fatih/structs"
 )
+
+var GetRunCommandTemplate string
 
 // Represent a Docker container
 type Container struct {
@@ -111,6 +116,12 @@ func ContainerSingleActions() []ui.MenuAction {
 			RequiresResource: true,
 		},
 		ui.MenuAction{
+			Key:              "e",
+			Label:            "(Experimental) edit container",
+			Command:          "container.edit.prepare",
+			RequiresResource: true,
+		},
+		ui.MenuAction{
 			Key:              "E",
 			Label:            "exec shell inside container",
 			Command:          "container.shell",
@@ -181,8 +192,8 @@ func ContainersBulkActions() []ui.MenuAction {
 }
 
 // Retrieve all Docker containers
-func ContainersList(client *client.Client) Containers {
-	reader, err := client.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+func ContainersList(client *client.Client, filters filters.Args) Containers {
+	reader, err := client.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filters})
 
 	if err != nil {
 		return []Container{}
@@ -224,7 +235,7 @@ func ContainersCount(client *client.Client) int {
 
 // Stop all Docker containers
 func ContainersStop(client *client.Client, monitor process.LongTaskMonitor, args map[string]interface{}) {
-	containers := ContainersList(client)
+	containers := ContainersList(client, filters.Args{})
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(containers))
@@ -248,7 +259,7 @@ func ContainersStop(client *client.Client, monitor process.LongTaskMonitor, args
 
 // Force remove Docker containers
 func ContainersRemove(client *client.Client) error {
-	containers := ContainersList(client)
+	containers := ContainersList(client, filters.Args{})
 
 	for i := 0; i < len(containers); i++ {
 		_container := containers[i]
@@ -432,12 +443,24 @@ func (c Container) GetBrowserUrl(client *client.Client) (string, error) {
 	return address, nil
 }
 
+// Retrieve the run command of the Docker container
+func (c Container) GetRunCommand(client *client.Client) (string, error) {
+	output, err := exec.Command("docker", "inspect", "--format", GetRunCommandTemplate, c.Name).Output()
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(output), nil
+}
+
 // Rename the Docker container
 func (c Container) Rename(client *client.Client, newName string) error {
 	err := client.ContainerRename(context.Background(), c.ID, newName)
 	return err
 }
 
+// Update the Docker container (down, pull, recreate)
 func (c Container) Update(client *client.Client) error {
 	inspection, err := c.Inspect(client)
 
@@ -499,6 +522,88 @@ func (c Container) Update(client *client.Client) error {
 	}
 
 	return nil
+}
+
+func (c Container) Edit(client *client.Client, m process.LongTaskMonitor, args map[string]interface{}) {
+	newCommand := args["Content"].(string)
+	originalCommand, err := c.GetRunCommand(client)
+
+	if err != nil {
+		m.Errors <- err
+		return
+	}
+
+	if c.State == "running" {
+		err := c.Stop(client)
+		if err != nil {
+			m.Errors <- err
+			return
+		}
+	}
+
+	err = c.Remove(client, true, false)
+	if err != nil {
+		m.Errors <- err
+		return
+	}
+
+	// Create a shell script to run the original run command in case of error
+	tmpFileOriginal, err := os.CreateTemp("", "isaiah-*.sh")
+	if err != nil {
+		m.Errors <- err
+		return
+	}
+	defer os.Remove(tmpFileOriginal.Name()) // Clean up the file afterwards
+
+	if _, err := tmpFileOriginal.Write([]byte(fmt.Sprintf("#!/bin/bash\n%s", originalCommand))); err != nil {
+		m.Errors <- err
+		return
+	}
+	if err := tmpFileOriginal.Close(); err != nil {
+		m.Errors <- err
+		return
+	}
+	if err := os.Chmod(tmpFileOriginal.Name(), 0755); err != nil {
+		m.Errors <- err
+		return
+	}
+
+	// Create a shell script to run the new run command
+	tmpFileNew, err := os.CreateTemp("", "isaiah-*.sh")
+	if err != nil {
+		m.Errors <- err
+		return
+	}
+	defer os.Remove(tmpFileNew.Name()) // Clean up the file afterwards
+
+	if _, err := tmpFileNew.Write([]byte(fmt.Sprintf("#!/bin/bash\n%s", newCommand))); err != nil {
+		m.Errors <- err
+		return
+	}
+	if err := tmpFileNew.Close(); err != nil {
+		m.Errors <- err
+		return
+	}
+	if err := os.Chmod(tmpFileNew.Name(), 0755); err != nil {
+		m.Errors <- err
+		return
+	}
+
+	output, err := exec.Command(tmpFileNew.Name()).CombinedOutput()
+
+	if err != nil {
+		m.Errors <- errors.New(string(output))
+		m.Errors <- err
+		_ouput, _err := exec.Command(tmpFileOriginal.Name()).CombinedOutput()
+		if _err != nil {
+			m.Errors <- errors.New(string(_ouput))
+			m.Errors <- err
+			return
+		}
+		return
+	}
+
+	m.Done <- true
 }
 
 // Inspector - Retrieve the logs written by the Docker container
