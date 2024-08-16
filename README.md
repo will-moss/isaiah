@@ -51,9 +51,14 @@ Isaiah is a self-hostable service that enables you to manage all your Docker res
 ## Features
 
 Isaiah has all these features implemented :
+- For stacks :
+    - Bulk update
+    - Up, Down, Pause, Unpause, Restart, Update
+    - Create and Edit stacks using `docker-compose.yml` files in your browser
+    - Inspect (live logs, `docker-compose.yml`, services)
 - For containers :
     - Bulk stop, Bulk remove, Prune
-    - Remove, Pause, Unpause, Restart, Rename, Update, Open in browser
+    - Remove, Pause, Unpause, Restart, Rename, Update, Edit, Open in browser
     - Open a shell inside the container (from your browser)
     - Inspect (live logs, stats, env, full configuration, top)
 - For images :
@@ -420,6 +425,7 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `AUTHENTICATION_SECRET` | `string`  | The master password used to secure your Isaiah instance against malicious actors. | one-very-long-and-mysterious-secret        |
 | `AUTHENTICATION_HASH`   | `string`  | The master password's hash (sha256 format) used to secure your Isaiah instance against malicious actors. Use this setting instead of `AUTHENTICATION_SECRET` if you feel uncomfortable providing a cleartext password. | Empty    |
 | `DISPLAY_CONFIRMATIONS` | `boolean` | Whether the web interface should display a confirmation message after every succesful operation. | True |
+| `TABS_ENABLED`          | `string`  | Comma-separated list of tabs to display in the interface. (Case-insensitive) (Available: Stacks, Containers, Images, Volumes, Networks) | stacks,containers,images,volumes,networks |
 | `COLUMNS_CONTAINERS`    | `string`  | Comma-separated list of fields to display in the `Containers` panel. (Case-sensitive) (Available: ID, State, ExitCode, Name, Image, Created) | State,ExitCode,Name,Image |
 | `COLUMNS_IMAGES`        | `string`  | Comma-separated list of fields to display in the `Images` panel. (Case-sensitive) (Available: ID, Name, Version, Size) | Name,Version,Size |
 | `COLUMNS_VOLUMES`       | `string`  | Comma-separated list of fields to display in the `Volumes` panel. (Case-sensitive) (Available: Name, Driver, MountPoint) | Driver,Name |
@@ -431,6 +437,7 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `CONTAINER_HEALTH_STYLE`| `string`  | Style used to display the containers' health state. (Available: long, short, icon)| long |
 | `CONTAINER_LOGS_TAIL`   | `integer` | Number of lines to retrieve when requesting the last container logs | 50 |
 | `CONTAINER_LOGS_SINCE`  | `string`  | The amount of time from now to use for retrieving the last container logs | 60m |
+| `STACKS_DIRECTORY`      | `string`  | The path to the directory that will be used to store the `docker-compose.yml` files generated while creating and editing stacks. It must be a valid path to an existing and writable directory. | `.` (current directory) |
 | `TTY_SERVER_COMMAND`    | `string`  | The command used to spawn a new shell inside the server where Isaiah is running | `/bin/sh -i` |
 | `TTY_CONTAINER_COMMAND` | `string`  | The command used to spawn a new shell inside the containers that Isaiah manages | `/bin/sh -c eval $(grep ^$(id -un): /etc/passwd \| cut -d : -f 7-) -i` |
 | `CUSTOM_DOCKER_HOST`    | `string`  | The host to use in place of the one defined by the DOCKER_HOST default variable | Empty |
@@ -467,6 +474,7 @@ Using this interface, you can toggle the following options based on your prefere
 | `enableOverviewOnLaunch`| Whether an overview panel should show first before anything when launching Isaiah in your browser. |
 | `enableLogLinesStrippedBackground`| Whether alternated log lines should have a brighter background to enhance readability. |
 | `enableJumpFuzzySearch` | Whether, in Jump mode, fuzzy search should be used, as opposed to default substring search. |
+| `enableSyntaxHightlight`| Whether syntax highlighting should be enabled (when viewing docker-compose.yml files). |
 
 > Note : You must have Isaiah open in your browser and be authenticated to access these options. Once set up, these options will be saved to your localStorage.
 

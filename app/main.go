@@ -28,6 +28,7 @@ import (
 	_session "will-moss/isaiah/server/_internal/session"
 	_strconv "will-moss/isaiah/server/_internal/strconv"
 	"will-moss/isaiah/server/_internal/tty"
+	"will-moss/isaiah/server/resources"
 	"will-moss/isaiah/server/server"
 	"will-moss/isaiah/server/ui"
 )
@@ -37,6 +38,9 @@ var clientAssets embed.FS
 
 //go:embed default.env
 var defaultEnv string
+
+//go:embed server/_internal/templates/run.tpl
+var getRunCommandTemplate string
 
 // Perform checks to ensure the server is ready to start
 // Returns an error if any condition isn't met
@@ -147,6 +151,9 @@ func main() {
 			os.Setenv(k, v)
 		}
 	}
+
+	// Pass embed assets down the tree
+	resources.GetRunCommandTemplate = getRunCommandTemplate
 
 	// Load custom settings via .env file
 	err := godotenv.Overload(".env")

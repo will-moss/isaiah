@@ -53,6 +53,16 @@ div {
     overflow: auto;
     // overflow: hidden;
 
+    pre {
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 8px;
+
+      code {
+        padding: 0;
+      }
+    }
+
     .row {
       display: flex;
       align-items: center;
@@ -93,12 +103,17 @@ div {
         pointer-events: none;
       }
 
+      &.is-for-code {
+        &:hover {
+          background: transparent;
+        }
+      }
+
       &.is-textual {
         width: unset;
         height: unset;
         line-height: 145%;
       }
-
       &.is-json {
         gap: 8px;
       }

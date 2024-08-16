@@ -319,7 +319,8 @@ html {
             }
           }
 
-          &.for-containers {
+          &.for-containers,
+          &.for-stacks {
             .cell {
               &[data-value='exited'] {
                 color: var(--color-terminal-cell-failure);
@@ -396,6 +397,22 @@ html {
                 background: var(--color-terminal-log-row-alternative);
               }
             }
+          }
+        }
+
+        [data-tab='Services'] .tab-content .cell {
+          &[data-value='exited'] {
+            color: var(--color-terminal-cell-failure);
+
+            + .cell {
+              color: var(--color-terminal-cell-failure);
+            }
+          }
+          &[data-value='running'] {
+            color: var(--color-terminal-cell-success);
+          }
+          &[data-value='paused'] {
+            color: var(--color-terminal-cell-paused);
           }
         }
       }
@@ -507,6 +524,53 @@ html {
           outline: 0;
           margin-left: 8px;
           width: 90%;
+        }
+
+        textarea {
+          border: 0;
+          background: rgba(0, 0, 0, 0);
+          color: rgba(0, 0, 0, 0);
+          caret-color: var(--color-terminal-base);
+          outline: 0;
+          width: 98%;
+          resize: none;
+          height: 600px;
+          z-index: 2;
+          line-height: 135%;
+          font-family: monospace;
+          font-size: 1em;
+          overflow: auto;
+          white-space: pre;
+        }
+
+        pre {
+          position: absolute;
+          left: 4px;
+          top: 14px;
+          z-index: 1;
+          pointer-events: none;
+          width: 98%;
+          overflow: auto;
+          height: 610px;
+          white-space: pre;
+
+          code {
+            color: var(--color-terminal-base);
+          }
+        }
+
+        &:has(textarea) {
+          position: relative;
+
+          .row {
+            padding-top: 8px;
+            justify-content: center;
+          }
+          .cell {
+            position: absolute;
+            opacity: 0.25;
+            pointer-events: none;
+          }
         }
       }
     }
@@ -717,4 +781,19 @@ html {
 
 *.has-accent {
   color: var(--color-terminal-accent) !important;
+}
+
+pre code.hljs {
+  background: var(--color-terminal-background);
+  line-height: 135%;
+
+  .hljs-attr {
+    color: var(--color-terminal-accent-alternative);
+  }
+  .hljs-bullet {
+    color: var(--color-terminal-accent);
+  }
+  .hljs-string {
+    color: var(--color-terminal-base);
+  }
 }

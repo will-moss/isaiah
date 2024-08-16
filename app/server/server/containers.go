@@ -12,6 +12,7 @@ import (
 	"will-moss/isaiah/server/resources"
 	"will-moss/isaiah/server/ui"
 
+	"github.com/docker/docker/api/types/filters"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -42,7 +43,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 	// Bulk - List
 	case "containers.list":
 		columns := strings.Split(_os.GetEnv("COLUMNS_CONTAINERS"), ",")
-		containers := resources.ContainersList(server.Docker)
+		containers := resources.ContainersList(server.Docker, filters.Args{})
 
 		rows := containers.ToRows(columns)
 		server.SendNotification(
@@ -369,6 +370,98 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 				Content: ui.JSON{"Message": "Your container was succesfully updated"},
 				Follow:  "containers.list",
 			}))
+
+	// Single - Retrieve run command to edit client-side
+	case "container.edit.prepare":
+		if _os.GetEnv("DOCKER_RUNNING") == "TRUE" {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a Docker container." +
+							" In this case, editing containers is unavailable because" +
+							" Isaiah is bound to its container and it can't run commands on your hosting system.",
+					},
+				}),
+			)
+			return
+		}
+
+		var container resources.Container
+		mapstructure.Decode(command.Args["Resource"], &container)
+		_command, err := container.GetRunCommand(server.Docker)
+
+		if err != nil {
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+			break
+		}
+
+		server.SendNotification(
+			session,
+			ui.NotificationPrompt(ui.NP{
+				Content: ui.JSON{
+					"RunLocalCommand": true,
+					"Input": ui.JSON{
+						"Name":         "Edit container",
+						"DefaultValue": _command,
+						"Type":         "textarea",
+						"Placeholder":  "Please fill in the content of your updated docker run command",
+					},
+					"Command": "_editContainer",
+				},
+			}),
+		)
+
+	// Single - Edit a container (down, and new run command)
+	case "container.edit":
+		if _os.GetEnv("DOCKER_RUNNING") == "TRUE" {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a Docker container." +
+							" In this case, editing containers is unavailable because" +
+							" Isaiah is bound to its container and it can't run commands on your hosting system.",
+					},
+				}),
+			)
+			return
+		}
+
+		var container resources.Container
+		mapstructure.Decode(command.Args["Resource"], &container)
+
+		task := process.LongTask{
+			Function: container.Edit,
+			Args:     command.Args, // Expects : { "Content": <string> }
+			OnStep: func(update string) {
+				server.SendNotification(
+					session,
+					ui.NotificationInfo(ui.NP{
+						Content: ui.JSON{
+							"Message": update,
+						},
+					}),
+				)
+			},
+			OnError: func(err error) {
+				server.SendNotification(
+					session,
+					ui.NotificationSuccess(ui.NP{
+						Content: ui.JSON{"Message": fmt.Sprintf("Error: %s", err.Error())}, Follow: "containers.list",
+					}),
+				)
+			},
+			OnDone: func() {
+				server.SendNotification(
+					session,
+					ui.NotificationSuccess(ui.NP{
+						Content: ui.JSON{"Message": "Your container was succesfully edited (down, up with new command)"}, Follow: "containers.list",
+					}),
+				)
+			},
+		}
+		task.RunSync(server.Docker)
 
 	// Single - Get inspector tabs
 	case "container.inspect.tabs":
