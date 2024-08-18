@@ -430,10 +430,12 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `COLUMNS_IMAGES`        | `string`  | Comma-separated list of fields to display in the `Images` panel. (Case-sensitive) (Available: ID, Name, Version, Size) | Name,Version,Size |
 | `COLUMNS_VOLUMES`       | `string`  | Comma-separated list of fields to display in the `Volumes` panel. (Case-sensitive) (Available: Name, Driver, MountPoint) | Driver,Name |
 | `COLUMNS_NETWORKS`      | `string`  | Comma-separated list of fields to display in the `Networks` panel. (Case-sensitive) (Available: ID, Name, Driver) | Driver,Name |
+| `COLUMNS_STACKS`        | `string`  | Comma-separated list of fields to display in the `Stacks` panel. (Case-sensitive) (Available: Name, Status) | Status,Name |
 | `SORTBY_CONTAINERS`     | `string`  | Field used to sort the rows in the `Containers` panel. (Case-sensitive) (Available: ID, State, ExitCode, Name, Image, Created) | Empty |
 | `SORTBY_IMAGES`         | `string`  | Field used to sort the rows in the `Images` panel. (Case-sensitive) (Available: ID, Name, Version, Size) | Empty |
 | `SORTBY_VOLUMES`        | `string`  | Field used to sort the rows in the `Volumes` panel. (Case-sensitive) (Available: Name, Driver, MountPoint) | Empty |
 | `SORTBY_NETWORKS`       | `string`  | Field used to sort the rows in the `Networks` panel. (Case-sensitive) (Available: Id, Name, Driver) | Empty |
+| `SORTBY_STACKS`         | `string`  | Field used to sort the rows in the `Stacks` panel. (Case-sensitive) (Available: Name, Status) | Empty |
 | `CONTAINER_HEALTH_STYLE`| `string`  | Style used to display the containers' health state. (Available: long, short, icon)| long |
 | `CONTAINER_LOGS_TAIL`   | `integer` | Number of lines to retrieve when requesting the last container logs | 50 |
 | `CONTAINER_LOGS_SINCE`  | `string`  | The amount of time from now to use for retrieving the last container logs | 60m |
