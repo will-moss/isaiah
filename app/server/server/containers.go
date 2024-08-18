@@ -384,7 +384,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 					},
 				}),
 			)
-			return
+			break
 		}
 
 		var container resources.Container
@@ -425,11 +425,25 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 					},
 				}),
 			)
-			return
+			break
 		}
 
 		var container resources.Container
 		mapstructure.Decode(command.Args["Resource"], &container)
+
+		newCommand := command.Args["Content"].(string)
+		if !strings.HasPrefix(newCommand, "docker run") {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "For your own security, you can only run a \"docker run\" command." +
+							" Please make sure that your command starts, indeed, with \"docker run\"",
+					},
+				}),
+			)
+			break
+		}
 
 		task := process.LongTask{
 			Function: container.Edit,
