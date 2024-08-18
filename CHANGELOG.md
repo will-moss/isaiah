@@ -1,3 +1,10 @@
+## [1.23.1](https://github.com/will-moss/isaiah/compare/1.23.0...1.23.1) (2024-08-18)
+
+
+### Bug Fixes
+
+* **security:** added a check to allow only docker run commands in edit container feature ([1928ef5](https://github.com/will-moss/isaiah/commit/1928ef5c2e6f4c9167f12f5f1fe417f2641096bc))
+
 # [1.23.0](https://github.com/will-moss/isaiah/compare/1.22.0...1.23.0) (2024-08-16)
 
 
