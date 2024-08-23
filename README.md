@@ -631,6 +631,17 @@ See below :
 - `enableTimestampDisplay` becomes `CLIENT_PREFERENCE_ENABLE_TIMESTAMP_DISPLAY`
 - `enableLogLinesStrippedBackground` becomes `CLIENT_PREFERENCE_ENABLE_LOG_LINES_STRIPPED_BACKGROUND`
 
+#### I can't see my Docker Stacks (Docker Compose) in the user interface / A feature isn't available
+
+Please ensure that Isaiah is running on the hosting system directly, and not inside a Docker container.
+
+For certain features (including, managing Docker Compose projects), Isaiah needs to run commands on the hosting system.
+For example, it runs `docker compose ls` to find all the Docker Compose projects, or even `docker compose -f FILE up -d` to up a stack.
+
+As a result, if Isaiah is running inside a Docker container, it won't be able to run those commands on the hosting system.
+
+For ease of deployment, you may want to use the install script [described here](https://github.com/will-moss/isaiah?tab=readme-ov-file#using-an-existing-binary).
+
 #### A feature that works on desktop is missing from the mobile user interface
 
 Please note that you can horizontally scroll the mobile controls located in the bottom part of your screen to reveal all of them.
