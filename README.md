@@ -107,6 +107,7 @@ For more information, read about [Configuration](#configuration) and [Deployment
 
 ## Deployment and Examples
 
+> Please make sure that Docker 23.0.0+ is installed before proceeding, or consider updating beforehand.
 
 ### Deploy with Docker
 
@@ -543,6 +544,13 @@ Please make sure that the following requirements are met :
     - Check your proxy forwarding rules.
 
 In any case, the crucial part is [Configuration](#configuration) and making sure your Docker / Proxy setup is correct as well.
+
+
+#### On startup, Isaiah shows 0 containers, 0 networks, 0 volumes, and 0 images
+
+You must update Docker on your system to fix that issue.
+
+Isaiah uses the native Docker Engine API, and it requires Docker to be at least on version 23.0.0+
 
 #### The emulated shell behaves unconsistently or displays unexpected characters
 
