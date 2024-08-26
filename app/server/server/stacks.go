@@ -59,6 +59,21 @@ func (Stacks) RunCommand(server *Server, session _session.GenericSession, comman
 
 	// Bulk - Update
 	case "stacks.update":
+		if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" && !strings.HasPrefix(server.Docker.DaemonHost(), "unix://") {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a multi-host deployment." +
+							" In this case, updating stacks is unavailable because" +
+							" it requires accessing files on the remote host, which isn't feasible over the raw Docker socket." +
+							" You may want to deploy a multi-node setup for that purpose.",
+					},
+				}),
+			)
+			return
+		}
+
 		stacks := resources.StacksList(server.Docker)
 
 		hasErrored := false
@@ -90,6 +105,21 @@ func (Stacks) RunCommand(server *Server, session _session.GenericSession, comman
 
 	// Single - Up
 	case "stack.up":
+		if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" && !strings.HasPrefix(server.Docker.DaemonHost(), "unix://") {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a multi-host deployment." +
+							" In this case, starting a stack is unavailable because" +
+							" it requires accessing files on the remote host, which isn't feasible over the raw Docker socket." +
+							" You may want to deploy a multi-node setup for that purpose.",
+					},
+				}),
+			)
+			return
+		}
+
 		var stack resources.Stack
 		mapstructure.Decode(command.Args["Resource"], &stack)
 
@@ -164,6 +194,21 @@ func (Stacks) RunCommand(server *Server, session _session.GenericSession, comman
 
 	// Single - Update
 	case "stack.update":
+		if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" && !strings.HasPrefix(server.Docker.DaemonHost(), "unix://") {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a multi-host deployment." +
+							" In this case, updating stacks is unavailable because" +
+							" it requires accessing files on the remote host, which isn't feasible over the raw Docker socket." +
+							" You may want to deploy a multi-node setup for that purpose.",
+					},
+				}),
+			)
+			return
+		}
+
 		var stack resources.Stack
 		mapstructure.Decode(command.Args["Resource"], &stack)
 		err := stack.Update(server.Docker)
@@ -200,6 +245,21 @@ func (Stacks) RunCommand(server *Server, session _session.GenericSession, comman
 
 	// Single - Create
 	case "stack.create":
+		if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" && !strings.HasPrefix(server.Docker.DaemonHost(), "unix://") {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a multi-host deployment." +
+							" In this case, creating stacks is unavailable because" +
+							" it requires editing files on the remote host, which isn't feasible over the raw Docker socket." +
+							" You may want to deploy a multi-node setup for that purpose.",
+					},
+				}),
+			)
+			return
+		}
+
 		task := process.LongTask{
 			Function: resources.StackCreate,
 			Args:     command.Args, // Expects : { "Content": <string> }
@@ -232,6 +292,21 @@ func (Stacks) RunCommand(server *Server, session _session.GenericSession, comman
 
 	// Single - Retrieve configuration for editing it client-side
 	case "stack.edit.prepare":
+		if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" && !strings.HasPrefix(server.Docker.DaemonHost(), "unix://") {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a multi-host deployment." +
+							" In this case, editing stacks is unavailable because" +
+							" it requires editing files on the remote host, which isn't feasible over the raw Docker socket." +
+							" You may want to deploy a multi-node setup for that purpose.",
+					},
+				}),
+			)
+			return
+		}
+
 		var stack resources.Stack
 		mapstructure.Decode(command.Args["Resource"], &stack)
 		config, err := stack.GetRawConfig(server.Docker)
@@ -259,6 +334,21 @@ func (Stacks) RunCommand(server *Server, session _session.GenericSession, comman
 
 	// Single - Edit a stack (down, overwrite, up)
 	case "stack.edit":
+		if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" && !strings.HasPrefix(server.Docker.DaemonHost(), "unix://") {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a multi-host deployment." +
+							" In this case, editing stacks is unavailable because" +
+							" it requires editing files on the remote host, which isn't feasible over the raw Docker socket." +
+							" You may want to deploy a multi-node setup for that purpose.",
+					},
+				}),
+			)
+			return
+		}
+
 		var stack resources.Stack
 		mapstructure.Decode(command.Args["Resource"], &stack)
 
