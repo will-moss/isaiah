@@ -563,17 +563,17 @@
       ? `<div class="cell">${prompt.input.name}${prompt.input.type === 'input' ? ':' : ''}</div>
          ${
            prompt.input.type === 'input'
-             ? `<input 
+             ? `<input
                   id="prompt-input"
                   placeholder="${prompt.input.placeholder}"
                   type="${prompt.isForAuthentication ? 'password' : 'text'}"
                   ${prompt.input.defaultValue ? `value="${prompt.input.defaultValue}"` : ''}
                />`
              : `<pre><code class="hljs language-yaml">${prompt.input.defaultValue ? prompt.input.defaultValue : ''}</code></pre>
-                <textarea 
+                <textarea
                   id="prompt-input"
-                  class="textarea" 
-                  placeholder="${prompt.input.placeholder}" 
+                  class="textarea"
+                  placeholder="${prompt.input.placeholder}"
                   spellcheck="false"
                   oninput="const block = this.parentNode.querySelector('pre code');
                            block.innerHTML = this.value;
@@ -581,7 +581,7 @@
                             block.innerHTML += ' ';
                            block.parentNode.scrollTop = this.scrollTop;
                            block.scrollLeft = this.scrollLeft;
-                           if (window.hljs) { 
+                           if (window.hljs) {
                             block.removeAttribute('data-highlighted');
                             hljs.highlightElement(block);
                           }"
@@ -1361,7 +1361,8 @@
     // 12.2. Log lines stripped background
     if (_state.settings.enableLogLinesStrippedBackground)
       if (_state.inspector.currentTab === 'Logs')
-        hgetTab('inspector').classList.add('stripped-background');
+        if (hgetTab('inspector'))
+          hgetTab('inspector').classList.add('stripped-background');
 
     // 12.3. Highlight code
     if (_state.settings.enableSyntaxHighlight)
@@ -4509,7 +4510,7 @@
 
     /**
      * @typedef Notification
-     * @property {"init"|"refresh"|"loading"|"report"|"prompt"|"tty"|"auth"} Category
+     * @property {"init"|"refresh"|"loading"|"report"|"prompt"|"tty"|"auth"|"init-chunk"|"refresh-chunk"} Category
      * @property {string} Type
      * @property {string} Title
      * @property {object} Content
@@ -4580,7 +4581,7 @@
         }
 
         // Jump to the picked resource if previously Jumped to a new host
-        if (state.jump.backlog) {
+        if (state.jump.backlog && !('ChunkIndex' in notification.Content)) {
           state.navigation.currentTab = state.jump.backlog.ParentKey;
           state.navigation.currentTabsRows[state.jump.backlog.ParentKey] =
             sgetCurrentTab().Rows.findIndex((r) =>
@@ -4593,6 +4594,71 @@
 
         state.isLoading = false;
         if (!state.isFullyEmpty) cmdRun(cmds._inspectorTabs);
+        break;
+
+      case 'init-chunk':
+        const { Tab } = notification.Content;
+        const isFirstChunk =
+          notification.Content.ChunkIndex === 1 ? true : false;
+
+        if (isFirstChunk) state.tabs = [];
+
+        if (!state.tabs.some((t) => t.Key === Tab.Key)) state.tabs.push(Tab);
+        else
+          state.tabs = state.tabs.map((t) =>
+            t.Key === Tab.Key ? { ...t, Rows: [...t.Rows, ...Tab.Rows] } : t
+          );
+
+        state.navigation.currentTab = state.tabs[0].Key;
+        state.navigation.currentTabsRows = state.tabs.reduce(
+          (a, b) => ({ ...a, [b.Key]: 1 }),
+          {}
+        );
+        state.isFullyEmpty = false;
+
+        // Perform sort if applicable
+        state.tabs = state.tabs.map((tab) => ({
+          ...tab,
+          Rows: !tab.SortBy
+            ? tab.Rows
+            : tab.Rows.toSorted((a, b) => {
+                const inReverse = tab.SortBy.startsWith('-');
+                const key = inReverse ? tab.SortBy.slice(1) : tab.SortBy;
+
+                let val1 = a[key];
+                let val2 = b[key];
+                const comparisonType = getGeneralType(!val1 ? val2 : val1);
+
+                if (comparisonType === 'string')
+                  return !inReverse
+                    ? val1.localeCompare(val2)
+                    : val2.localeCompare(val1);
+                else if (comparisonType === 'numeric')
+                  return !inReverse ? val1 - val2 : val2 - val1;
+              }),
+        }));
+
+        // Jump to the picked resource if previously Jumped to a new host
+        if (state.jump.backlog) {
+          if (state.tabs.some((t) => t.Key === state.jump.backlog.ParentKey)) {
+            state.navigation.currentTab = state.jump.backlog.ParentKey;
+
+            if (
+              sgetCurrentTab().Rows.some((r) => r.ID === state.jump.backlog.ID)
+            ) {
+              state.navigation.currentTabsRows[state.jump.backlog.ParentKey] =
+                sgetCurrentTab().Rows.findIndex((r) =>
+                  r.ID
+                    ? r.ID === state.jump.backlog.ID
+                    : r.Name === state.jump.backlog.Name
+                ) + 1;
+              // state.jump.backlog = null;
+            }
+          }
+        }
+
+        state.isLoading = false;
+        debouncedCmdRun(cmds._inspectorTabs);
         break;
 
       case 'auth':
@@ -4778,6 +4844,52 @@
                 ParentKey: t.Key,
               }))
             ).flat()
+          );
+          state.isLoading = false;
+          cmdRun(cmds._performJumpSearch);
+          break;
+        }
+
+        state.isLoading = false;
+        break;
+
+      case 'refresh-chunk':
+        if ('Tab' in notification.Content) {
+          if (notification.Content.ChunkIndex === 1) {
+            state.tabs = state.tabs.map((t) =>
+              t.Key !== notification.Content.Tab.Key
+                ? t
+                : notification.Content.Tab
+            );
+          } else {
+            state.tabs = state.tabs.map((t) =>
+              t.Key === notification.Content.Tab.Key
+                ? {
+                    ...t,
+                    Rows: [...t.Rows, ...notification.Content.Tab.Rows],
+                  }
+                : t
+            );
+          }
+
+          if (state.tabs.some((t) => t.Rows.length === 0))
+            state.tabs = state.tabs.filter((t) => t.Rows.length > 0);
+
+          state.navigation.currentTabsRows[notification.Content.Tab.Key] = 1;
+          if (searchIsEnabled) reapplySearch = true;
+        }
+
+        if ('Enumeration' in notification.Content) {
+          // Jump can be disabled if we chose a local resource before enumeration finished
+          if (!state.jump.isEnabled) return;
+
+          state.jump.remoteResources.push(
+            ...notification.Content.Enumeration.Rows.map((r) => ({
+              ...r,
+              Host: notification.Content.Host,
+              Parent: notification.Content.Enumeration.Title,
+              ParentKey: notification.Content.Enumeration.Key,
+            }))
           );
           state.isLoading = false;
           cmdRun(cmds._performJumpSearch);
