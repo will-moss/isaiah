@@ -1,3 +1,17 @@
+# [1.24.0](https://github.com/will-moss/isaiah/compare/1.23.2...1.24.0) (2024-08-26)
+
+
+### Bug Fixes
+
+* **containers:** added a pop-up block to prevent trying to edit a container on a remote host ([552cb6e](https://github.com/will-moss/isaiah/commit/552cb6e7f45d3619d10c50f32149dc3078374176))
+* **ui:** fixed a typo in the authentication process success notification ([683a9b9](https://github.com/will-moss/isaiah/commit/683a9b9bc3a34fb93a37bfc48c98ff1600d207e8))
+
+
+### Features
+
+* **project:** added full support for chunked communication (local + multi-node + multi-host) ([fb7261e](https://github.com/will-moss/isaiah/commit/fb7261e261c524c8d0ebc5d0595e34ab8f5d10d3)), closes [#9](https://github.com/will-moss/isaiah/issues/9)
+* **stacks:** added support for managing Docker Compose stacks on remote hosts over Docker socket ([c40a468](https://github.com/will-moss/isaiah/commit/c40a4686f09aaf872dddfcf7d2c05edd9c6599b5))
+
 ## [1.23.2](https://github.com/will-moss/isaiah/compare/1.23.1...1.23.2) (2024-08-25)
 
 
