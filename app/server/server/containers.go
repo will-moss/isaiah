@@ -387,6 +387,21 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 			break
 		}
 
+		if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" && !strings.HasPrefix(server.Docker.DaemonHost(), "unix://") {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a multi-host deployment." +
+							" In this case, editing a running container is unavailable because" +
+							" it requires accessing files on the remote host, which isn't feasible over the raw Docker socket." +
+							" You may want to deploy a multi-node setup for that purpose.",
+					},
+				}),
+			)
+			return
+		}
+
 		var container resources.Container
 		mapstructure.Decode(command.Args["Resource"], &container)
 		_command, err := container.GetRunCommand(server.Docker)
@@ -426,6 +441,21 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 				}),
 			)
 			break
+		}
+
+		if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" && !strings.HasPrefix(server.Docker.DaemonHost(), "unix://") {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're running Isaiah inside a multi-host deployment." +
+							" In this case, editing a running container is unavailable because" +
+							" it requires accessing files on the remote host, which isn't feasible over the raw Docker socket." +
+							" You may want to deploy a multi-node setup for that purpose.",
+					},
+				}),
+			)
+			return
 		}
 
 		var container resources.Container

@@ -445,7 +445,7 @@ func (c Container) GetBrowserUrl(client *client.Client) (string, error) {
 
 // Retrieve the run command of the Docker container
 func (c Container) GetRunCommand(client *client.Client) (string, error) {
-	output, err := exec.Command("docker", "inspect", "--format", GetRunCommandTemplate, c.Name).Output()
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "inspect", "--format", GetRunCommandTemplate, c.Name).Output()
 
 	if err != nil {
 		return "", err
