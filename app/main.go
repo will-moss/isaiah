@@ -268,7 +268,7 @@ func main() {
 						Content: ui.JSON{
 							"Authentication": ui.JSON{
 								"Spontaneous": true,
-								"Message":     "Your are now authenticated",
+								"Message":     "You are now authenticated",
 							},
 						},
 					}))
