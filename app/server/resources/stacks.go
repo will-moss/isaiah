@@ -135,7 +135,7 @@ func StacksList(client *client.Client) Stacks {
 		return []Stack{}
 	}
 
-	output, err := exec.Command("docker", "compose", "ls", "--format", "json").Output()
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "ls", "--format", "json").Output()
 
 	if err != nil {
 		return []Stack{}
@@ -195,7 +195,7 @@ func (stacks Stacks) ToRows(columns []string) ui.Rows {
 
 // Single - Start the stack (docker compose up -d)
 func (s Stack) Up(client *client.Client) error {
-	output, err := exec.Command("docker", "compose", "-f", s.ConfigFiles, "up", "-d").CombinedOutput()
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "-f", s.ConfigFiles, "up", "-d").CombinedOutput()
 
 	if err != nil {
 		return errors.New(string(output))
@@ -206,7 +206,7 @@ func (s Stack) Up(client *client.Client) error {
 
 // Single - Pause the stack (docker compose pause)
 func (s Stack) Pause(client *client.Client) error {
-	output, err := exec.Command("docker", "compose", "-f", s.ConfigFiles, "pause").CombinedOutput()
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "-p", s.Name, "pause").CombinedOutput()
 
 	if err != nil {
 		return errors.New(string(output))
@@ -217,7 +217,7 @@ func (s Stack) Pause(client *client.Client) error {
 
 // Single - Unpause the stack (docker compose unpause)
 func (s Stack) Unpause(client *client.Client) error {
-	output, err := exec.Command("docker", "compose", "-f", s.ConfigFiles, "unpause").CombinedOutput()
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "-p", s.Name, "unpause").CombinedOutput()
 
 	if err != nil {
 		return errors.New(string(output))
@@ -228,7 +228,7 @@ func (s Stack) Unpause(client *client.Client) error {
 
 // Single - Down the stack (docker compose down)
 func (s Stack) Down(client *client.Client) error {
-	output, err := exec.Command("docker", "compose", "-f", s.ConfigFiles, "down").CombinedOutput()
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "-p", s.Name, "down").CombinedOutput()
 
 	if err != nil {
 		return errors.New(string(output))
@@ -239,19 +239,19 @@ func (s Stack) Down(client *client.Client) error {
 
 // Single - Update the stack (docker compose down, docker compose pull, docker compose up)
 func (s Stack) Update(client *client.Client) error {
-	output, err := exec.Command("docker", "compose", "-f", s.ConfigFiles, "down").CombinedOutput()
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "-p", s.Name, "down").CombinedOutput()
 
 	if err != nil {
 		return errors.New(string(output))
 	}
 
-	output, err = exec.Command("docker", "compose", "-f", s.ConfigFiles, "pull").CombinedOutput()
+	output, err = exec.Command("docker", "-H", client.DaemonHost(), "compose", "-f", s.ConfigFiles, "pull").CombinedOutput()
 
 	if err != nil {
 		return errors.New(string(output))
 	}
 
-	output, err = exec.Command("docker", "compose", "-f", s.ConfigFiles, "up", "-d").CombinedOutput()
+	output, err = exec.Command("docker", "-H", client.DaemonHost(), "compose", "-f", s.ConfigFiles, "up", "-d").CombinedOutput()
 
 	if err != nil {
 		return errors.New(string(output))
@@ -262,7 +262,7 @@ func (s Stack) Update(client *client.Client) error {
 
 // Single - Restart the stack (docker compose restart)
 func (s Stack) Restart(client *client.Client) error {
-	output, err := exec.Command("docker", "compose", "-f", s.ConfigFiles, "restart").CombinedOutput()
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "-p", s.Name, "restart").CombinedOutput()
 
 	if err != nil {
 		return errors.New(string(output))
@@ -273,10 +273,10 @@ func (s Stack) Restart(client *client.Client) error {
 
 // Inspector - Retrieve the list of services (containers) inside a Docker stack
 func (s Stack) GetServices(client *client.Client) (ui.InspectorContent, error) {
-	output, err := exec.Command("docker", "compose", "-f", s.ConfigFiles, "ps", "-aq").Output()
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "-p", s.Name, "ps", "-aq").CombinedOutput()
 
 	if err != nil {
-		return nil, err
+		return nil, errors.New(string(output))
 	}
 
 	ids := strings.Split(string(output), "\n")
@@ -302,13 +302,20 @@ func (s Stack) GetConfig(client *client.Client) (ui.InspectorContent, error) {
 
 	separator := ui.InspectorContentPart{Type: "lines", Content: []string{}}
 
-	config, err := os.ReadFile(s.ConfigFiles)
+	code := make([]string, 0)
+	if _os.GetEnv("MULTI_HOST_ENABLED") != "TRUE" || strings.HasPrefix(client.DaemonHost(), "unix://") {
 
-	if err != nil {
-		return nil, err
+		config, err := os.ReadFile(s.ConfigFiles)
+
+		if err != nil {
+			return nil, err
+		}
+
+		code = strings.Split(string(config), "\n")
+	} else {
+		code = append(code, "The content of this docker-compose.yml file is unavailable because it is located on the remote host.")
+		code = append(code, "Please consider deploying a multi-node setup for full access to Stacks features.")
 	}
-
-	code := strings.Split(string(config), "\n")
 
 	allConfig := ui.InspectorContent{
 		firstPart,
@@ -334,9 +341,11 @@ func (s Stack) GetRawConfig(client *client.Client) (string, error) {
 func (s Stack) GetLogs(client *client.Client, writer io.Writer, showTimestamps bool) (*io.ReadCloser, error) {
 	opts := make([]string, 0)
 
+	opts = append(opts, "-H")
+	opts = append(opts, client.DaemonHost())
 	opts = append(opts, "compose")
-	opts = append(opts, "-f")
-	opts = append(opts, s.ConfigFiles)
+	opts = append(opts, "-p")
+	opts = append(opts, s.Name)
 	opts = append(opts, "logs")
 
 	opts = append(opts, "--follow")
@@ -353,6 +362,7 @@ func (s Stack) GetLogs(client *client.Client, writer io.Writer, showTimestamps b
 	}
 
 	process := exec.Command("docker", opts...)
+
 	reader, err := process.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -381,14 +391,14 @@ func StackCreate(c *client.Client, m process.LongTaskMonitor, args map[string]in
 		return
 	}
 
-	output, err := exec.Command("docker", "compose", "-f", filepath, "config").CombinedOutput()
+	output, err := exec.Command("docker", "-H", c.DaemonHost(), "compose", "-f", filepath, "config").CombinedOutput()
 
 	if err != nil {
 		m.Errors <- errors.New(string(output))
 		return
 	}
 
-	process := exec.Command("docker", "compose", "-f", filepath, "up", "-d")
+	process := exec.Command("docker", "-H", c.DaemonHost(), "compose", "-f", filepath, "up", "-d")
 	reader, err := process.StdoutPipe()
 
 	if err != nil {
@@ -441,7 +451,7 @@ func (s Stack) Edit(c *client.Client, m process.LongTaskMonitor, args map[string
 		return
 	}
 
-	output, err := exec.Command("docker", "compose", "-f", s.ConfigFiles, "config").CombinedOutput()
+	output, err := exec.Command("docker", "-H", c.DaemonHost(), "compose", "-f", s.ConfigFiles, "config").CombinedOutput()
 
 	if err != nil {
 		m.Errors <- errors.New(string(output))
@@ -450,7 +460,7 @@ func (s Stack) Edit(c *client.Client, m process.LongTaskMonitor, args map[string
 		return
 	}
 
-	process := exec.Command("docker", "compose", "-f", s.ConfigFiles, "up", "-d")
+	process := exec.Command("docker", "-H", c.DaemonHost(), "compose", "-f", s.ConfigFiles, "up", "-d")
 	reader, err := process.StdoutPipe()
 
 	if err != nil {
