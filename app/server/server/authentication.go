@@ -21,7 +21,7 @@ func (Authentication) RunCommand(server *Server, session _session.GenericSession
 				Type: ui.TypeSuccess,
 				Content: ui.JSON{
 					"Authentication": ui.JSON{
-						"Message": "Your are now authenticated",
+						"Message": "You are now authenticated",
 					},
 					"Preferences": server.GetPreferences(),
 				},
@@ -81,7 +81,7 @@ func (Authentication) RunCommand(server *Server, session _session.GenericSession
 				Type: ui.TypeSuccess,
 				Content: ui.JSON{
 					"Authentication": ui.JSON{
-						"Message": "Your are now authenticated",
+						"Message": "You are now authenticated",
 					},
 					"Preferences": server.GetPreferences(),
 				},
