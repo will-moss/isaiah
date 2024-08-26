@@ -8,6 +8,8 @@ import (
 	_os "will-moss/isaiah/server/_internal/os"
 	"will-moss/isaiah/server/_internal/process"
 	_session "will-moss/isaiah/server/_internal/session"
+	_slices "will-moss/isaiah/server/_internal/slices"
+	_strconv "will-moss/isaiah/server/_internal/strconv"
 	"will-moss/isaiah/server/_internal/tty"
 	"will-moss/isaiah/server/resources"
 	"will-moss/isaiah/server/ui"
@@ -46,11 +48,32 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 		containers := resources.ContainersList(server.Docker, filters.Args{})
 
 		rows := containers.ToRows(columns)
-		server.SendNotification(
-			session,
-			ui.NotificationData(ui.NP{
-				Content: ui.JSON{"Tab": ui.Tab{Key: "containers", Title: "Containers", Rows: rows, SortBy: _os.GetEnv("SORTBY_CONTAINERS")}}}),
-		)
+
+		// Default communication method - Send all at once
+		if _os.GetEnv("SERVER_CHUNKED_COMMUNICATION_ENABLED") != "TRUE" {
+			server.SendNotification(
+				session,
+				ui.NotificationData(ui.NP{
+					Content: ui.JSON{"Tab": ui.Tab{Key: "containers", Title: "Containers", Rows: rows, SortBy: _os.GetEnv("SORTBY_CONTAINERS")}}}),
+			)
+		} else {
+			// Chunked communication method, send resources chunk by chunk
+			chunkSize := int(_strconv.ParseInt(_os.GetEnv("SERVER_CHUNKED_COMMUNICATION_SIZE"), 10, 64))
+			chunkIndex := 1
+			chunks := _slices.Chunk(rows, chunkSize)
+			for _, c := range chunks {
+				server.SendNotification(
+					session,
+					ui.NotificationDataChunk(ui.NP{
+						Content: ui.JSON{
+							"Tab":        ui.Tab{Key: "containers", Title: "Containers", Rows: c, SortBy: _os.GetEnv("SORTBY_CONTAINERS")},
+							"ChunkIndex": chunkIndex,
+						},
+					}),
+				)
+				chunkIndex += 1
+			}
+		}
 
 	// Bulk - Prune
 	case "containers.prune":

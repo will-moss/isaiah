@@ -12,6 +12,8 @@ import (
 	_io "will-moss/isaiah/server/_internal/io"
 	_os "will-moss/isaiah/server/_internal/os"
 	_session "will-moss/isaiah/server/_internal/session"
+	_slices "will-moss/isaiah/server/_internal/slices"
+	_strconv "will-moss/isaiah/server/_internal/strconv"
 	"will-moss/isaiah/server/_internal/tty"
 	"will-moss/isaiah/server/resources"
 	"will-moss/isaiah/server/ui"
@@ -135,23 +137,76 @@ func (server *Server) runCommand(session _session.GenericSession, command ui.Com
 			}
 		}
 
-		if command.Action == "init" {
-			server.SendNotification(
-				session,
-				ui.NotificationInit(ui.NotificationParams{
-					Content: ui.JSON{
-						"Tabs":   tabs,
-						"Agents": agents,
-						"Hosts":  hosts,
-					},
-				}))
-		} else if command.Action == "enumerate" {
-			// `enumerate` is used only in the context of the `Jump` command
-			server.SendNotification(
-				session,
-				ui.NotificationData(ui.NotificationParams{
-					Content: ui.JSON{"Enumeration": tabs, "Host": command.Host},
-				}))
+		// Default communication method - Send all at once
+		if _os.GetEnv("SERVER_CHUNKED_COMMUNICATION_ENABLED") != "TRUE" {
+			if command.Action == "init" {
+				server.SendNotification(
+					session,
+					ui.NotificationInit(ui.NotificationParams{
+						Content: ui.JSON{
+							"Tabs":   tabs,
+							"Agents": agents,
+							"Hosts":  hosts,
+						},
+					}))
+			} else if command.Action == "enumerate" {
+				// `enumerate` is used only in the context of the `Jump` command
+				server.SendNotification(
+					session,
+					ui.NotificationData(ui.NotificationParams{
+						Content: ui.JSON{"Enumeration": tabs, "Host": command.Host},
+					}))
+			}
+		} else {
+			// Chunked communication method, send resources chunk by chunk
+			chunkSize := int(_strconv.ParseInt(_os.GetEnv("SERVER_CHUNKED_COMMUNICATION_SIZE"), 10, 64))
+			chunkIndex := 1
+			if command.Action == "init" {
+				// First, send the Agents and Hosts
+				server.SendNotification(
+					session,
+					ui.NotificationInit(ui.NotificationParams{
+						Content: ui.JSON{
+							"Agents":     agents,
+							"Hosts":      hosts,
+							"ChunkIndex": -1,
+						},
+					}))
+
+				// Then, send the resources by chunks
+				for _, t := range tabs {
+					chunks := _slices.Chunk(t.Rows, chunkSize)
+					for _, c := range chunks {
+						server.SendNotification(
+							session,
+							ui.NotificationInitChunk(ui.NotificationParams{
+								Content: ui.JSON{
+									"Tab":        ui.Tab{Key: t.Key, Title: t.Title, Rows: c, SortBy: t.SortBy},
+									"ChunkIndex": chunkIndex,
+								},
+							}),
+						)
+						chunkIndex += 1
+					}
+				}
+			} else if command.Action == "enumerate" {
+				for _, t := range tabs {
+					chunks := _slices.Chunk(t.Rows, chunkSize)
+					for _, c := range chunks {
+						server.SendNotification(
+							session,
+							ui.NotificationDataChunk(ui.NotificationParams{
+								Content: ui.JSON{
+									"Host":        command.Host,
+									"Enumeration": ui.Tab{Key: t.Key, Title: t.Title, Rows: c, SortBy: t.SortBy},
+									"ChunkIndex":  chunkIndex,
+								},
+							}),
+						)
+						chunkIndex += 1
+					}
+				}
+			}
 		}
 
 	// Command : Agent-only - Clear TTY / Stream

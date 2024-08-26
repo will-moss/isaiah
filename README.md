@@ -109,6 +109,8 @@ For more information, read about [Configuration](#configuration) and [Deployment
 
 > Please make sure that Docker 23.0.0+ is installed before proceeding, or consider updating beforehand.
 
+> If you are using the Stacks feature to manage Docker Compose stacks, please use Docker 26.0.0+.
+
 ### Deploy with Docker
 
 You can run Isaiah with Docker on the command line very quickly.
@@ -422,6 +424,8 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `SSL_ENABLED`           | `boolean` | Whether HTTPS should be used in place of HTTP. When configured, Isaiah will look for `certificate.pem` and `key.pem` next to the executable for configuring SSL. Note that if Isaiah is behind a proxy that already handles SSL, this should be set to `false`. | False        |
 | `SERVER_PORT`           | `integer` | The port Isaiah listens on. | 3000        |
 | `SERVER_MAX_READ_SIZE`  | `integer` | The maximum size (in bytes) per message that Isaiah will accept over Websocket. Note that, in a multi-node deployment, you may need to incrase the value of that setting. (Shouldn't be modified, unless your server randomly restarts the Websocket session for no obvious reason) | 100000        |
+| `SERVER_CHUNKED_COMMUNICATION_ENABLED`  | `boolean` | Whether resources should be sent in chunks, rather than all at once. (Recommended only in setups with 150+ Docker resources, and multi-node deployments) | False        |
+| `SERVER_CHUNKED_COMMUNICATION_SIZE`  | `integer` | The number of resources to send per chunk, when chunked communication is enabled | 50        |
 | `AUTHENTICATION_ENABLED`| `boolean` | Whether a password is required to access Isaiah. (Recommended) | True |
 | `AUTHENTICATION_SECRET` | `string`  | The master password used to secure your Isaiah instance against malicious actors. | one-very-long-and-mysterious-secret        |
 | `AUTHENTICATION_HASH`   | `string`  | The master password's hash (sha256 format) used to secure your Isaiah instance against malicious actors. Use this setting instead of `AUTHENTICATION_SECRET` if you feel uncomfortable providing a cleartext password. | Empty    |
@@ -551,6 +555,18 @@ In any case, the crucial part is [Configuration](#configuration) and making sure
 You must update Docker on your system to fix that issue.
 
 Isaiah uses the native Docker Engine API, and it requires Docker to be at least on version 23.0.0+
+
+#### On a system with a lot of Docker resources, Isaiah is inconsistent or crashes
+
+This is due to a limitation on the message size during the WebSocket communication.
+When your server has a lot of Docker resources on it (~150+), Isaiah will send all these resources in a single
+WebSocket message by default. This can cause the server to crash.
+
+There are two solutions :
+- Increase the maximum size of a message : Increase the value of the setting `SERVER_MAX_READ_SIZE`
+- Enabled chunked communication : Set `SERVER_CHUNKED_COMMUNICATION_ENABLED` to `TRUE` and adjust `SERVER_CHUNKED_COMMUNICATION_SIZE` if it's not already satisfying.
+
+You may encounter the same issue in a multi-node deployment, and the cleanest solution here would be to enable chunked communication on the node that hosts a lot of Docker resources. 
 
 #### The emulated shell behaves unconsistently or displays unexpected characters
 

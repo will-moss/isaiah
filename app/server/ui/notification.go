@@ -32,17 +32,23 @@ const (
 )
 
 const (
-	CategoryInit    = "init"    // Notification sent at first connection established
-	CategoryRefresh = "refresh" // Notification sent when requesting new data for Docker / UI resources
-	CategoryLoading = "loading" // Notification sent to let the user know that the server is loading
-	CategoryReport  = "report"  // Notification sent to let the user know something (message, error)
-	CategoryPrompt  = "prompt"  // Notification sent to ask confirmation from the user
-	CategoryTty     = "tty"     // Notification sent to instruct about TTY status / output
-	CategoryAuth    = "auth"    // Notification sent to instruct about authentication
+	CategoryInit         = "init"          // Notification sent at first connection established
+	CategoryInitChunk    = "init-chunk"    // Notification sent at first connection established, in chunked communication
+	CategoryRefresh      = "refresh"       // Notification sent when requesting new data for Docker / UI resources
+	CategoryRefreshChunk = "refresh-chunk" // Notification sent when requesting new data for Docker / UI resources, in chunked communication
+	CategoryLoading      = "loading"       // Notification sent to let the user know that the server is loading
+	CategoryReport       = "report"        // Notification sent to let the user know something (message, error)
+	CategoryPrompt       = "prompt"        // Notification sent to ask confirmation from the user
+	CategoryTty          = "tty"           // Notification sent to instruct about TTY status / output
+	CategoryAuth         = "auth"          // Notification sent to instruct about authentication
 )
 
 func NotificationInit(p NotificationParams) Notification {
 	return Notification{Category: CategoryInit, Type: TypeSuccess, Content: p.Content, Follow: p.Follow}
+}
+
+func NotificationInitChunk(p NotificationParams) Notification {
+	return Notification{Category: CategoryInitChunk, Type: TypeSuccess, Content: p.Content, Follow: p.Follow}
 }
 
 func NotificationError(p NotificationParams) Notification {
@@ -51,6 +57,9 @@ func NotificationError(p NotificationParams) Notification {
 
 func NotificationData(p NotificationParams) Notification {
 	return Notification{Category: CategoryRefresh, Type: TypeInfo, Content: p.Content, Follow: p.Follow}
+}
+func NotificationDataChunk(p NotificationParams) Notification {
+	return Notification{Category: CategoryRefreshChunk, Type: TypeInfo, Content: p.Content, Follow: p.Follow}
 }
 
 func NotificationInfo(p NotificationParams) Notification {
