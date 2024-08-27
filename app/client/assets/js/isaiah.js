@@ -565,8 +565,10 @@
            prompt.input.type === 'input'
              ? `<input
                   id="prompt-input"
+                  name="${prompt.isForAuthentication ? 'password': 'prompt-input'}"
                   placeholder="${prompt.input.placeholder}"
                   type="${prompt.isForAuthentication ? 'password' : 'text'}"
+                  autocomplete="${prompt.isForAuthentication ? 'password' : 'off'}"
                   ${prompt.input.defaultValue ? `value="${prompt.input.defaultValue}"` : ''}
                />`
              : `<pre><code class="hljs language-yaml">${prompt.input.defaultValue ? prompt.input.defaultValue : ''}</code></pre>
@@ -598,13 +600,23 @@
         <div class="tab is-active">
           <span class="tab-title">${title}</span>
           <div class="tab-content">
-            <div class="row ${
+            <form class="row ${
               prompt.input.isEnabled && prompt.input.type === 'input'
                 ? 'is-not-interactive'
                 : 'is-for-code'
             } is-textual">
+              ${
+                prompt.isForAuthentication
+                  ? `<input type="hidden" name="email" value="isaiah-dummy-do-not-erase" autocomplete="email" />`
+                  : ''
+              }
               ${body}
-            </div>
+              ${
+                prompt.isForAuthentication
+                  ? `<button type="submit" style="display: none">Submit</button>`
+                  : ''
+              }
+            </form>
           </div>
         </div>
       </div>
@@ -4712,9 +4724,13 @@
               setTimeout(() => {
                 cmdRun(cmds._clearMessage);
                 state.isAuthenticated = true;
+
                 if (state.settings.enableOverviewOnLaunch)
                   cmdRun(cmds.overview);
                 else cmdRun(cmds._init);
+
+                // Trick to trigger browser password save mechanism
+                history.replaceState({ success: true }, '', '/');
               }, state._delays.forAuthentication);
             }
             // Dev-only
