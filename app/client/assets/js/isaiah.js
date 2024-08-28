@@ -1716,12 +1716,22 @@
       /**
        * @type {string}
        */
+      masterPassword: null,
+
+      /**
+       * @type {string}
+       */
       currentAgent: null,
 
       /**
        * @type {Array<string>}
        */
       availableAgents: [],
+
+      /**
+       * @type {Array<string>}
+       */
+      authenticatedAgents: [],
 
       /**
        * @type {string}
@@ -2382,6 +2392,8 @@
 
       if (!password) return;
 
+      state.communication.masterPassword = password;
+
       websocketSend({ action: 'auth.login', args: { Password: password } });
     },
 
@@ -2401,10 +2413,29 @@
     _pickAgent: function (action) {
       cmdRun(cmds._clear);
 
-      if (action.Label === 'Master') state.communication.currentAgent = null;
-      else state.communication.currentAgent = action.Label;
+      let hasAttemptedAutoLogin = false;
 
-      cmdRun(cmds._init);
+      if (action.Label === 'Master') state.communication.currentAgent = null;
+      else {
+        state.communication.currentAgent = action.Label;
+
+        // Attempt auto-login using the known password used on Master node
+        if (!state.communication.authenticatedAgents.includes(action.Label)) {
+          if (state.communication.masterPassword) {
+            websocketSend({
+              action: 'auth.login',
+              args: {
+                Password: state.communication.masterPassword,
+                AutoLogin: true,
+              },
+            });
+
+            hasAttemptedAutoLogin = true;
+          }
+        }
+      }
+
+      if (!hasAttemptedAutoLogin) cmdRun(cmds._init);
     },
 
     /**
@@ -4710,6 +4741,8 @@
 
           // Authentication error
           if ('error' === notification.Type) {
+            state.communication.masterPassword = null;
+
             cmdRun(cmds._showPopup, 'message');
             setTimeout(() => {
               cmdRun(cmds._clearMessage);
@@ -4720,18 +4753,39 @@
           else if ('success' === notification.Type) {
             // Normal case
             if (!notification.Content.Authentication.Spontaneous) {
-              cmdRun(cmds._showPopup, 'message');
-              setTimeout(() => {
-                cmdRun(cmds._clearMessage);
-                state.isAuthenticated = true;
+              if (!notification.Content.Authentication.Seamless)
+                cmdRun(cmds._showPopup, 'message');
 
-                if (state.settings.enableOverviewOnLaunch)
-                  cmdRun(cmds.overview);
-                else cmdRun(cmds._init);
+              setTimeout(
+                () => {
+                  cmdRun(cmds._clearMessage);
 
-                // Trick to trigger browser password save mechanism
-                history.replaceState({ success: true }, '', '/');
-              }, state._delays.forAuthentication);
+                  state.isAuthenticated = true;
+
+                  // prettier-ignore
+                  if (state.communication.availableAgents.length > 0)
+                  if (state.communication.currentAgent !== 'Master')
+                    if (!state.communication.authenticatedAgents.includes(state.communication.currentAgent))
+                      state.communication.authenticatedAgents.push(
+                        state.communication.currentAgent
+                      );
+
+                  if (state.settings.enableOverviewOnLaunch) {
+                    // Very first connection, no agent is known from the client yet
+                    if (state.communication.availableAgents.length === 0)
+                      cmdRun(cmds.overview);
+                    // Connection to another agent is established, retrieve all data
+                    else cmdRun(cmds._init);
+                  } else cmdRun(cmds._init);
+
+                  // Trick to trigger browser password save mechanism
+                  history.replaceState({ success: true }, '', '/');
+                },
+
+                !notification.Content.Authentication.Seamless
+                  ? state._delays.forAuthentication
+                  : 0
+              );
             }
             // Dev-only
             else {

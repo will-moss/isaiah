@@ -75,13 +75,19 @@ func (Authentication) RunCommand(server *Server, session _session.GenericSession
 
 		session.Set("authenticated", true)
 
+		showNothingOnFront, ok := command.Args["AutoLogin"]
+		if !ok {
+			showNothingOnFront = false
+		}
+
 		server.SendNotification(
 			session,
 			ui.NotificationAuth(ui.NP{
 				Type: ui.TypeSuccess,
 				Content: ui.JSON{
 					"Authentication": ui.JSON{
-						"Message": "You are now authenticated",
+						"Message":  "You are now authenticated",
+						"Seamless": showNothingOnFront,
 					},
 					"Preferences": server.GetPreferences(),
 				},
