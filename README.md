@@ -317,6 +317,8 @@ If encounter any issue, please read the [Troubleshoot](#troubleshoot) section.
 
 > You may want to note that you don't need to expose ports on the machine / Docker container running Isaiah when it is configured as an Agent.
 
+> **Feature:** When Master and Agent nodes have the same secret, no authentication prompt will be required after logging into Master
+
 ## Multi-host deployment
 
 Using Isaiah, you can manage multiple hosts with their own distinct Docker resources from a single dashboard.
@@ -329,6 +331,9 @@ The big difference between multi-node and multi-host deployments is that you won
 if you are using multi-host. In this setup, Isaiah is installed only on one server, and communicates with other Docker hosts
 directly over TCP / Unix sockets. It makes it easier to manage multiple remote Docker environments without having to setup Isaiah
 on all of them.
+
+> In a multi-host deployment, Isaiah sends requests directly to the `/var/run/docker.sock` socket on the remote machines. So, that file must
+be exposed in one way or another.
 
 Please note that, in a multi-host setup, there must be a direct access between the main host (where Isaiah is running)
 and the other ones. Usually, they should be on the same network, or visible through a secured gateway / VPN / filesystem mount.
