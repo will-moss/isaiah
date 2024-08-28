@@ -323,6 +323,11 @@ func main() {
 
 	// When current node is an agent, perform agent registration procedure with the master node
 	if _os.GetEnv("SERVER_ROLE") == "Agent" {
+		hasRegisteredSuccessfullyAtLeastOnce := false
+		lastRegistrationAttemptAt := time.Now().Unix()
+		retryDelay := _strconv.ParseInt(_os.GetEnv("AGENT_REGISTRATION_RETRY_DELAY"), 10, 64)
+
+	agentRegistration:
 		log.Print("Initiating registration with master node")
 
 		var response ui.Notification
@@ -333,7 +338,21 @@ func main() {
 		if err != nil {
 			log.Print("Error establishing connection to the master node")
 			log.Print(err)
-			return
+
+			if hasRegisteredSuccessfullyAtLeastOnce {
+				currentAttemptAt := time.Now().Unix()
+				nextAttemptDelay := retryDelay - (currentAttemptAt - lastRegistrationAttemptAt)
+
+				if nextAttemptDelay > 0 {
+					log.Printf("New attempt in %d seconds", nextAttemptDelay)
+					time.Sleep(time.Duration(nextAttemptDelay) * time.Second)
+				}
+
+				lastRegistrationAttemptAt = time.Now().Unix()
+				goto agentRegistration
+			} else {
+				return
+			}
 		}
 
 		if _os.GetEnv("MASTER_SECRET") != "" {
@@ -357,7 +376,7 @@ func main() {
 			}
 
 			if response.Type != ui.TypeSuccess {
-				log.Print("Authentication with master node unsuccesful")
+				log.Print("Authentication with master node unsuccessful")
 				log.Print("Please check your MASTER_SECRET setting and restart")
 				return
 			}
@@ -403,22 +422,26 @@ func main() {
 			return
 		}
 		if response.Type != ui.TypeSuccess {
-			log.Print("Registration with master node unsuccesful")
+			log.Print("Registration with master node unsuccessful")
 			log.Print("Please check your settings and connectivity")
 			log.Printf("Error : %s", response.Content["Message"])
 			return
 		}
 
 		log.Print("Connection with master node is established")
+		hasRegisteredSuccessfullyAtLeastOnce = true
 
 		// Workaround : Create a tweaked reimplementation of melody.Session to reuse existing code
 		session := _session.Create(connection)
 
 		// 6. Process the commands as they are received
+		masterConnectionLost := false
 		for {
 			_, message, err := connection.ReadMessage()
 			if err != nil {
 				log.Print(err)
+				log.Print("Connection with master node was lost, will reconnect")
+				masterConnectionLost = true
 				break
 			}
 
@@ -444,7 +467,11 @@ func main() {
 			}
 		}
 
-		return
+		if masterConnectionLost {
+			goto agentRegistration
+		} else {
+			return
+		}
 	}
 
 	// When current node is master, start the HTTP server
