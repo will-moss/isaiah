@@ -1,3 +1,12 @@
+# [1.25.0](https://github.com/will-moss/isaiah/compare/1.24.0...1.25.0) (2024-08-28)
+
+
+### Features
+
+* **client:** added support for native browser password autocompletion during authentication ([5a4af9f](https://github.com/will-moss/isaiah/commit/5a4af9fbdd586b93187229312ff62af9ef05d613))
+* **multi-node:** added a reconnection strategy so agents auto-reconnect to master when disconnected ([f5395d1](https://github.com/will-moss/isaiah/commit/f5395d1c155157992264e3d0821049b6d2c1c86a))
+* **multi-node:** added auto-login to agents from the client when master and agent share same secret ([3ef2cbd](https://github.com/will-moss/isaiah/commit/3ef2cbdb82a27ebc492d13f5ed7654fbadb1a1df))
+
 # [1.24.0](https://github.com/will-moss/isaiah/compare/1.23.2...1.24.0) (2024-08-26)
 
 
