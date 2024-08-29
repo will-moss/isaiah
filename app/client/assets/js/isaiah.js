@@ -3382,26 +3382,46 @@
 
     /**
      * Public - Container-only - Stop
+     * Public - Stack-only - Stop
      */
     stop: function () {
-      if (sgetCurrentTabKey() !== 'containers') return;
+      const currentTabKey = sgetCurrentTabKey();
 
-      if (state.settings.enableMenuPrompt)
-        cmdRun(cmds._showPrompt, {
-          text: 'Are you sure you want to stop this container?',
-          callback: cmds._wsSend,
-          callbackArgs: [
-            {
-              action: `container.stop`,
-              args: { Resource: sgetCurrentRow() },
-            },
-          ],
-        });
-      else
-        websocketSend({
-          action: `container.stop`,
-          args: { Resource: sgetCurrentRow() },
-        });
+      if (currentTabKey === 'containers') {
+        if (state.settings.enableMenuPrompt)
+          cmdRun(cmds._showPrompt, {
+            text: 'Are you sure you want to stop this container?',
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: `container.stop`,
+                args: { Resource: sgetCurrentRow() },
+              },
+            ],
+          });
+        else
+          websocketSend({
+            action: `container.stop`,
+            args: { Resource: sgetCurrentRow() },
+          });
+      } else if (currentTabKey === 'stacks') {
+        if (state.settings.enableMenuPrompt)
+          cmdRun(cmds._showPrompt, {
+            text: 'Are you sure you want to stop this stack?',
+            callback: cmds._wsSend,
+            callbackArgs: [
+              {
+                action: `stack.stop`,
+                args: { Resource: sgetCurrentRow() },
+              },
+            ],
+          });
+        else
+          websocketSend({
+            action: `stack.stop`,
+            args: { Resource: sgetCurrentRow() },
+          });
+      }
     },
 
     /**
