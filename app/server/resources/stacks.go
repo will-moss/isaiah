@@ -64,6 +64,16 @@ func StackSingleActions() []ui.MenuAction {
 	actions = append(
 		actions,
 		ui.MenuAction{
+			Label:            "stop the stack",
+			Command:          "stack.stop",
+			Key:              "s",
+			RequiresResource: true,
+		},
+	)
+
+	actions = append(
+		actions,
+		ui.MenuAction{
 			Label:            "down the stack",
 			Command:          "stack.down",
 			Key:              "d",
@@ -218,6 +228,17 @@ func (s Stack) Pause(client *client.Client) error {
 // Single - Unpause the stack (docker compose unpause)
 func (s Stack) Unpause(client *client.Client) error {
 	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "-p", s.Name, "unpause").CombinedOutput()
+
+	if err != nil {
+		return errors.New(string(output))
+	}
+
+	return nil
+}
+
+// Single - Stop the stack (docker compose stop)
+func (s Stack) Stop(client *client.Client) error {
+	output, err := exec.Command("docker", "-H", client.DaemonHost(), "compose", "-p", s.Name, "stop").CombinedOutput()
 
 	if err != nil {
 		return errors.New(string(output))

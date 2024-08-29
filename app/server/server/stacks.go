@@ -188,6 +188,30 @@ func (Stacks) RunCommand(server *Server, session _session.GenericSession, comman
 		server.SendNotification(
 			session,
 			ui.NotificationSuccess(ui.NP{
+				Content: ui.JSON{"Message": "Your stack was succesfully removed"},
+				Follow:  "init",
+			}))
+
+	// Single - Stop
+	case "stack.stop":
+		var stack resources.Stack
+		mapstructure.Decode(command.Args["Resource"], &stack)
+
+		if strings.HasPrefix(stack.Status, "stopped") {
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "Your stack stopped already"}}))
+			break
+		}
+
+		err := stack.Stop(server.Docker)
+
+		if err != nil {
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+			break
+		}
+
+		server.SendNotification(
+			session,
+			ui.NotificationSuccess(ui.NP{
 				Content: ui.JSON{"Message": "Your stack was succesfully stopped"},
 				Follow:  "init",
 			}))
