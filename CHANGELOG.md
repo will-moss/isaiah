@@ -1,3 +1,15 @@
+# [1.26.0](https://github.com/will-moss/isaiah/compare/1.25.0...1.26.0) (2024-08-29)
+
+
+### Bug Fixes
+
+* **client:** now the stack icon is displayed correctly in Safari when showing the Overview panel ([c7844de](https://github.com/will-moss/isaiah/commit/c7844de8232cc0d61a25af3c0e800adb92614a8c))
+
+
+### Features
+
+* **stacks:** added support for stopping a stack (run "docker compose stop") ([dc98921](https://github.com/will-moss/isaiah/commit/dc9892153482f334bb66d1b8dfa8f80a21e90425))
+
 # [1.25.0](https://github.com/will-moss/isaiah/compare/1.24.0...1.25.0) (2024-08-28)
 
 
