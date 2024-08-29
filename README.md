@@ -53,7 +53,7 @@ Isaiah is a self-hostable service that enables you to manage all your Docker res
 Isaiah has all these features implemented :
 - For stacks :
     - Bulk update
-    - Up, Down, Pause, Unpause, Restart, Update
+    - Up, Down, Pause, Unpause, Stop, Restart, Update
     - Create and Edit stacks using `docker-compose.yml` files in your browser
     - Inspect (live logs, `docker-compose.yml`, services)
 - For containers :
