@@ -877,8 +877,34 @@
             Overview
           </span>
           <div class="tab-content">
-          ${overview.Instances.map(
-            (i) => `
+          ${overview.Instances.map((i) =>
+            // Special case : Remote agents are registered, but we haven't connected to them yet
+            i.Unknown
+              ? `<div
+                  data-role="Agent"
+                  data-name="${i.Name}"
+                  class="row"
+                >
+                 <div class="row-logo">
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 0 0-.12-1.03l-2.268-9.64a3.375 3.375 0 0 0-3.285-2.602H7.923a3.375 3.375 0 0 0-3.285 2.602l-2.268 9.64a4.5 4.5 0 0 0-.12 1.03v.228m19.5 0a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3m19.5 0a3 3 0 0 0-3-3H5.25a3 3 0 0 0-3 3m16.5 0h.008v.008h-.008v-.008Zm-3 0h.008v.008h-.008v-.008Z" /> </svg>
+                 </div>
+                 <div class="row-content">
+                   <div class="row-summary">
+                     <p>
+                       <i>Agent</i> ${i.Name}
+                     </p>
+                   </div>
+                   <div class="row-information">
+                     <div class="row-information-box for-containers">
+                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
+                       <span>Connect to this node to fetch its resources</span>
+                     </div>
+                    </div>
+                  </div>
+                </div>
+              `
+              : // Regular case
+                `
              <div
                data-role="${i.Server.Role}"
                data-name="${i.Server.Name}"
@@ -908,8 +934,8 @@
                      <span>${i.Resources.Containers.Count} Containers</span>
                    </div>
                    <div class="row-information-box for-volumes">
-                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" /> </svg>
-                   <span>${i.Resources.Volumes.Count} Volumes</span>
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" /> </svg>
+                     <span>${i.Resources.Volumes.Count} Volumes</span>
                    </div>
                    <div class="row-information-box for-images">
                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /> </svg>
@@ -4910,9 +4936,26 @@
             return;
           }
 
+          // Case when : First launch with multiple remote Agents
+          let unknownAgents = [];
+          if (
+            state.isFullyEmpty &&
+            notification.Content.Overview.Instances.length === 1 &&
+            notification.Content.Overview.Instances[0].Server.Agents &&
+            state.communication.availableAgents.length === 0
+          ) {
+            unknownAgents.push(
+              ...notification.Content.Overview.Instances[0].Server.Agents.map(
+                (a) => ({ Unknown: true, Name: a })
+              )
+            );
+          }
+
           // prettier-ignore
           state.overview.Instances = [
-            ...state.overview.Instances, ...notification.Content.Overview.Instances,
+            ...state.overview.Instances,
+            ...notification.Content.Overview.Instances,
+            ...unknownAgents
           ];
           state.overview.isEnabled = true;
           state.navigation.currentMenuRow = 1;
@@ -5183,5 +5226,6 @@
     // 4. Set mouse listener (third execution loop)
     window.addEventListener('click', listenerMouseClick);
     window.addEventListener('mousemove', listenerMouseMove);
+    window.xxx = state;
   });
 })(window);
