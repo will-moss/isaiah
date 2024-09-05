@@ -1,3 +1,10 @@
+# [1.27.0](https://github.com/will-moss/isaiah/compare/1.26.0...1.27.0) (2024-09-05)
+
+
+### Features
+
+* **client:** in a multi-node environment, Agents are now shown in the first overview for better UX ([6c304af](https://github.com/will-moss/isaiah/commit/6c304af1cdcbde700254aecee7f94b0649b1b612)), closes [#12](https://github.com/will-moss/isaiah/issues/12)
+
 # [1.26.0](https://github.com/will-moss/isaiah/compare/1.25.0...1.26.0) (2024-08-29)
 
 
