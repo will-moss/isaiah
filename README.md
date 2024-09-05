@@ -111,6 +111,8 @@ For more information, read about [Configuration](#configuration) and [Deployment
 
 > If you are using the Stacks feature to manage Docker Compose stacks, please use Docker 26.0.0+.
 
+> The default password is : one-very-long-and-mysterious-secret
+
 ### Deploy with Docker
 
 You can run Isaiah with Docker on the command line very quickly.
