@@ -426,6 +426,8 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 
 > **Note :** Regular environment variables provided on the commandline work too
 
+> **Note :** Boolean values are case-insensitive, and can be represented via "ON" / "OFF" / "TRUE" / "FALSE" / 0 / 1.
+
 | Parameter               | Type      | Description                | Default |
 | :---------------------- | :-------- | :------------------------- | ------- |
 | `SSL_ENABLED`           | `boolean` | Whether HTTPS should be used in place of HTTP. When configured, Isaiah will look for `certificate.pem` and `key.pem` next to the executable for configuring SSL. Note that if Isaiah is behind a proxy that already handles SSL, this should be set to `false`. | False        |
@@ -467,8 +469,6 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `FORWARD_PROXY_AUTHENTICATION_HEADER_KEY` | `string` | The name of the authentication header sent by the forward proxy after a succesful authentication. | Remote-User        |
 | `FORWARD_PROXY_AUTHENTICATION_HEADER_VALUE` | `string` | The value accepted by Isaiah for the authentication header. Using `*` means that all values are accepted (except emptiness). This parameter can be used to enforce that only a specific user or group can access Isaiah (e.g. `admins` or `john`). | * |
 | `CLIENT_PREFERENCE_XXX` | `string` | Please read [this troubleshooting paragraph](#the-web-interface-does-not-save-my-preferences). These settings enable you to define your client preferences on the server, for when your browser can't use the `localStorage` due to limitations, or private browsing. | Empty |
-
-> **Note :** Boolean values are case-insensitive, and can be represented via "ON" / "OFF" / "TRUE" / "FALSE" / 0 / 1.
 
 > **Note :** To sort rows in reverse using the `SORTBY_` parameters, prepend your field with the minus symbol, as in `-Name`
 
