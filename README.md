@@ -456,7 +456,7 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `TTY_CONTAINER_COMMAND` | `string`  | The command used to spawn a new shell inside the containers that Isaiah manages | `/bin/sh -c eval $(grep ^$(id -un): /etc/passwd \| cut -d : -f 7-) -i` |
 | `CUSTOM_DOCKER_HOST`    | `string`  | The host to use in place of the one defined by the DOCKER_HOST default variable | Empty |
 | `CUSTOM_DOCKER_CONTEXT` | `string`  | The Docker context to use in place of the current Docker context set on the system | Empty |
-| `SKIP_VERIFICATIONS`    | `boolean` | Whether Isaiah should skip startup verification checks before running the HTTP(S) server. (Not recommended) | False        |
+| `SKIP_VERIFICATIONS`    | `string` | Whether Isaiah should skip startup verification checks before running the HTTP(S) server - `"TRUE"` or `"FALSE"` (Not recommended) | "FALSE"        |
 | `SERVER_ROLE`           | `string`  | For multi-node deployments only. The role of the current instance of Isaiah. Can be either `Master` or `Agent` and is case-sensitive. | Master        |
 | `MASTER_HOST`           | `string`  | For multi-node deployments only. The host used to reach the Master node, specifying the IP address or the hostname, and the port if applicable (e.g. my-server.tld:3000). | Empty        |
 | `MASTER_SECRET`         | `string`  | For multi-node deployments only. The secret password used to authenticate on the Master node. Note that it should equal the `AUTHENTICATION_SECRET` setting on the Master node. | Empty        |
