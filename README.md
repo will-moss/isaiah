@@ -263,6 +263,11 @@ to ease running it. In more details, the following actions are performed :
 
 If you encounter any issue during this process, please feel free to tweak the install script or reach out by opening an issue.
 
+#### Updating
+
+You can update your `isaiah` executable by running the install script once again, or by performing the steps to build it manually once again.
+Both procedures will take care of overwriting any existing executable.
+
 ## Multi-node deployment
 
 Using Isaiah, you can manage multiple nodes with their own distinct Docker resources from a single dashboard.
