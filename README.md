@@ -190,7 +190,7 @@ An install script was created to help you install Isaiah in one line, from your 
 > As always, check the content of every file you pipe in bash
 
 ```sh
-curl https://raw.githubusercontent.com/will-moss/isaiah/master/scripts/remote-install.sh | bash
+bash <(curl -s https://raw.githubusercontent.com/will-moss/isaiah/master/scripts/remote-install.sh)
 ```
 
 This script will try to automatically download a binary that matches your operating system and architecture, and put it
