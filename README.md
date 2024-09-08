@@ -194,12 +194,9 @@ An install script was created to help you install Isaiah in one line, from your 
 # operating systems and versions of curl.
 
 # Option 1:
-curl -s https://raw.githubusercontent.com/will-moss/isaiah/master/scripts/remote-install.sh | bash
-
-# Option 2:
 bash <(curl -s https://raw.githubusercontent.com/will-moss/isaiah/master/scripts/remote-install.sh)
 
-# Option 3:
+# Option 2:
 curl -s https://raw.githubusercontent.com/will-moss/isaiah/master/scripts/remote-install.sh > install.sh
 chmod 755 install.sh
 ./install.sh
