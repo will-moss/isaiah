@@ -11,6 +11,8 @@ if [ $(id -u) -ne 0 ]; then
   echo "but that requires root permission. You can either restart the"
   echo "install script using sudo, or provide a new installation directory."
 
+  # Clear stdin
+  read -t 1 -n 10000 discard
 
   read -p "New installation directory: " DESTINATION
   if [ ! -d $DESTINATION ]; then

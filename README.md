@@ -190,7 +190,19 @@ An install script was created to help you install Isaiah in one line, from your 
 > As always, check the content of every file you pipe in bash
 
 ```sh
+# Multiple options are provided to cater to differences between
+# operating systems and versions of curl.
+
+# Option 1:
+curl -s https://raw.githubusercontent.com/will-moss/isaiah/master/scripts/remote-install.sh | bash
+
+# Option 2:
 bash <(curl -s https://raw.githubusercontent.com/will-moss/isaiah/master/scripts/remote-install.sh)
+
+# Option 3:
+curl -s https://raw.githubusercontent.com/will-moss/isaiah/master/scripts/remote-install.sh > install.sh
+chmod 755 install.sh
+./install.sh
 ```
 
 This script will try to automatically download a binary that matches your operating system and architecture, and put it
@@ -579,7 +591,7 @@ There are two solutions :
 - Increase the maximum size of a message : Increase the value of the setting `SERVER_MAX_READ_SIZE`
 - Enabled chunked communication : Set `SERVER_CHUNKED_COMMUNICATION_ENABLED` to `TRUE` and adjust `SERVER_CHUNKED_COMMUNICATION_SIZE` if it's not already satisfying.
 
-You may encounter the same issue in a multi-node deployment, and the cleanest solution here would be to enable chunked communication on the node that hosts a lot of Docker resources. 
+You may encounter the same issue in a multi-node deployment, and the cleanest solution here would be to enable chunked communication on the node that hosts a lot of Docker resources.
 
 #### The emulated shell behaves unconsistently or displays unexpected characters
 
