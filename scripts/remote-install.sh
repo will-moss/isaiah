@@ -12,7 +12,7 @@ if [ $(id -u) -ne 0 ]; then
   echo "install script using sudo, or provide a new installation directory."
 
 
-  read -r -p "New installation directory: " DESTINATION
+  read -p "New installation directory: " DESTINATION
   if [ ! -d $DESTINATION ]; then
     echo "Error: No such directory"
     exit
