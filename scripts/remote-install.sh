@@ -1,5 +1,28 @@
 #!/bin/bash
 
+DESTINATION="/usr/bin"
+if [ -d "/usr/local/bin" ]; then
+  DESTINATION="/usr/local/bin"
+fi
+
+# Handle sudo requirement on default install location
+if [ $(id -u) -ne 0 ]; then
+  echo "By default, Isaiah attempts to install its binary in /usr/bin/"
+  echo "but that requires root permission. You can either restart the"
+  echo "install script using sudo, or provide a new installation directory."
+
+
+  read -r -p "New installation directory: " DESTINATION
+  if [ ! -d $DESTINATION ]; then
+    echo "Error: No such directory"
+    exit
+  fi
+
+  # Remove trailing slash if any
+  DESTINATION=${DESTINATION%/}
+fi
+
+
 # Retrieve the system's architecture
 ARCH=$(uname -m)
 case $ARCH in
@@ -18,10 +41,6 @@ GITHUB_URL="https://github.com/will-moss/isaiah/releases/download/${GITHUB_LATES
 curl -L -o isaiah.tar.gz $GITHUB_URL
 tar xzvf isaiah.tar.gz isaiah
 
-DESTINATION="/usr/bin"
-if [ -d "/usr/local/bin" ]; then
-  DESTINATION="/usr/local/bin"
-fi
 
 mv isaiah $DESTINATION
 chmod 755 $DESTINATION/isaiah
