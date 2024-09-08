@@ -28,6 +28,7 @@
   * [Deploy as a standalone application](#deploy-as-a-standalone-application)
     + [Using an existing binary](#using-an-existing-binary)
     + [Building the binary manually](#building-the-binary-manually)
+    + [Updating](#updating)
 - [Multi-node deployment](#multi-node-deployment)
   * [General information](#general-information)
   * [Setup](#setup)
@@ -276,6 +277,8 @@ If you encounter any issue during this process, please feel free to tweak the in
 
 You can update your `isaiah` executable by running the install script once again, or by performing the steps to build it manually once again.
 Both procedures will take care of overwriting any existing executable.
+
+> For Docker deployments, just pull the latest image and recreate your container / stack.
 
 ## Multi-node deployment
 
