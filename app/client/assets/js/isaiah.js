@@ -3972,7 +3972,7 @@
         state.communication.availableAgents.length > 0
       ) {
         websocketSend({ action: `overview` });
-        for (const agent of state.communication.availableAgents)
+        for (const agent of state.communication.authenticatedAgents)
           websocketSend({ action: `overview`, Agent: agent }, true);
       }
       // When current Agent isn't Master, and other Agents exist
@@ -3981,7 +3981,7 @@
         state.communication.availableAgents.length > 0
       ) {
         websocketSend({ action: `overview` }, true);
-        for (const agent of state.communication.availableAgents)
+        for (const agent of state.communication.authenticatedAgents)
           websocketSend({ action: `overview`, Agent: agent }, true);
       }
     },
@@ -4936,18 +4936,12 @@
             return;
           }
 
-          // Case when : First launch with multiple remote Agents
           let unknownAgents = [];
-          if (
-            state.isFullyEmpty &&
-            notification.Content.Overview.Instances.length === 1 &&
-            notification.Content.Overview.Instances[0].Server.Agents &&
-            state.communication.availableAgents.length === 0
-          ) {
+          if (notification.Content.Overview.Instances[0].Server.Agents) {
             unknownAgents.push(
-              ...notification.Content.Overview.Instances[0].Server.Agents.map(
-                (a) => ({ Unknown: true, Name: a })
-              )
+              ...notification.Content.Overview.Instances[0].Server.Agents.filter(
+                (a) => !state.communication.authenticatedAgents.includes(a)
+              ).map((a) => ({ Unknown: true, Name: a }))
             );
           }
 
@@ -4957,6 +4951,12 @@
             ...notification.Content.Overview.Instances,
             ...unknownAgents
           ];
+
+          if (unknownAgents.length > 0)
+            state.communication.availableAgents = unknownAgents.map(
+              (u) => u.Name
+            );
+
           state.overview.isEnabled = true;
           state.navigation.currentMenuRow = 1;
           state.helper = state.isFullyEmpty ? 'overview' : 'picker';
