@@ -1,3 +1,11 @@
+## [1.29.1](https://github.com/will-moss/isaiah/compare/1.29.0...1.29.1) (2024-09-16)
+
+
+### Bug Fixes
+
+* **multi-node:** improved auto-login, agent-switching, and overview when in a multi-node deployment ([944e1d7](https://github.com/will-moss/isaiah/commit/944e1d791f9c18988a13f4db75551415f25bf6af))
+* **multi-node:** removed port binding check when current node is an Agent ([3e5de37](https://github.com/will-moss/isaiah/commit/3e5de37534969facfdd3ce09f7350bae1cac3036))
+
 # [1.29.0](https://github.com/will-moss/isaiah/compare/1.28.0...1.29.0) (2024-09-16)
 
 
