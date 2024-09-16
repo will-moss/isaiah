@@ -1,3 +1,10 @@
+# [1.29.0](https://github.com/will-moss/isaiah/compare/1.28.0...1.29.0) (2024-09-16)
+
+
+### Features
+
+* **stacks:** added new bulk operations for stacks ([5278982](https://github.com/will-moss/isaiah/commit/5278982363312fa1631f9758a454f851a4967ad3))
+
 # [1.27.0](https://github.com/will-moss/isaiah/compare/1.26.0...1.27.0) (2024-09-05)
 
 
