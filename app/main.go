@@ -65,11 +65,13 @@ func performVerifications() error {
 	}
 
 	// 3. Ensure server port is available
-	l, err := net.Listen("tcp", fmt.Sprintf(":%s", _os.GetEnv("SERVER_PORT")))
-	if err != nil {
-		return fmt.Errorf("Failed Verification : Port binding -> %s", err)
+	if _os.GetEnv("SERVER_ROLE") == "Master" {
+		l, err := net.Listen("tcp", fmt.Sprintf(":%s", _os.GetEnv("SERVER_PORT")))
+		if err != nil {
+			return fmt.Errorf("Failed Verification : Port binding -> %s", err)
+		}
+		defer l.Close()
 	}
-	defer l.Close()
 
 	// 4. Ensure certificate and private key are provided
 	if _os.GetEnv("SSL_ENABLED") == "TRUE" {
