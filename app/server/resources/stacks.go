@@ -136,6 +136,43 @@ func StacksBulkActions() []ui.MenuAction {
 			Command: "stacks.update",
 		},
 	)
+
+	actions = append(
+		actions,
+		ui.MenuAction{
+			Label:   "restart all stacks",
+			Prompt:  "Are you sure you want to restart all stacks?",
+			Command: "stacks.restart",
+		},
+	)
+
+	actions = append(
+		actions,
+		ui.MenuAction{
+			Label:   "pause all stacks",
+			Prompt:  "Are you sure you want to pause all stacks?",
+			Command: "stacks.pause",
+		},
+	)
+
+	actions = append(
+		actions,
+		ui.MenuAction{
+			Label:   "unpause all stacks",
+			Prompt:  "Are you sure you want to unpause all stacks?",
+			Command: "stacks.unpause",
+		},
+	)
+
+	actions = append(
+		actions,
+		ui.MenuAction{
+			Label:   "down all stacks",
+			Prompt:  "Are you sure you want to down all stacks?",
+			Command: "stacks.down",
+		},
+	)
+
 	return actions
 }
 

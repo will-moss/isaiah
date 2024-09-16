@@ -103,6 +103,158 @@ func (Stacks) RunCommand(server *Server, session _session.GenericSession, comman
 				}))
 		}
 
+	// Bulk - Restart
+	case "stacks.restart":
+		stacks := resources.StacksList(server.Docker)
+
+		hasErrored := false
+		for _, stack := range stacks {
+			server.SendNotification(
+				session,
+				ui.NotificationInfo(ui.NP{
+					Content: ui.JSON{"Message": fmt.Sprintf("Restarting stack %s...", stack.Name)},
+				}),
+			)
+
+			err := stack.Restart(server.Docker)
+
+			if err != nil {
+				server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+				hasErrored = true
+				break
+			}
+		}
+
+		if !hasErrored {
+			server.SendNotification(
+				session,
+				ui.NotificationSuccess(ui.NP{
+					Content: ui.JSON{"Message": "Your stacks were all succesfully restarted"},
+					Follow:  "init",
+				}))
+		}
+
+	// Bulk - Pause
+	case "stacks.pause":
+		stacks := resources.StacksList(server.Docker)
+
+		hasEvenStarted := false
+		hasErrored := false
+		for _, stack := range stacks {
+			if strings.HasPrefix(stack.Status, "paused") {
+				continue
+			}
+
+			hasEvenStarted = true
+
+			server.SendNotification(
+				session,
+				ui.NotificationInfo(ui.NP{
+					Content: ui.JSON{"Message": fmt.Sprintf("Pause stack %s...", stack.Name)},
+				}),
+			)
+
+			err := stack.Pause(server.Docker)
+
+			if err != nil {
+				server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+				hasErrored = true
+				break
+			}
+		}
+
+		if !hasErrored && hasEvenStarted {
+			server.SendNotification(
+				session,
+				ui.NotificationSuccess(ui.NP{
+					Content: ui.JSON{"Message": "Your stacks were all succesfully paused"},
+					Follow:  "init",
+				}))
+		} else if !hasEvenStarted {
+			server.SendNotification(
+				session,
+				ui.NotificationSuccess(ui.NP{
+					Content: ui.JSON{"Message": "Your stacks were all paused already"},
+					Follow:  "init",
+				}))
+		}
+
+	// Bulk - Unpause
+	case "stacks.unpause":
+		stacks := resources.StacksList(server.Docker)
+
+		hasEvenStarted := false
+		hasErrored := false
+		for _, stack := range stacks {
+			if !strings.HasPrefix(stack.Status, "paused") {
+				continue
+			}
+
+			hasEvenStarted = true
+
+			server.SendNotification(
+				session,
+				ui.NotificationInfo(ui.NP{
+					Content: ui.JSON{"Message": fmt.Sprintf("Unpause stack %s...", stack.Name)},
+				}),
+			)
+
+			err := stack.Unpause(server.Docker)
+
+			if err != nil {
+				server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+				hasErrored = true
+				break
+			}
+		}
+
+		if !hasErrored && hasEvenStarted {
+			server.SendNotification(
+				session,
+				ui.NotificationSuccess(ui.NP{
+					Content: ui.JSON{"Message": "Your stacks were all succesfully unpaused"},
+					Follow:  "init",
+				}))
+		} else if !hasEvenStarted {
+			server.SendNotification(
+				session,
+				ui.NotificationSuccess(ui.NP{
+					Content: ui.JSON{"Message": "Your stacks were all unpaused already"},
+					Follow:  "init",
+				}))
+		}
+
+	// Bulk - Down
+	case "stacks.down":
+		stacks := resources.StacksList(server.Docker)
+
+		hasErrored := false
+		for _, stack := range stacks {
+			server.SendNotification(
+				session,
+				ui.NotificationInfo(ui.NP{
+					Content: ui.JSON{"Message": fmt.Sprintf("Down stack %s...", stack.Name)},
+				}),
+			)
+
+			err := stack.Down(server.Docker)
+
+			if err != nil {
+				server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+				hasErrored = true
+				break
+			}
+		}
+
+		if !hasErrored {
+			server.SendNotification(
+				session,
+				ui.NotificationSuccess(ui.NP{
+					Content: ui.JSON{"Message": "Your stacks were all succesfully shut down"},
+					Follow:  "init",
+				}))
+		}
+
 	// Single - Up
 	case "stack.up":
 		if _os.GetEnv("MULTI_HOST_ENABLED") == "TRUE" && !strings.HasPrefix(server.Docker.DaemonHost(), "unix://") {
