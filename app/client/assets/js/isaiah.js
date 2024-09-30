@@ -1628,6 +1628,11 @@
        * @type {boolean}
        */
       enableSyntaxHighlight: true,
+
+      /**
+       * @type {boolean}
+       */
+      _mobileInstructionsDisplayed: false,
     },
 
     /**
@@ -4029,6 +4034,21 @@
     },
   };
 
+  // === Misc
+  const showMobileInstructions = () => {
+    localStorage.setItem('_mobileInstructionsDisplayed', true);
+
+    state.message.category = 'report';
+    state.message.type = 'success';
+    state.message.title = 'Welcome';
+    state.message.content =
+      "It seems that you're on a mobile device. Please note that you have more than 4 buttons available in the lower left scrollable menu.";
+    state.message.isEnabled = true;
+    state.helper = 'message';
+
+    cmdRun(cmds._showPopup, 'message');
+  };
+
   // === Variables
 
   /**
@@ -4683,6 +4703,14 @@
 
         state.isLoading = false;
         if (!state.isFullyEmpty) cmdRun(cmds._inspectorTabs);
+
+        // Show mobile instructions on first launch
+        if (
+          !state.settings._mobileInstructionsDisplayed &&
+          window.screen.availWidth <= 440
+        )
+          showMobileInstructions();
+
         break;
 
       case 'init-chunk':
@@ -5186,6 +5214,7 @@
       state.settings.enableOverviewOnLaunch = lsGet('enableOverviewOnLaunch', true);
       state.settings.enableJumpFuzzySearch = lsGet('enableJumpFuzzySearch', true);
       state.settings.enableSyntaxHighlight = lsGet('enableSyntaxHighlight', true);
+      state.settings._mobileInstructionsDisplayed = lsGet('_mobileInstructionsDisplayed', false);
     }
 
     // 1.1. Load fuzzy-search library if enabled by the user
