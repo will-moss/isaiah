@@ -153,8 +153,16 @@ func ImagesList(client *client.Client) Images {
 				image.Version = parts[1]
 			}
 		} else {
-			image.Name = "<none>"
-			image.Version = "<none>"
+			if len(summary.RepoDigests) > 0 {
+				if strings.Contains(summary.RepoDigests[0], "@") {
+					parts := strings.Split(summary.RepoDigests[0], "@")
+					image.Name = parts[0]
+					image.Version = "<none>"
+				}
+			} else {
+				image.Name = "<none>"
+				image.Version = "<none>"
+			}
 		}
 
 		image.Size = summary.Size
