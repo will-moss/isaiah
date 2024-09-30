@@ -1,3 +1,16 @@
+# [1.30.0](https://github.com/will-moss/isaiah/compare/1.29.1...1.30.0) (2024-09-30)
+
+
+### Bug Fixes
+
+* **mobile:** added an initial popup on mobile to instruct users about the scrollable menu ([c510000](https://github.com/will-moss/isaiah/commit/c510000642a331c0c0e80f0f408cdfa2e840c66d)), closes [#17](https://github.com/will-moss/isaiah/issues/17)
+* **mobile:** improved styling on mobile to prevent tab header buttons to be cut out ([c71f866](https://github.com/will-moss/isaiah/commit/c71f8662bd0af60c54014c84d70d333554d217d0))
+
+
+### Features
+
+* **images:** added fallback to RepoDigests when RepoTags is empty, to construct image's name ([80e8e86](https://github.com/will-moss/isaiah/commit/80e8e86c90376d40ca5aabba955c024cf54fdbe4)), closes [#15](https://github.com/will-moss/isaiah/issues/15)
+
 ## [1.29.1](https://github.com/will-moss/isaiah/compare/1.29.0...1.29.1) (2024-09-16)
 
 
