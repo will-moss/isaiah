@@ -1,3 +1,15 @@
+# [1.31.0](https://github.com/will-moss/isaiah/compare/1.30.0...1.31.0) (2024-10-06)
+
+
+### Bug Fixes
+
+* **mobile:** improved styling on mobile when the resource's name is too large to fit the screen ([bf24d94](https://github.com/will-moss/isaiah/commit/bf24d945f84ffef490ed0783ebcd6ba179c8463b))
+
+
+### Features
+
+* **mobile:** replaced the scrolling menu and associated notification with a hamburger + popup menu ([b2814b9](https://github.com/will-moss/isaiah/commit/b2814b97b7aaba661aef8bcfb30726a1a954ce31)), closes [#17](https://github.com/will-moss/isaiah/issues/17)
+
 # [1.30.0](https://github.com/will-moss/isaiah/compare/1.29.1...1.30.0) (2024-09-30)
 
 
