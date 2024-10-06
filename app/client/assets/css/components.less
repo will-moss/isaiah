@@ -266,6 +266,13 @@ div {
     .tab-title {
       font-weight: bold;
       color: var(--color-terminal-accent-selected);
+
+      @media screen and (max-width: @width-small-mobile) {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        max-width: 90%;
+      }
     }
 
     &.is-scrollable {
