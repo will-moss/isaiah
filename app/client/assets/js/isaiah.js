@@ -1376,17 +1376,7 @@
     else {
       hgetMobileControl('previousTab').classList.add('is-active');
       hgetMobileControl('nextTab').classList.add('is-active');
-      hgetMobileControl('menu').classList.add('is-active');
-      hgetMobileControl('bulk').classList.add('is-active');
-      hgetMobileControl('shellSystem').classList.add('is-active');
-      hgetMobileControl('theme').classList.add('is-active');
-      hgetMobileControl('parameters').classList.add('is-active');
-      if (_state.communication.availableAgents.length > 0)
-        hgetMobileControl('agent').classList.add('is-active');
-      if (_state.communication.availableHosts.length > 0)
-        hgetMobileControl('host').classList.add('is-active');
-      hgetMobileControl('overview').classList.add('is-active');
-      hgetMobileControl('jump').classList.add('is-active');
+      hgetMobileControl('mobileMenu').classList.add('is-active');
     }
 
     // 12. Apply extra user settings if any
@@ -1628,11 +1618,6 @@
        * @type {boolean}
        */
       enableSyntaxHighlight: true,
-
-      /**
-       * @type {boolean}
-       */
-      _mobileInstructionsDisplayed: false,
     },
 
     /**
@@ -2769,6 +2754,79 @@
     },
 
     /**
+     * Public - Mobile-only - Show the mobile menu
+     */
+    mobileMenu: function () {
+      state.menu.key = 'menu';
+      state.helper = 'menu';
+      state.menu.actions = [
+        {
+          Label: 'Show Single Actions',
+          Command: 'menu',
+          RequiresResource: false,
+          RunLocally: true,
+        },
+        {
+          Label: 'Show Bulk Actions',
+          Command: 'bulk',
+          RequiresResource: false,
+          RunLocally: true,
+        },
+        {
+          Label: 'Open System Shell',
+          Command: 'shellSystem',
+          RequiresResource: false,
+          RunLocally: true,
+        },
+        {
+          Label: 'Change Theme',
+          Command: 'theme',
+          RequiresResource: false,
+          RunLocally: true,
+        },
+        {
+          Label: 'Change Preferences',
+          Command: 'parameters',
+          RequiresMenuAction: true,
+          RequiresResource: false,
+          RunLocally: true,
+        },
+        {
+          Label: 'Show Overview',
+          Command: 'overview',
+          RequiresResource: false,
+          RunLocally: true,
+        },
+        {
+          Label: 'Perform Global Search',
+          Command: 'jump',
+          RequiresResource: false,
+          RunLocally: true,
+        },
+      ];
+
+      if (state.communication.availableAgents.length > 0)
+        state.menu.actions.push({
+          Label: 'Change Agent',
+          Command: 'agent',
+          RequiresResource: false,
+          RunLocally: true,
+        });
+
+      if (state.communication.availableHosts.length > 0)
+        state.menu.actions.push({
+          Label: 'Change Host',
+          Command: 'host',
+          RequiresResource: false,
+          RunLocally: true,
+        });
+
+      state.navigation.currentMenuRow = 1;
+
+      cmdRun(cmds._showPopup, 'menu');
+    },
+
+    /**
      * Public - Show the menu associated with the current tab
      */
     menu: function () {
@@ -2883,19 +2941,19 @@
           cmdRun(cmds._clearPopup);
 
           if (attributes.useRow) {
-            cmdRun(cmds[attributes.command], sgetCurrentRow());
             cmdRun(cmds._clearMenu);
+            cmdRun(cmds[attributes.command], sgetCurrentRow());
             return;
           }
 
           if (attributes.useMenuAction) {
-            cmdRun(cmds[attributes.command], _menuAction);
             cmdRun(cmds._clearMenu);
+            cmdRun(cmds[attributes.command], _menuAction);
             return;
           }
 
-          cmdRun(cmds[attributes.command]);
           cmdRun(cmds._clearMenu);
+          cmdRun(cmds[attributes.command]);
         }
 
         return;
@@ -4035,19 +4093,6 @@
   };
 
   // === Misc
-  const showMobileInstructions = () => {
-    localStorage.setItem('_mobileInstructionsDisplayed', true);
-
-    state.message.category = 'report';
-    state.message.type = 'success';
-    state.message.title = 'Welcome';
-    state.message.content =
-      "It seems that you're on a mobile device. Please note that you have more than 4 buttons available in the lower left scrollable menu.";
-    state.message.isEnabled = true;
-    state.helper = 'message';
-
-    cmdRun(cmds._showPopup, 'message');
-  };
 
   // === Variables
 
@@ -4704,13 +4749,6 @@
         state.isLoading = false;
         if (!state.isFullyEmpty) cmdRun(cmds._inspectorTabs);
 
-        // Show mobile instructions on first launch
-        if (
-          !state.settings._mobileInstructionsDisplayed &&
-          window.screen.availWidth <= 440
-        )
-          showMobileInstructions();
-
         break;
 
       case 'init-chunk':
@@ -5214,7 +5252,6 @@
       state.settings.enableOverviewOnLaunch = lsGet('enableOverviewOnLaunch', true);
       state.settings.enableJumpFuzzySearch = lsGet('enableJumpFuzzySearch', true);
       state.settings.enableSyntaxHighlight = lsGet('enableSyntaxHighlight', true);
-      state.settings._mobileInstructionsDisplayed = lsGet('_mobileInstructionsDisplayed', false);
     }
 
     // 1.1. Load fuzzy-search library if enabled by the user
