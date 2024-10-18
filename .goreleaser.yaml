@@ -23,6 +23,8 @@ builds:
       - 6
       - 7
     dir: app
+    flags:
+      - -trimpath
 
 archives:
   - format: tar.gz
