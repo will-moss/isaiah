@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"strings"
 	_io "will-moss/isaiah/server/_internal/io"
@@ -138,17 +139,22 @@ func (Volumes) RunCommand(server *Server, session _session.GenericSession, comma
 		}
 
 		if _os.GetEnv("DOCKER_RUNNING") == "TRUE" {
-			server.SendNotification(
-				session,
-				ui.NotificationError(ui.NP{
-					Content: ui.JSON{
-						"Message": "It seems that you're running Isaiah inside a Docker container." +
-							" In this case, external volumes can't be accessed directly because" +
-							" Isaiah is bound to its container and it can't access the volumes on your hosting system.",
-					},
-				}),
-			)
-			break
+			// Bypass limitation if volumes are mounted on the container
+			if _, err := os.Stat("/var/lib/docker/volumes/"); err != nil {
+				server.SendNotification(
+					session,
+					ui.NotificationError(ui.NP{
+						Content: ui.JSON{
+							"Message": "It seems that you're running Isaiah inside a Docker container." +
+								" In this case, external volumes can't be accessed directly because" +
+								" Isaiah is bound to its container and it can't access the volumes on your hosting system." +
+								" To solve that, please add the following mount to your container configuration : <br />" +
+								" - /var/lib/docker/volumes:/var/lib/docker/volumes",
+						},
+					}),
+				)
+				break
+			}
 		}
 
 		var volume resources.Volume

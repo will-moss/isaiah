@@ -1,4 +1,4 @@
-FROM scratch
+FROM busybox:stable
 
 COPY isaiah /
 
