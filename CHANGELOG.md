@@ -1,3 +1,10 @@
+# [1.32.0](https://github.com/will-moss/isaiah/compare/1.31.1...1.32.0) (2024-10-18)
+
+
+### Features
+
+* **server:** added the ability to browse volumes while inside a Docker container, using Busybox ([973d195](https://github.com/will-moss/isaiah/commit/973d19514ab3ce2311118bd51c36dc2ede7d4d66)), closes [#16](https://github.com/will-moss/isaiah/issues/16)
+
 ## [1.31.1](https://github.com/will-moss/isaiah/compare/1.31.0...1.31.1) (2024-10-18)
 
 
