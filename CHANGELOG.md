@@ -1,3 +1,10 @@
+## [1.31.1](https://github.com/will-moss/isaiah/compare/1.31.0...1.31.1) (2024-10-18)
+
+
+### Bug Fixes
+
+* **server:** fixed container environment retrieval crashing the app when no value is provided ([824d1e9](https://github.com/will-moss/isaiah/commit/824d1e9f4ddf361078231a7fb917e799578a80cb)), closes [#18](https://github.com/will-moss/isaiah/issues/18)
+
 # [1.31.0](https://github.com/will-moss/isaiah/compare/1.30.0...1.31.0) (2024-10-06)
 
 
