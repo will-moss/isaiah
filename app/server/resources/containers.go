@@ -691,7 +691,11 @@ func (c Container) GetEnv(client *client.Client) (ui.Rows, error) {
 
 		pair := strings.Split(raw[i], "=")
 		key := pair[0]
-		value := pair[1]
+		value := ""
+
+		if len(pair) == 2 {
+			value = pair[1]
+		}
 
 		structured[key] = value
 		structured["_representation"] = []string{key + ":", value}
