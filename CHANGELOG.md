@@ -1,3 +1,10 @@
+## [1.32.1](https://github.com/will-moss/isaiah/compare/1.32.0...1.32.1) (2024-10-21)
+
+
+### Bug Fixes
+
+* **server:** fixed the code responsible from browsing a volume inside a shell, to prevent hanging ([3b63a85](https://github.com/will-moss/isaiah/commit/3b63a852241cf0afd5688e57fad14a99996830ab))
+
 # [1.32.0](https://github.com/will-moss/isaiah/compare/1.31.1...1.32.0) (2024-10-18)
 
 
