@@ -168,23 +168,25 @@ func (Volumes) RunCommand(server *Server, session _session.GenericSession, comma
 		}})
 		session.Set("tty", &terminal)
 
-		errs, updates, finished := make(chan error), make(chan string), false
-		go _os.OpenShell(&terminal, errs, updates)
-		go terminal.RunCommand("cd " + volume.MountPoint + "\n")
+		go func() {
+			errs, updates, finished := make(chan error), make(chan string), false
+			go _os.OpenShell(&terminal, errs, updates)
+			go terminal.RunCommand("cd " + volume.MountPoint + "\n")
 
-		for {
-			if finished {
-				break
-			}
+			for {
+				if finished {
+					break
+				}
 
-			select {
-			case e := <-errs:
-				server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": e.Error()}}))
-			case u := <-updates:
-				server.SendNotification(session, ui.NotificationTty(ui.NP{Content: ui.JSON{"Status": u, "Type": "volume"}}))
-				finished = u == "exited"
+				select {
+				case e := <-errs:
+					server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": e.Error()}}))
+				case u := <-updates:
+					server.SendNotification(session, ui.NotificationTty(ui.NP{Content: ui.JSON{"Status": u, "Type": "volume"}}))
+					finished = u == "exited"
+				}
 			}
-		}
+		}()
 
 	// Single - Get inspector tabs
 	case "volume.inspect.tabs":
