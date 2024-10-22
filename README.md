@@ -476,11 +476,11 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `CUSTOM_DOCKER_HOST`    | `string`  | The host to use in place of the one defined by the DOCKER_HOST default variable | Empty |
 | `CUSTOM_DOCKER_CONTEXT` | `string`  | The Docker context to use in place of the current Docker context set on the system | Empty |
 | `SKIP_VERIFICATIONS`    | `boolean` | Whether Isaiah should skip startup verification checks before running the HTTP(S) server. (Not recommended) | False        |
-| `SERVER_ROLE`           | `string`  | For multi-node deployments only. The role of the current instance of Isaiah. Can be either `Master` or `Agent` and is case-sensitive. | Master        |
-| `MASTER_HOST`           | `string`  | For multi-node deployments only. The host used to reach the Master node, specifying the IP address or the hostname, and the port if applicable (e.g. my-server.tld:3000). | Empty        |
-| `MASTER_SECRET`         | `string`  | For multi-node deployments only. The secret password used to authenticate on the Master node. Note that it should equal the `AUTHENTICATION_SECRET` setting on the Master node. | Empty        |
-| `AGENT_NAME`            | `string`  | For multi-node deployments only. The name associated with the Agent node as it is displayed on the web interface. It should be unique for each Agent. | Empty        |
-| `AGENT_REGISTRATION_RETRY_DELAY`  | `integer`  | For multi-node deployments only. The delay (in seconds) between reconnection attempts when the connection to the Master node was lost. | 30        |
+| `SERVER_ROLE`           | `string`  | For multi-node deployments only, for both Master and Agent nodes. The role of the current instance of Isaiah. Can be either `Master` or `Agent` and is case-sensitive. | Master        |
+| `MASTER_HOST`           | `string`  | For multi-node deployments only, for Agent nodes. The host used to reach the Master node, specifying the IP address or the hostname, and the port if applicable (e.g. my-server.tld:3000). | Empty        |
+| `MASTER_SECRET`         | `string`  | For multi-node deployments only, for Agent nodes. The secret password used to authenticate on the Master node. Note that it should equal the `AUTHENTICATION_SECRET` setting on the Master node. | Empty        |
+| `AGENT_NAME`            | `string`  | For multi-node deployments only, for Agent nodes. The name associated with the Agent node as it is displayed on the web interface. It should be unique for each Agent. | Empty        |
+| `AGENT_REGISTRATION_RETRY_DELAY`  | `integer`  | For multi-node deployments only, for Agent nodes. The delay (in seconds) between reconnection attempts when the connection to the Master node was lost. | 30        |
 | `MULTI_HOST_ENABLED`    | `boolean` | Whether Isaiah should be run in multi-host mode. When enabled, make sure to have your `docker_hosts` file next to the executable. | False        |
 | `FORWARD_PROXY_AUTHENTICATION_ENABLED`    | `boolean` | Whether Isaiah should accept authentication headers from a forward proxy. | False        |
 | `FORWARD_PROXY_AUTHENTICATION_HEADER_KEY` | `string` | The name of the authentication header sent by the forward proxy after a succesful authentication. | Remote-User        |
