@@ -338,6 +338,18 @@ If encounter any issue, please read the [Troubleshoot](#troubleshoot) section.
 
 > **Feature:** When Master and Agent nodes have the same secret, no authentication prompt will be required after logging into Master
 
+### Additional notes on configuration
+
+Please note that, in a multi-node deployment, the following affirmations about the configuration are true :
+- The configuration settings that have no comment about multi-node deployments are all both available for Master and Agent nodes, except for `SSL_ENABLED` and `SERVER_PORT` since Agent nodes do not behave like a server that listens for incoming connections.
+    - So, for instance, you could have a different `TABS_ENABLED` setting for each node, regardless of them being a Master or Agent.
+    - These settings were all designed to work in a single-node deployment initially, without multi-node enabled at all, but they also work in a multi-node deployment transparently due to how the code is written.
+- The configuration settings that have a comment about multi-node deployments will be interpreted only in a multi-node deployment, and fully ignored in a single-node deployment. Even more so, they are absolutely required for a multi-node deployment to work. And the ones that mention "for Agent node" will be fully ignored by the Master node.
+- For the only configuration setting that mentions "for both Master and Agent nodes", which is `SERVER_ROLE`, this is just a requirement for the code to identify "Who is a Master? Who is an Agent?" at startup, and it is interpreted only in a multi-node deployment.
+
+You may want to check the issue [#19](https://github.com/will-moss/isaiah/issues/19) to learn more about that part.
+
+
 ## Multi-host deployment
 
 Using Isaiah, you can manage multiple hosts with their own distinct Docker resources from a single dashboard.
