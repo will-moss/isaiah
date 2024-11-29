@@ -146,6 +146,16 @@ func performVerifications() error {
 
 // Entrypoint
 func main() {
+	// Handle commandline arguments if any
+	args := os.Args[1:]
+	if len(args) > 0 {
+		// Handle -v / --version switch
+		if args[0] == "-v" || args[0] == "--version" {
+			fmt.Printf("Version: -VERSION-")
+			return
+		}
+	}
+
 	// Load default settings via default.env file (workaround since the file is embed)
 	defaultSettings, _ := godotenv.Unmarshal(defaultEnv)
 	for k, v := range defaultSettings {
