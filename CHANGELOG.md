@@ -1,3 +1,10 @@
+# [1.33.0](https://github.com/will-moss/isaiah/compare/1.32.1...1.33.0) (2024-11-29)
+
+
+### Features
+
+* **cli:** added -v / --version switch on the commandline, to retrieve the version of the binary ([5bc5935](https://github.com/will-moss/isaiah/commit/5bc5935320715032f39dbc74d61be8691ac2132e))
+
 ## [1.32.1](https://github.com/will-moss/isaiah/compare/1.32.0...1.32.1) (2024-10-21)
 
 
