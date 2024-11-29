@@ -214,6 +214,10 @@ touch .env
 
 # Run Isaiah
 isaiah
+
+# Check current version
+isaiah -v
+
 ```
 
 In case you feel uncomfortable running the install script, you can head to the `Releases`, find the binary that meets your system, and install it yourself.
