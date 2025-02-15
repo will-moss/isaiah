@@ -337,6 +337,20 @@ html {
               }
             }
           }
+
+          &.for-images {
+            .cell {
+              &[data-value='unknown'] {
+                color: var(--color-terminal-cell-paused);
+              }
+              &[data-value='unused'] {
+                color: var(--color-terminal-cell-failure);
+              }
+              &[data-value='used'] {
+                color: var(--color-terminal-cell-success);
+              }
+            }
+          }
         }
       }
       // Inspector part

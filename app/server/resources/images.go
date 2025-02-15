@@ -21,10 +21,12 @@ import (
 
 // Represent a Docker image
 type Image struct {
-	ID      string
-	Name    string
-	Version string
-	Size    int64
+	ID         string
+	Name       string
+	Version    string
+	Size       int64
+	UsageState string
+	UsedBy     []string
 }
 
 // Represent an array of Docker images
@@ -33,6 +35,13 @@ type Images []Image
 // Retrieve all inspector tabs for Docker images
 func ImagesInspectorTabs() []string {
 	return []string{"Config"}
+}
+
+// Usage translations using symbol icons
+var iconUsageTranslations = map[string]rune{
+	"unknown": '—',
+	"used":    '▶',
+	"unused":  '⨯',
 }
 
 // Retrieve all the single actions associated with Docker images
@@ -133,15 +142,31 @@ func ImagesBulkActions() []ui.MenuAction {
 
 // Retrieve all Docker images
 func ImagesList(client *client.Client) Images {
-	reader, err := client.ImageList(context.Background(), types.ImageListOptions{All: true})
+	imgReader, err := client.ImageList(context.Background(), types.ImageListOptions{All: true})
 
 	if err != nil {
 		return []Image{}
 	}
 
+	// Fetch used image ids from containers as well to determine if an image is currently in use
+	var usedImageIds = make(map[string][]string, 0)
+	cntReader, cntErr := client.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	if cntErr == nil {
+		for i := 0; i < len(cntReader); i++ {
+			var imageID = cntReader[i].ImageID
+			var containerName = cntReader[i].Names[0][1:]
+
+			if _, exists := usedImageIds[imageID]; exists {
+				usedImageIds[imageID] = append(usedImageIds[imageID], containerName)
+			} else {
+				usedImageIds[imageID] = []string{containerName}
+			}
+		}
+	}
+
 	var images []Image
-	for i := 0; i < len(reader); i++ {
-		var summary = reader[i]
+	for i := 0; i < len(imgReader); i++ {
+		var summary = imgReader[i]
 
 		var image Image
 		image.ID = summary.ID
@@ -166,6 +191,18 @@ func ImagesList(client *client.Client) Images {
 		}
 
 		image.Size = summary.Size
+
+		if cntErr != nil {
+			image.UsageState = "unknown"
+		} else {
+			if _, exists := usedImageIds[image.ID]; exists {
+				image.UsageState = "used"
+				image.UsedBy = usedImageIds[image.ID]
+			} else {
+				image.UsageState = "unused"
+			}
+		}
+
 		images = append(images, image)
 	}
 
@@ -196,12 +233,20 @@ func (images Images) ToRows(columns []string) ui.Rows {
 	var rows = make(ui.Rows, 0)
 
 	sort.Slice(images, func(i, j int) bool {
+		if images[i].UsageState == "used" && images[j].UsageState != "used" {
+			return true
+		}
+		if images[j].UsageState == "used" && images[i].UsageState != "used" {
+			return false
+		}
+
 		if images[i].Name == "<none>" {
 			return false
 		}
 		if images[j].Name == "<none>" {
 			return true
 		}
+
 		return images[i].Name < images[j].Name
 	})
 
@@ -225,6 +270,9 @@ func (images Images) ToRows(columns []string) ui.Rows {
 			case "Size":
 				_entry["value"] = strconv.FormatInt(image.Size, 10)
 				_entry["representation"] = ui.ByteCount(image.Size)
+			case "UsageState":
+				_entry["value"] = image.UsageState
+				_entry["representation"] = string(iconUsageTranslations[image.UsageState])
 			}
 
 			flat = append(flat, _entry)
@@ -278,7 +326,7 @@ func (i Image) GetConfig(client *client.Client) (ui.InspectorContent, error) {
 	// Build the first part of the config (main information)
 	firstPart := ui.InspectorContentPart{Type: "rows"}
 	rows := make(ui.Rows, 0)
-	fields := []string{"Name", "ID", "Tags", "Size", "Created"}
+	fields := []string{"Name", "ID", "Tags", "Size", "Created", "Used"}
 	for _, field := range fields {
 		row := make(ui.Row)
 		switch field {
@@ -297,6 +345,13 @@ func (i Image) GetConfig(client *client.Client) (ui.InspectorContent, error) {
 		case "Created":
 			row["Created"] = information.Created
 			row["_representation"] = []string{"Created:", information.Created}
+		case "Used":
+			row["Used"] = i.UsedBy
+			if i.UsageState == "used" {
+				row["_representation"] = []string{"Used by:", strings.Join(i.UsedBy, ", ")}
+			} else {
+				row["_representation"] = []string{"Used by:", "-"}
+			}
 		}
 
 		rows = append(rows, row)

@@ -474,7 +474,7 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `DISPLAY_CONFIRMATIONS` | `boolean` | Whether the web interface should display a confirmation message after every succesful operation. | True |
 | `TABS_ENABLED`          | `string`  | Comma-separated list of tabs to display in the interface. (Case-insensitive) (Available: Stacks, Containers, Images, Volumes, Networks) | stacks,containers,images,volumes,networks |
 | `COLUMNS_CONTAINERS`    | `string`  | Comma-separated list of fields to display in the `Containers` panel. (Case-sensitive) (Available: ID, State, ExitCode, Name, Image, Created) | State,ExitCode,Name,Image |
-| `COLUMNS_IMAGES`        | `string`  | Comma-separated list of fields to display in the `Images` panel. (Case-sensitive) (Available: ID, Name, Version, Size) | Name,Version,Size |
+| `COLUMNS_IMAGES`        | `string`  | Comma-separated list of fields to display in the `Images` panel. (Case-sensitive) (Available: UsageState, ID, Name, Version, Size) | UsageState,Name,Version,Size |
 | `COLUMNS_VOLUMES`       | `string`  | Comma-separated list of fields to display in the `Volumes` panel. (Case-sensitive) (Available: Name, Driver, MountPoint) | Driver,Name |
 | `COLUMNS_NETWORKS`      | `string`  | Comma-separated list of fields to display in the `Networks` panel. (Case-sensitive) (Available: ID, Name, Driver) | Driver,Name |
 | `COLUMNS_STACKS`        | `string`  | Comma-separated list of fields to display in the `Stacks` panel. (Case-sensitive) (Available: Name, Status) | Status,Name |
