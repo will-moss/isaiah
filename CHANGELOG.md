@@ -1,3 +1,10 @@
+# [1.34.0](https://github.com/will-moss/isaiah/compare/1.33.0...1.34.0) (2025-02-15)
+
+
+### Features
+
+* **images:** added ability to see whether an image was used or not, with associated containers ([e2fb66a](https://github.com/will-moss/isaiah/commit/e2fb66a72d0652f16cdcbd2e8932e89ce90ff1bb)), closes [#21](https://github.com/will-moss/isaiah/issues/21)
+
 # [1.33.0](https://github.com/will-moss/isaiah/compare/1.32.1...1.33.0) (2024-11-29)
 
 
