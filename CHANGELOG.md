@@ -1,3 +1,10 @@
+# [1.35.0](https://github.com/will-moss/isaiah/compare/1.34.0...1.35.0) (2025-03-27)
+
+
+### Features
+
+* **containers:** added the ability to bulk restart and bulk update containers ([410fa62](https://github.com/will-moss/isaiah/commit/410fa62060928f412be1f01400b16bf56137972b)), closes [#22](https://github.com/will-moss/isaiah/issues/22)
+
 # [1.34.0](https://github.com/will-moss/isaiah/compare/1.33.0...1.34.0) (2025-02-15)
 
 
