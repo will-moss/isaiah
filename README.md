@@ -58,7 +58,7 @@ Isaiah has all these features implemented :
     - Create and Edit stacks using `docker-compose.yml` files in your browser
     - Inspect (live logs, `docker-compose.yml`, services)
 - For containers :
-    - Bulk stop, Bulk remove, Prune
+    - Bulk stop, Bulk remove, Bulk restart, Bulk update, Prune
     - Remove, Pause, Unpause, Restart, Rename, Update, Edit, Open in browser
     - Open a shell inside the container (from your browser)
     - Inspect (live logs, stats, env, full configuration, top)
