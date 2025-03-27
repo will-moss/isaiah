@@ -120,6 +120,68 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 		}
 		task.RunSync(server.Docker)
 
+	// Bulk - Update
+	case "containers.update":
+		task := process.LongTask{
+			Function: resources.ContainersUpdate,
+			OnStep: func(id string) {
+				server.SendNotification(
+					session,
+					ui.NotificationInfo(ui.NP{Content: ui.JSON{"Message": fmt.Sprintf("Container %s was updated", id)}}),
+				)
+				server.SendNotification(
+					session,
+					ui.NotificationLoading(),
+				)
+			},
+			OnError: func(err error) {
+				server.SendNotification(
+					session,
+					ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}),
+				)
+			},
+			OnDone: func() {
+				server.SendNotification(
+					session,
+					ui.NotificationSuccess(ui.NP{
+						Content: ui.JSON{"Message": "All the containers were updated"}, Follow: "containers.list",
+					}),
+				)
+			},
+		}
+		task.RunSync(server.Docker)
+
+	// Bulk - Restart
+	case "containers.restart":
+		task := process.LongTask{
+			Function: resources.ContainersRestart,
+			OnStep: func(id string) {
+				server.SendNotification(
+					session,
+					ui.NotificationInfo(ui.NP{Content: ui.JSON{"Message": fmt.Sprintf("Container %s was restarted", id)}}),
+				)
+				server.SendNotification(
+					session,
+					ui.NotificationLoading(),
+				)
+			},
+			OnError: func(err error) {
+				server.SendNotification(
+					session,
+					ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}),
+				)
+			},
+			OnDone: func() {
+				server.SendNotification(
+					session,
+					ui.NotificationSuccess(ui.NP{
+						Content: ui.JSON{"Message": "All the containers were restarted"}, Follow: "containers.list",
+					}),
+				)
+			},
+		}
+		task.RunSync(server.Docker)
+
 	// Bulk - Remove
 	case "containers.remove":
 		err := resources.ContainersRemove(server.Docker)

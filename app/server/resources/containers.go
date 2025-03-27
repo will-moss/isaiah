@@ -175,6 +175,22 @@ func ContainersBulkActions() []ui.MenuAction {
 	actions = append(
 		actions,
 		ui.MenuAction{
+			Label:   "restart all containers",
+			Prompt:  "Are you sure you want to restart all containers?",
+			Command: "containers.restart",
+		},
+	)
+	actions = append(
+		actions,
+		ui.MenuAction{
+			Label:   "(Experimental) update all containers",
+			Prompt:  "(Experimental) This will kill all the current containers, pull their newest image, and create a new container with the same configuration. Do you want to proceed?",
+			Command: "containers.update",
+		},
+	)
+	actions = append(
+		actions,
+		ui.MenuAction{
 			Label:   "remove all containers (forced)",
 			Prompt:  "Are you sure you want to remove all containers?",
 			Command: "containers.remove",
@@ -245,6 +261,54 @@ func ContainersStop(client *client.Client, monitor process.LongTaskMonitor, args
 			defer wg.Done()
 
 			err := client.ContainerStop(context.Background(), _container.ID, container.StopOptions{})
+			if err != nil {
+				monitor.Errors <- err
+				return
+			}
+			monitor.Results <- _container.ID
+		}(containers[i])
+	}
+
+	wg.Wait()
+	monitor.Done <- true
+}
+
+// Restart all Docker containers
+func ContainersRestart(client *client.Client, monitor process.LongTaskMonitor, args map[string]interface{}) {
+	containers := ContainersList(client, filters.Args{})
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(containers))
+
+	for i := 0; i < len(containers); i++ {
+		go func(_container Container) {
+			defer wg.Done()
+
+			err := client.ContainerRestart(context.Background(), _container.ID, container.StopOptions{})
+			if err != nil {
+				monitor.Errors <- err
+				return
+			}
+			monitor.Results <- _container.ID
+		}(containers[i])
+	}
+
+	wg.Wait()
+	monitor.Done <- true
+}
+
+// Update all Docker containers
+func ContainersUpdate(client *client.Client, monitor process.LongTaskMonitor, args map[string]interface{}) {
+	containers := ContainersList(client, filters.Args{})
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(containers))
+
+	for i := 0; i < len(containers); i++ {
+		go func(_container Container) {
+			defer wg.Done()
+
+			err := _container.Update(client)
 			if err != nil {
 				monitor.Errors <- err
 				return
