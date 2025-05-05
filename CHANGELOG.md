@@ -1,3 +1,11 @@
+## [1.35.1](https://github.com/will-moss/isaiah/compare/1.35.0...1.35.1) (2025-05-05)
+
+
+### Bug Fixes
+
+* **containers:** added a check to prevent Isaiah from stopping/restarting/updating itself in bulk op ([8f77097](https://github.com/will-moss/isaiah/commit/8f77097d7c442921894072f951bd11b09d71c7e8))
+* **style:** added new CSS rules to try to prevent scrollbars from showing forcefully on all browsers ([bc04ad4](https://github.com/will-moss/isaiah/commit/bc04ad48bc315094be8124a93bc0a7bc64517a81))
+
 # [1.35.0](https://github.com/will-moss/isaiah/compare/1.34.0...1.35.0) (2025-03-27)
 
 
