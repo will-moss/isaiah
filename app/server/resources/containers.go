@@ -65,6 +65,18 @@ var iconStateTranslations = map[string]rune{
 	"dead":       '!',
 }
 
+// Determine whether a given Container is the current running instance of Isaiah
+func (c Container) isIsaiah() bool {
+	if _os.GetEnv("DOCKER_RUNNING") != "TRUE" {
+		return false
+	}
+
+	imageParts := strings.Split(c.Image, ":")
+	unversionedImage := imageParts[0]
+
+	return unversionedImage == "mosswill/isaiah"
+}
+
 // Retrieve all inspector tabs for Docker containers
 func ContainersInspectorTabs() []string {
 	return []string{"Logs", "Stats", "Env", "Config", "Top"}
@@ -260,6 +272,11 @@ func ContainersStop(client *client.Client, monitor process.LongTaskMonitor, args
 		go func(_container Container) {
 			defer wg.Done()
 
+			if _container.isIsaiah() {
+				monitor.Results <- _container.ID
+				return
+			}
+
 			err := client.ContainerStop(context.Background(), _container.ID, container.StopOptions{})
 			if err != nil {
 				monitor.Errors <- err
@@ -283,6 +300,11 @@ func ContainersRestart(client *client.Client, monitor process.LongTaskMonitor, a
 	for i := 0; i < len(containers); i++ {
 		go func(_container Container) {
 			defer wg.Done()
+
+			if _container.isIsaiah() {
+				monitor.Results <- _container.ID
+				return
+			}
 
 			err := client.ContainerRestart(context.Background(), _container.ID, container.StopOptions{})
 			if err != nil {
@@ -308,6 +330,11 @@ func ContainersUpdate(client *client.Client, monitor process.LongTaskMonitor, ar
 		go func(_container Container) {
 			defer wg.Done()
 
+			if _container.isIsaiah() {
+				monitor.Results <- _container.ID
+				return
+			}
+
 			err := _container.Update(client)
 			if err != nil {
 				monitor.Errors <- err
@@ -327,6 +354,10 @@ func ContainersRemove(client *client.Client) error {
 
 	for i := 0; i < len(containers); i++ {
 		_container := containers[i]
+
+		if _container.isIsaiah() {
+			continue
+		}
 
 		err := client.ContainerRemove(context.Background(), _container.ID, types.ContainerRemoveOptions{Force: true})
 
