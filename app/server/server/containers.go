@@ -442,6 +442,21 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 	case "container.update":
 		var container resources.Container
 		mapstructure.Decode(command.Args["Resource"], &container)
+
+		if container.IsIsaiah() {
+			server.SendNotification(
+				session,
+				ui.NotificationError(ui.NP{
+					Content: ui.JSON{
+						"Message": "It seems that you're attempting to update Isaiah from Isaiah itself." +
+							" For now, this is not supported. You may rather try to pull the latest image" +
+							" and restart the container, or use a 3rd party tool such as WatchTower.",
+					},
+				}),
+			)
+			break
+		}
+
 		err := container.Update(server.Docker)
 
 		if err != nil {

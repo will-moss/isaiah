@@ -66,7 +66,7 @@ var iconStateTranslations = map[string]rune{
 }
 
 // Determine whether a given Container is the current running instance of Isaiah
-func (c Container) isIsaiah() bool {
+func (c Container) IsIsaiah() bool {
 	if _os.GetEnv("DOCKER_RUNNING") != "TRUE" {
 		return false
 	}
@@ -272,7 +272,7 @@ func ContainersStop(client *client.Client, monitor process.LongTaskMonitor, args
 		go func(_container Container) {
 			defer wg.Done()
 
-			if _container.isIsaiah() {
+			if _container.IsIsaiah() {
 				monitor.Results <- _container.Name
 				return
 			}
@@ -301,7 +301,7 @@ func ContainersRestart(client *client.Client, monitor process.LongTaskMonitor, a
 		go func(_container Container) {
 			defer wg.Done()
 
-			if _container.isIsaiah() {
+			if _container.IsIsaiah() {
 				monitor.Results <- _container.Name
 				return
 			}
@@ -330,7 +330,7 @@ func ContainersUpdate(client *client.Client, monitor process.LongTaskMonitor, ar
 		go func(_container Container) {
 			defer wg.Done()
 
-			if _container.isIsaiah() {
+			if _container.IsIsaiah() {
 				monitor.Results <- _container.Name
 				return
 			}
@@ -355,7 +355,7 @@ func ContainersRemove(client *client.Client) error {
 	for i := 0; i < len(containers); i++ {
 		_container := containers[i]
 
-		if _container.isIsaiah() {
+		if _container.IsIsaiah() {
 			continue
 		}
 
