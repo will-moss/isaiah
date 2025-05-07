@@ -1,3 +1,15 @@
+# [1.36.0](https://github.com/will-moss/isaiah/compare/1.35.1...1.36.0) (2025-05-07)
+
+
+### Bug Fixes
+
+* **containers:** added a note about updating Isaiah container from Isaiah itself, to prevent errors ([57b0f02](https://github.com/will-moss/isaiah/commit/57b0f02149905d9375243fafee55ea1ee62f14a6))
+
+
+### Features
+
+* **containers:** made the containers bulk operations show the containers' name rather than their ID ([8e3656a](https://github.com/will-moss/isaiah/commit/8e3656a8fc6cbe250905a88f4e4cdd3688cdc91b))
+
 ## [1.35.1](https://github.com/will-moss/isaiah/compare/1.35.0...1.35.1) (2025-05-05)
 
 
