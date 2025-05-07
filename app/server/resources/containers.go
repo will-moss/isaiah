@@ -273,16 +273,16 @@ func ContainersStop(client *client.Client, monitor process.LongTaskMonitor, args
 			defer wg.Done()
 
 			if _container.isIsaiah() {
-				monitor.Results <- _container.ID
+				monitor.Results <- _container.Name
 				return
 			}
 
-			err := client.ContainerStop(context.Background(), _container.ID, container.StopOptions{})
+			err := client.ContainerStop(context.Background(), _container.Name, container.StopOptions{})
 			if err != nil {
 				monitor.Errors <- err
 				return
 			}
-			monitor.Results <- _container.ID
+			monitor.Results <- _container.Name
 		}(containers[i])
 	}
 
@@ -302,16 +302,16 @@ func ContainersRestart(client *client.Client, monitor process.LongTaskMonitor, a
 			defer wg.Done()
 
 			if _container.isIsaiah() {
-				monitor.Results <- _container.ID
+				monitor.Results <- _container.Name
 				return
 			}
 
-			err := client.ContainerRestart(context.Background(), _container.ID, container.StopOptions{})
+			err := client.ContainerRestart(context.Background(), _container.Name, container.StopOptions{})
 			if err != nil {
 				monitor.Errors <- err
 				return
 			}
-			monitor.Results <- _container.ID
+			monitor.Results <- _container.Name
 		}(containers[i])
 	}
 
@@ -331,7 +331,7 @@ func ContainersUpdate(client *client.Client, monitor process.LongTaskMonitor, ar
 			defer wg.Done()
 
 			if _container.isIsaiah() {
-				monitor.Results <- _container.ID
+				monitor.Results <- _container.Name
 				return
 			}
 
@@ -340,7 +340,7 @@ func ContainersUpdate(client *client.Client, monitor process.LongTaskMonitor, ar
 				monitor.Errors <- err
 				return
 			}
-			monitor.Results <- _container.ID
+			monitor.Results <- _container.Name
 		}(containers[i])
 	}
 
@@ -359,7 +359,7 @@ func ContainersRemove(client *client.Client) error {
 			continue
 		}
 
-		err := client.ContainerRemove(context.Background(), _container.ID, types.ContainerRemoveOptions{Force: true})
+		err := client.ContainerRemove(context.Background(), _container.Name, types.ContainerRemoveOptions{Force: true})
 
 		if err != nil {
 			return err
