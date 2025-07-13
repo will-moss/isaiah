@@ -1,6 +1,7 @@
 package server
 
 import (
+	"slices"
 	_session "will-moss/isaiah/server/_internal/session"
 	"will-moss/isaiah/server/ui"
 
@@ -85,6 +86,8 @@ func (agents AgentsArray) ToStrings() []string {
 	for _, v := range agents {
 		arr = append(arr, v.Name)
 	}
+
+	slices.Sort(arr)
 
 	return arr
 }
