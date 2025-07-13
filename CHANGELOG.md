@@ -1,3 +1,11 @@
+## [1.36.1](https://github.com/will-moss/isaiah/compare/1.36.0...1.36.1) (2025-07-13)
+
+
+### Bug Fixes
+
+* **agents:** added agents sort by name for easier navigation and selection ([f53a344](https://github.com/will-moss/isaiah/commit/f53a344b95f6a562d4a2e7fb08c3323c94b9defb)), closes [#24](https://github.com/will-moss/isaiah/issues/24)
+* **overview:** added native scroll mechanism to the overview to accomodate for a list of many agents ([c5addb9](https://github.com/will-moss/isaiah/commit/c5addb969d5fb3c46b53d9576f6d3440972951c3)), closes [#23](https://github.com/will-moss/isaiah/issues/23)
+
 # [1.36.0](https://github.com/will-moss/isaiah/compare/1.35.1...1.36.0) (2025-05-07)
 
 
