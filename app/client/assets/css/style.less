@@ -659,14 +659,21 @@ html {
     }
 
     &.for-overview {
+      @row-height: 96px;
+
       width: 860px;
 
       @media screen and (max-width: @width-mobile) {
         width: 95%;
       }
 
+      .tab-content {
+        max-height: calc(5 * @row-height);
+        overflow: auto;
+      }
+
       .row {
-        height: 96px;
+        height: @row-height;
         display: flex;
         align-items: center;
         padding-left: 16px;
