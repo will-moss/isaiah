@@ -4236,7 +4236,7 @@
       else return;
     }
 
-    if (evt.metaKey) return;
+    if (evt.metaKey || evt.ctrlKey) return;
 
     let { key } = evt;
 
