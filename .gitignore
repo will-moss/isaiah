@@ -22,4 +22,3 @@ app/package.json
 app/package-lock.json
 scripts/_*.sh
 !app/sample.custom.css
-scripts/local-install-windows.sh
