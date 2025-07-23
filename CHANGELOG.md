@@ -1,3 +1,10 @@
+## [1.36.2](https://github.com/will-moss/isaiah/compare/1.36.1...1.36.2) (2025-07-23)
+
+
+### Bug Fixes
+
+* **client:** bypass Ctrl key to prevent clash with native browser shortcuts, thanks @Lumberj3ck ([22908df](https://github.com/will-moss/isaiah/commit/22908df87fe0a4c792ef7fddff3f338ba9c2a95b))
+
 ## [1.36.1](https://github.com/will-moss/isaiah/compare/1.36.0...1.36.1) (2025-07-13)
 
 
