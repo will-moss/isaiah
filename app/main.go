@@ -48,8 +48,12 @@ func performVerifications() error {
 
 	// 1. Ensure Docker CLI is available
 	if _os.GetEnv("DOCKER_RUNNING") != "TRUE" {
-		cmd := exec.Command("docker", "version")
+        ctx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
+        defer cancel()
+
+		cmd := exec.CommandContext(ctx, "docker", "version")
 		_, err := cmd.Output()
+
 		if err != nil {
 			return fmt.Errorf("Failed Verification : Access to Docker CLI -> %s", err)
 		}
