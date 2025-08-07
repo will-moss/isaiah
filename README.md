@@ -145,6 +145,8 @@ docker run \
 docker run -v /var/run/docker.sock:/var/run/docker.sock:ro -p 3000:3000 mosswill/isaiah
 ```
 
+> Note : Since version 1.36.2, all the Docker images are also mirrored on Github. You can run from `ghcr.io/will-moss/isaiah:latest`
+
 ### Deploy with Docker Compose
 
 To help you get started quickly, multiple example `docker-compose` files are located in the ["examples/"](examples) directory.
@@ -178,6 +180,8 @@ docker logs <NAME-OF-YOUR-CONTAINER>
 ```
 
 > Warning : Always make sure that your Docker Unix socket is mounted, else Isaiah won't be able to communicate with the Docker API.
+
+> Note : Since version 1.36.2, all the Docker images are also mirrored on Github. You can pull from `ghcr.io/will-moss/isaiah:latest`
 
 ### Deploy as a standalone application
 
