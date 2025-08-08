@@ -1,8 +1,11 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"log"
+	"strconv"
 	"strings"
 	_io "will-moss/isaiah/server/_internal/io"
 	_os "will-moss/isaiah/server/_internal/os"
@@ -748,6 +751,72 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 				},
 			}),
 		)
+
+    case "container.metrics":
+        // add from parameter
+		var container resources.Container
+        err := mapstructure.Decode(command.Args["Resource"], &container)
+
+        if err != nil{
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+            break
+        }
+
+
+        from, ok := command.Args["From"]
+
+        if !ok{
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "missing container.metrics mandatory argument \"from\""}}))
+            break
+        }
+        
+        f, ok := from.(string)
+
+        if !ok{
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be string"}}))
+            break
+        }
+
+        from_idx, err := strconv.Atoi(f)
+
+        if err != nil{
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be valid integer"}}))
+            break
+        }
+
+
+        // Spawn a new metrics poller, if we don't have one yet
+        if !container.IsMetricsPolling(){
+            errChan := make(chan  error, 1)
+            ctx, cancel := context.WithCancel(context.Background())
+            session.Set("metrics-context", ctx)
+            session.Set("metrics-context-cancel", cancel)
+
+            go container.PollMetrics(server.Docker, ctx, errChan)
+
+            go func() {
+                select{
+                case e := <- errChan:
+                    // based on type of error send correct notification
+                    server.SendNotification(
+                        session, 
+                        ui.NotificationInfo(ui.NP{
+                            Content: ui.JSON{
+                                "Message": e.Error(),
+                            },
+                        },
+                        ),
+                    )
+                }
+            }()
+        }
+
+        metrics := container.GetMetricsFrom(from_idx)
+        server.SendNotification(
+            session,
+            ui.NotificationData(ui.NP{
+                Content: ui.JSON{"container.metrics": metrics}}),
+        )
 
 	// Command not found
 	default:

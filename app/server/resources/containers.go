@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"sort"
@@ -432,6 +433,67 @@ func (containers Containers) ToRows(columns []string) ui.Rows {
 	}
 
 	return rows
+}
+
+type containerMetric struct{
+    isPolling bool
+    // replace for circular buffer
+    cpuMetrics []int
+}
+
+// use sync map
+var containerMetrics = make(map[string]containerMetric)
+
+func (c Container) GetMetricsFrom(from int) []int{
+    m, ok := containerMetrics[c.ID] 
+    if !ok{
+        return []int{}
+    }
+    return m.cpuMetrics
+}
+
+func (c Container) IsMetricsPolling() bool{
+    m, ok := containerMetrics[c.ID]
+    if ok{
+        return m.isPolling
+    }
+    return false
+}
+
+func (c Container) PollMetrics(client *client.Client, ctx context.Context, errChan chan error){
+    cm, ok := containerMetrics[c.ID]
+
+    if !ok{
+        containerMetrics[c.ID] = containerMetric{}
+        cm = containerMetrics[c.ID]
+    }
+    cm.isPolling = true
+
+    t := time.NewTicker(time.Second * 3)
+    for {
+        select {
+        case <-ctx.Done():
+            log.Println("We are finished metrics polling!")
+            cm.isPolling = false
+            return
+        case <-t.C:
+            stats, err := client.ContainerStatsOneShot(context.TODO(), c.ID)
+
+            if err != nil{
+                errChan <- err
+                cm.isPolling = false
+                return
+            }
+            m, err := io.ReadAll(stats.Body)
+            log.Println(string(m))
+
+            if err != nil{
+                errChan <- err
+                cm.isPolling = false
+                return
+            }
+        }
+    }
 }
 
 // Remove the Docker container
