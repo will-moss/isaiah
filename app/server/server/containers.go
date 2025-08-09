@@ -752,70 +752,68 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 
     case "container.metrics":
 		var container resources.Container
-        err := mapstructure.Decode(command.Args["Resource"], &container)
+		err := mapstructure.Decode(command.Args["Resource"], &container)
 
-        if err != nil{
+		if err != nil {
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
-            break
-        }
+			break
+		}
 
-        from, ok := command.Args["From"]
+		from, ok := command.Args["From"]
 
-        if !ok{
+		if !ok {
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "missing container.metrics mandatory argument \"from\""}}))
-            break
-        }
-        
-        idx, ok := from.(float64)
-        from_idx := int(idx)
+			break
+		}
 
+		idx, ok := from.(float64)
+		from_idx := int(idx)
 
-        if !ok{
+		if !ok {
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be integer "}}))
-            break
-        }
+			break
+		}
 
-        // Spawn a new metrics poller, if we don't have one yet
-        if !container.IsMetricsPolling(){
-            errChan := make(chan  error, 1)
-            // Link all metrics poller in one session with one context
-            ctxVal, exists := session.Get("metrics-context")
-            var ctx context.Context
+		// Spawn a new metrics poller, if we don't have one yet for this session.
+		// All metric pollers for a given session share the same context,
+		// so they can be cancelled all at once.
+		if !container.IsMetricsPolling() {
+			errChan := make(chan error, 1)
+			// Link all metrics poller in one session with one context
+			ctxVal, exists := session.Get("metrics-context")
+			var ctx context.Context
 
-            if exists{
-                ctx = ctxVal.(context.Context)
-            } else{
-                var cancel context.CancelFunc
-                ctx, cancel = context.WithCancel(context.Background())
-                session.Set("metrics-context", ctx)
-                session.Set("metrics-context-cancel", cancel)
-            }
+			if exists {
+				ctx = ctxVal.(context.Context)
+			} else {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithCancel(context.Background())
+				session.Set("metrics-context", ctx)
+				session.Set("metrics-context-cancel", cancel)
+			}
 
-            go container.PollMetrics(server.Docker, ctx, errChan)
+			go container.PollMetrics(server.Docker, ctx, errChan)
 
-            go func() {
-                select{
-                case e := <- errChan:
-                    // based on type of error send correct notification
-                    server.SendNotification(
-                        session, 
-                        ui.NotificationInfo(ui.NP{
-                            Content: ui.JSON{
-                                "Message": e.Error(),
-                            },
-                        },
-                        ),
-                    )
-                }
-            }()
-        }
+			go func() {
+				select {
+				case e := <-errChan:
+					// based on type of error send correct notification
+					server.SendNotification(
+						session,
+						ui.NotificationInfo(ui.NP{
+							Content: ui.JSON{ "Message": e.Error(), },
+						}),
+					)
+				}
+			}()
+		}
 
-        metrics := container.GetMetricsFrom(from_idx)
-        server.SendNotification(
-            session,
-            ui.NotificationData(ui.NP{
-                Content: ui.JSON{"container.metrics": metrics}}),
-        )
+		metrics := container.GetMetricsFrom(from_idx)
+		server.SendNotification(
+			session,
+			ui.NotificationData(ui.NP{
+				Content: ui.JSON{"container.metrics": metrics}}),
+		)
 
 	// Command not found
 	default:

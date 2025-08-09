@@ -305,14 +305,14 @@ func main() {
 	_server.Melody.HandleDisconnect(func(s *melody.Session) {
 		// When current node is master
 		if _os.GetEnv("SERVER_ROLE") == "Master" {
-            // Clear metrics polling gorutines if disconected client is not agent
+			// Clear metrics polling gorutines if disconected client is not agent
 			if _, exists := s.Get("agent"); !exists {
-                if v, exists := s.Get("metrics-context-cancel"); exists{
-                    if cancel, ok := v.(context.CancelFunc); ok{
-                        cancel()
-                    }
-                }
-            }
+				if v, exists := s.Get("metrics-context-cancel"); exists {
+					if cancel, ok := v.(context.CancelFunc); ok {
+						cancel()
+					}
+				}
+			}
 			// Clear user tty if there's any open
 			if terminal, exists := s.Get("tty"); exists {
 				(terminal.(*tty.TTY)).ClearAndQuit()

@@ -435,74 +435,80 @@ func (containers Containers) ToRows(columns []string) ui.Rows {
 	return rows
 }
 
-type containerMetric struct{
-    isPolling bool
-    // replace for circular buffer
-    cpuMetrics []int
+// Represents a metric data point for a container.
+type containerMetric struct {
+	isPolling  bool
+	// replace for circular buffer
+	cpuMetrics []int
 }
 
-// use sync map
+// A map to store metrics for each container.
+// TODO: Use a sync.Map for concurrent access.
 var containerMetrics = make(map[string]containerMetric)
 
-func (c Container) GetMetricsFrom(from int) []int{
-    m, ok := containerMetrics[c.ID] 
-    if !ok{
-        return []int{}
-    }
-    return m.cpuMetrics
+// GetMetricsFrom returns the CPU metrics for a container, starting from a given index.
+func (c Container) GetMetricsFrom(from int) []int {
+	m, ok := containerMetrics[c.ID]
+	if !ok {
+		return []int{}
+	}
+	return m.cpuMetrics
 }
 
-func (c Container) IsMetricsPolling() bool{
-    m, ok := containerMetrics[c.ID]
-    if ok{
-        return m.isPolling
-    }
-    return false
+// IsMetricsPolling returns whether metrics are currently being polled for a container.
+func (c Container) IsMetricsPolling() bool {
+	m, ok := containerMetrics[c.ID]
+	if ok {
+		return m.isPolling
+	}
+	return false
 }
 
-func (c Container) PollMetrics(client *client.Client, ctx context.Context, errChan chan error){
-    cm, ok := containerMetrics[c.ID]
+// PollMetrics polls the metrics for a container and sends them to a channel.
+// It will retry up to 5 times on error before stopping.
+func (c Container) PollMetrics(client *client.Client, ctx context.Context, errChan chan error) {
+	cm, ok := containerMetrics[c.ID]
 
-    if !ok{
-        containerMetrics[c.ID] = containerMetric{}
-        cm = containerMetrics[c.ID]
-    }
-    cm.isPolling = true
-    retries := 5
+	if !ok {
+		containerMetrics[c.ID] = containerMetric{}
+		cm = containerMetrics[c.ID]
+	}
+	cm.isPolling = true
+	retries := 5
 
-    t := time.NewTicker(time.Second * 3)
-    for {
-        select {
-        case <-ctx.Done():
-            log.Println("We are finished metrics polling!")
-            cm.isPolling = false
-            return
-        case <-t.C:
-            stats, err := client.ContainerStatsOneShot(context.TODO(), c.ID)
+	t := time.NewTicker(time.Second * 3)
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("We are finished metrics polling!")
+			cm.isPolling = false
+			return
+		case <-t.C:
+			stats, err := client.ContainerStatsOneShot(context.TODO(), c.ID)
 
-            if err != nil{
-                errChan <- err
-                retries -= 1
+			if err != nil {
+				errChan <- err
+				retries -= 1
 
-                if retries <= 0{
-                    errChan <- fmt.Errorf("Stopping polling metrics for container %s", c.ID)
-                    return
-                }
+				if retries <= 0 {
+					errChan <- fmt.Errorf("Stopping polling metrics for container %s", c.ID)
+					return
+				}
 
-                break
-            }
+				break
+			}
 
-            retries = 5
-            m, err := io.ReadAll(stats.Body)
-            log.Println(c.ID, string(m))
+			retries = 5
+			m, err := io.ReadAll(stats.Body)
+			log.Println(c.ID, string(m))
 
-            if err != nil{
-                errChan <- err
-                cm.isPolling = false
-                return
-            }
-        }
-    }
+			if err != nil {
+				errChan <- err
+				cm.isPolling = false
+				return
+			}
+		}
+	}
 }
 
 // Remove the Docker container
