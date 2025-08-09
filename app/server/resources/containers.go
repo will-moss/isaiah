@@ -468,6 +468,7 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
         cm = containerMetrics[c.ID]
     }
     cm.isPolling = true
+    retries := 5
 
     t := time.NewTicker(time.Second * 3)
     for {
@@ -481,9 +482,17 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
 
             if err != nil{
                 errChan <- err
-                cm.isPolling = false
-                return
+                retries -= 1
+
+                if retries <= 0{
+                    errChan <- fmt.Errorf("Stopping polling metrics for container %s", c.ID)
+                    return
+                }
+
+                break
             }
+
+            retries = 5
             m, err := io.ReadAll(stats.Body)
             log.Println(string(m))
 
