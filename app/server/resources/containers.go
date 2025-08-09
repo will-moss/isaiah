@@ -494,7 +494,7 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
 
             retries = 5
             m, err := io.ReadAll(stats.Body)
-            log.Println(string(m))
+            log.Println(c.ID, string(m))
 
             if err != nil{
                 errChan <- err

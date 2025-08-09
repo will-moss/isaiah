@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
-	"strconv"
 	"strings"
 	_io "will-moss/isaiah/server/_internal/io"
 	_os "will-moss/isaiah/server/_internal/os"
@@ -753,7 +751,6 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 		)
 
     case "container.metrics":
-        // add from parameter
 		var container resources.Container
         err := mapstructure.Decode(command.Args["Resource"], &container)
 
@@ -762,7 +759,6 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
             break
         }
 
-
         from, ok := command.Args["From"]
 
         if !ok{
@@ -770,27 +766,30 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
             break
         }
         
-        f, ok := from.(string)
+        idx, ok := from.(float64)
+        from_idx := int(idx)
+
 
         if !ok{
-			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be string"}}))
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be integer "}}))
             break
         }
-
-        from_idx, err := strconv.Atoi(f)
-
-        if err != nil{
-			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be valid integer"}}))
-            break
-        }
-
 
         // Spawn a new metrics poller, if we don't have one yet
         if !container.IsMetricsPolling(){
             errChan := make(chan  error, 1)
-            ctx, cancel := context.WithCancel(context.Background())
-            session.Set("metrics-context", ctx)
-            session.Set("metrics-context-cancel", cancel)
+            // Link all metrics poller in one session with one context
+            ctxVal, exists := session.Get("metrics-context")
+            var ctx context.Context
+
+            if exists{
+                ctx = ctxVal.(context.Context)
+            } else{
+                var cancel context.CancelFunc
+                ctx, cancel = context.WithCancel(context.Background())
+                session.Set("metrics-context", ctx)
+                session.Set("metrics-context-cancel", cancel)
+            }
 
             go container.PollMetrics(server.Docker, ctx, errChan)
 
