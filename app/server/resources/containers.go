@@ -437,18 +437,23 @@ func (containers Containers) ToRows(columns []string) ui.Rows {
 
 // Represents a metric data point for a container.
 type containerMetric struct {
-	isPolling  bool
+	isPolling bool
 	// replace for circular buffer
 	cpuMetrics []int
 }
 
 // A map to store metrics for each container.
 // TODO: Use a sync.Map for concurrent access.
-var containerMetrics = make(map[string]containerMetric)
+var (
+    cmMutex sync.RWMutex
+    containerMetrics = make(map[string]containerMetric)
+)
 
 // GetMetricsFrom returns the CPU metrics for a container, starting from a given index.
 func (c Container) GetMetricsFrom(from int) []int {
+    cmMutex.RLock()
 	m, ok := containerMetrics[c.ID]
+    cmMutex.RUnlock()
 	if !ok {
 		return []int{}
 	}
@@ -457,7 +462,9 @@ func (c Container) GetMetricsFrom(from int) []int {
 
 // IsMetricsPolling returns whether metrics are currently being polled for a container.
 func (c Container) IsMetricsPolling() bool {
+    cmMutex.RLock()
 	m, ok := containerMetrics[c.ID]
+    cmMutex.RUnlock()
 	if ok {
 		return m.isPolling
 	}
@@ -467,13 +474,15 @@ func (c Container) IsMetricsPolling() bool {
 // PollMetrics polls the metrics for a container and sends them to a channel.
 // It will retry up to 5 times on error before stopping.
 func (c Container) PollMetrics(client *client.Client, ctx context.Context, errChan chan error) {
+    cmMutex.Lock()
 	cm, ok := containerMetrics[c.ID]
-
 	if !ok {
 		containerMetrics[c.ID] = containerMetric{}
 		cm = containerMetrics[c.ID]
 	}
 	cm.isPolling = true
+    containerMetrics[c.ID] = cm
+    cmMutex.Unlock()
 	retries := 5
 
 	t := time.NewTicker(time.Second * 3)
@@ -481,7 +490,10 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
 		select {
 		case <-ctx.Done():
 			log.Println("We are finished metrics polling!")
+            cmMutex.Lock()
 			cm.isPolling = false
+            containerMetrics[c.ID] = cm
+            cmMutex.Unlock()
 			return
 		case <-t.C:
 			stats, err := client.ContainerStatsOneShot(context.TODO(), c.ID)
@@ -500,11 +512,17 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
 
 			retries = 5
 			m, err := io.ReadAll(stats.Body)
+            // put metric to the struct container metric
+            // we will use append so we don't need to acquire lock for struct
+            // since GetMetricsFrom method will use copy of that slice and we will update to completely new one
 			log.Println(c.ID, string(m))
 
 			if err != nil {
 				errChan <- err
-				cm.isPolling = false
+                cmMutex.Lock()
+                cm.isPolling = false
+                containerMetrics[c.ID] = cm
+                cmMutex.Unlock()
 				return
 			}
 		}

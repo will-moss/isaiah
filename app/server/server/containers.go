@@ -750,7 +750,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 			}),
 		)
 
-    case "container.metrics":
+	case "container.metrics":
 		var container resources.Container
 		err := mapstructure.Decode(command.Args["Resource"], &container)
 
@@ -801,7 +801,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 					server.SendNotification(
 						session,
 						ui.NotificationInfo(ui.NP{
-							Content: ui.JSON{ "Message": e.Error(), },
+							Content: ui.JSON{"Message": e.Error()},
 						}),
 					)
 				}
