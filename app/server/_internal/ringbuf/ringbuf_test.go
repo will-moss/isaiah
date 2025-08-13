@@ -4,15 +4,14 @@ import (
 	"testing"
 )
 
-
 func TestRingBuffer_Table(t *testing.T) {
 	tests := []struct {
-		name         string
-		size         int
-		addItems     []int
-		getCount     uint64
-		wantValues   []int
-		wantCount    uint64
+		name       string
+		size       int
+		addItems   []int
+		getCount   uint64
+		wantValues []int
+		wantCount  uint64
 	}{
 		{
 			name:       "on initial request",
@@ -20,6 +19,14 @@ func TestRingBuffer_Table(t *testing.T) {
 			addItems:   []int{10, 20, 30},
 			getCount:   0,
 			wantValues: []int{10, 20, 30},
+			wantCount:  3,
+		},
+		{
+			name:       "Count to big",
+			size:       10,
+			addItems:   []int{10, 20, 30},
+			getCount:   8,
+			wantValues: []int{},
 			wantCount:  3,
 		},
 		{

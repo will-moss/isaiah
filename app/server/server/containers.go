@@ -767,7 +767,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 		}
 
 		idx, ok := from.(float64)
-		from_idx := int(idx)
+		from_idx := uint64(idx)
 
 		if !ok {
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be integer "}}))
@@ -795,24 +795,22 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 			go container.PollMetrics(server.Docker, ctx, errChan)
 
 			go func() {
-				select {
-				case e := <-errChan:
-					// based on type of error send correct notification
-					server.SendNotification(
-						session,
-						ui.NotificationInfo(ui.NP{
-							Content: ui.JSON{"Message": e.Error()},
-						}),
-					)
-				}
+				e := <-errChan
+				// based on type of error send correct notification
+				server.SendNotification(
+					session,
+					ui.NotificationInfo(ui.NP{
+						Content: ui.JSON{"Message": e.Error()},
+					}),
+				)
 			}()
 		}
 
-		metrics := container.GetMetricsFrom(from_idx)
+		metrics, next_idx := container.GetMetricsFrom(from_idx)
 		server.SendNotification(
 			session,
 			ui.NotificationData(ui.NP{
-				Content: ui.JSON{"container.metrics": metrics}}),
+				Content: ui.JSON{"container.metrics": metrics, "From": next_idx}}),
 		)
 
 	// Command not found

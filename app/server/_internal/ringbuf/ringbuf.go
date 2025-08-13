@@ -9,21 +9,21 @@ import "sync"
 // operations that depend on the history of insertions, such as determining the oldest or newest
 // elements.
 type RingBuffer struct {
-	data  []int
-	head  int
-	count uint64
+	data    []float64
+	head    int
+	count   uint64
 	rbMutex sync.RWMutex
 }
 
 func NewRingBuffer(size int) *RingBuffer {
 	return &RingBuffer{
-		data:  make([]int, size),
+		data:  make([]float64, size),
 		head:  0,
 		count: 0,
 	}
 }
 
-func (r *RingBuffer) Add(item int) {
+func (r *RingBuffer) Add(item float64) {
 	r.rbMutex.Lock()
 	r.data[r.head] = item
 	r.head = (r.head + 1) % len(r.data)
@@ -31,14 +31,20 @@ func (r *RingBuffer) Add(item int) {
 	r.rbMutex.Unlock()
 }
 
-func (r *RingBuffer) GetFromCount(count uint64) ([]int, uint64) {
+func (r *RingBuffer) GetFromCount(count uint64) ([]float64, uint64) {
 	r.rbMutex.RLock()
 	defer r.rbMutex.RUnlock()
+	if count > r.count {
+		return []float64{}, r.count
+	} else if count < 0 {
+		return []float64{}, r.count
+	}
+
 	itemsToRead := r.count - count
 	// if from last time to now, we added more than whole array, head is made full circle
 	if itemsToRead >= uint64(len(r.data)) {
 		// To be safe from modifications of this slice
-		out := append([]int(nil), r.data[r.head:]...)
+		out := append([]float64(nil), r.data[r.head:]...)
 		out = append(out, r.data[:r.head]...)
 		return out, r.count
 	} else {
@@ -46,10 +52,10 @@ func (r *RingBuffer) GetFromCount(count uint64) ([]int, uint64) {
 		idx := int(count % uint64(len(r.data)))
 
 		if idx <= r.head {
-			out := append([]int(nil), r.data[idx:r.head]...)
+			out := append([]float64(nil), r.data[idx:r.head]...)
 			return out, r.count
 		} else {
-			out := append([]int(nil), r.data[idx:]...)
+			out := append([]float64(nil), r.data[idx:]...)
 			out = append(out, r.data[:r.head]...)
 			return out, r.count
 		}

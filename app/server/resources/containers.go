@@ -16,6 +16,7 @@ import (
 	"time"
 	_os "will-moss/isaiah/server/_internal/os"
 	"will-moss/isaiah/server/_internal/process"
+	"will-moss/isaiah/server/_internal/ringbuf"
 	"will-moss/isaiah/server/_internal/tty"
 	"will-moss/isaiah/server/ui"
 
@@ -437,34 +438,32 @@ func (containers Containers) ToRows(columns []string) ui.Rows {
 
 // Represents a metric data point for a container.
 type containerMetric struct {
-	isPolling bool
-	// replace for circular buffer
-	cpuMetrics []int
+	isPolling  bool
+	cpuMetrics *ringbuf.RingBuffer
 }
 
 // A map to store metrics for each container.
-// TODO: Use a sync.Map for concurrent access.
 var (
-    cmMutex sync.RWMutex
-    containerMetrics = make(map[string]containerMetric)
+	cmMutex          sync.RWMutex
+	containerMetrics = make(map[string]containerMetric)
 )
 
 // GetMetricsFrom returns the CPU metrics for a container, starting from a given index.
-func (c Container) GetMetricsFrom(from int) []int {
-    cmMutex.RLock()
+func (c Container) GetMetricsFrom(from uint64) ([]float64, uint64) {
+	cmMutex.RLock()
 	m, ok := containerMetrics[c.ID]
-    cmMutex.RUnlock()
+	cmMutex.RUnlock()
 	if !ok {
-		return []int{}
+		return []float64{}, 0
 	}
-	return m.cpuMetrics
+	return m.cpuMetrics.GetFromCount(from)
 }
 
 // IsMetricsPolling returns whether metrics are currently being polled for a container.
 func (c Container) IsMetricsPolling() bool {
-    cmMutex.RLock()
+	cmMutex.RLock()
 	m, ok := containerMetrics[c.ID]
-    cmMutex.RUnlock()
+	cmMutex.RUnlock()
 	if ok {
 		return m.isPolling
 	}
@@ -474,29 +473,39 @@ func (c Container) IsMetricsPolling() bool {
 // PollMetrics polls the metrics for a container and sends them to a channel.
 // It will retry up to 5 times on error before stopping.
 func (c Container) PollMetrics(client *client.Client, ctx context.Context, errChan chan error) {
-    cmMutex.Lock()
+	inspection, err := c.Inspect(client)
+	if err != nil {
+		errChan <- err
+		return
+	}
+
+	status := inspection.State.Status
+	if status == "created" || status == "removing" || status == "exited" || status == "dead" {
+		errChan <- fmt.Errorf("Container state is not running, paused or restarting")
+		return
+	}
+	cmMutex.Lock()
 	cm, ok := containerMetrics[c.ID]
 	if !ok {
-		containerMetrics[c.ID] = containerMetric{}
+		containerMetrics[c.ID] = containerMetric{cpuMetrics: ringbuf.NewRingBuffer(3000)}
 		cm = containerMetrics[c.ID]
 	}
 	cm.isPolling = true
-    containerMetrics[c.ID] = cm
-    cmMutex.Unlock()
+	containerMetrics[c.ID] = cm
+	cmMutex.Unlock()
 	retries := 5
 
 	t := time.NewTicker(time.Second * 3)
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("We are finished metrics polling!")
-            cmMutex.Lock()
+			cmMutex.Lock()
 			cm.isPolling = false
-            containerMetrics[c.ID] = cm
-            cmMutex.Unlock()
+			containerMetrics[c.ID] = cm
+			cmMutex.Unlock()
 			return
 		case <-t.C:
-			stats, err := client.ContainerStatsOneShot(context.TODO(), c.ID)
+			information, err := client.ContainerStatsOneShot(context.TODO(), c.ID)
 
 			if err != nil {
 				errChan <- err
@@ -504,6 +513,10 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
 
 				if retries <= 0 {
 					errChan <- fmt.Errorf("Stopping polling metrics for container %s", c.ID)
+					cmMutex.Lock()
+					cm.isPolling = false
+					containerMetrics[c.ID] = cm
+					cmMutex.Unlock()
 					return
 				}
 
@@ -511,20 +524,23 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
 			}
 
 			retries = 5
-			m, err := io.ReadAll(stats.Body)
-            // put metric to the struct container metric
-            // we will use append so we don't need to acquire lock for struct
-            // since GetMetricsFrom method will use copy of that slice and we will update to completely new one
-			log.Println(c.ID, string(m))
 
-			if err != nil {
+			var statsResult types.StatsJSON
+			if err := json.NewDecoder(information.Body).Decode(&statsResult); err != nil {
 				errChan <- err
-                cmMutex.Lock()
-                cm.isPolling = false
-                containerMetrics[c.ID] = cm
-                cmMutex.Unlock()
+				cmMutex.Lock()
+				cm.isPolling = false
+				containerMetrics[c.ID] = cm
+				cmMutex.Unlock()
 				return
 			}
+			// move out to helper func
+			cpuUsageDelta := statsResult.CPUStats.CPUUsage.TotalUsage - statsResult.PreCPUStats.CPUUsage.TotalUsage
+			cpuTotalUsageDelta := statsResult.CPUStats.SystemUsage - statsResult.PreCPUStats.SystemUsage
+			value := float64(cpuUsageDelta*100) / float64(cpuTotalUsageDelta)
+
+			log.Println(c.ID, statsResult)
+			cm.cpuMetrics.Add(value)
 		}
 	}
 }
