@@ -2,28 +2,28 @@ package ringbuf
 
 import "sync"
 
-// RingBuffer provides a thread-safe circular buffer for storing integers.
+// RingBuffer provides a thread-safe circular buffer for Metric points.
 // The 'head' field indicates the position in the buffer where the next element will be written.
 // The 'count' field tracks the total number of elements ever added to the buffer, which helps
 // distinguish between buffer states (e.g., empty, full, or partially filled) and supports
 // operations that depend on the history of insertions, such as determining the oldest or newest
 // elements.
-type RingBuffer struct {
-	data    []float64
+type RingBuffer[T any] struct {
+	data    []T
 	head    int
 	count   uint64
 	rbMutex sync.RWMutex
 }
 
-func NewRingBuffer(size int) *RingBuffer {
-	return &RingBuffer{
-		data:  make([]float64, size),
+func NewRingBuffer[T any](size int) *RingBuffer[T] {
+	return &RingBuffer[T]{
+		data:  make([]T, size),
 		head:  0,
 		count: 0,
 	}
 }
 
-func (r *RingBuffer) Add(item float64) {
+func (r *RingBuffer[T]) Add(item T) {
 	r.rbMutex.Lock()
 	r.data[r.head] = item
 	r.head = (r.head + 1) % len(r.data)
@@ -31,20 +31,20 @@ func (r *RingBuffer) Add(item float64) {
 	r.rbMutex.Unlock()
 }
 
-func (r *RingBuffer) GetFromCount(count uint64) ([]float64, uint64) {
+func (r *RingBuffer[T]) GetFromCount(count uint64) ([]T, uint64) {
 	r.rbMutex.RLock()
 	defer r.rbMutex.RUnlock()
 	if count > r.count {
-		return []float64{}, r.count
+		return []T{}, r.count
 	} else if count < 0 {
-		return []float64{}, r.count
+		return []T{}, r.count
 	}
 
 	itemsToRead := r.count - count
 	// if from last time to now, we added more than whole array, head is made full circle
 	if itemsToRead >= uint64(len(r.data)) {
 		// To be safe from modifications of this slice
-		out := append([]float64(nil), r.data[r.head:]...)
+		out := append([]T(nil), r.data[r.head:]...)
 		out = append(out, r.data[:r.head]...)
 		return out, r.count
 	} else {
@@ -52,10 +52,10 @@ func (r *RingBuffer) GetFromCount(count uint64) ([]float64, uint64) {
 		idx := int(count % uint64(len(r.data)))
 
 		if idx <= r.head {
-			out := append([]float64(nil), r.data[idx:r.head]...)
+			out := append([]T(nil), r.data[idx:r.head]...)
 			return out, r.count
 		} else {
-			out := append([]float64(nil), r.data[idx:]...)
+			out := append([]T(nil), r.data[idx:]...)
 			out = append(out, r.data[:r.head]...)
 			return out, r.count
 		}

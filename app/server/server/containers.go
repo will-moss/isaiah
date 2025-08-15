@@ -773,6 +773,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be integer "}}))
 			break
 		}
+		container.UpdateLastAccessed()
 
 		// Spawn a new metrics poller, if we don't have one yet for this session.
 		// All metric pollers for a given session share the same context,
