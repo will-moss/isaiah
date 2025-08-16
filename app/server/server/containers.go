@@ -773,12 +773,12 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be integer "}}))
 			break
 		}
-		container.UpdateLastAccessed()
+		server.StatsManager.UpdateLastAccessed(container.ID)
 
 		// Spawn a new metrics poller, if we don't have one yet for this session.
 		// All metric pollers for a given session share the same context,
 		// so they can be cancelled all at once.
-		if !container.IsMetricsPolling() {
+		if !server.StatsManager.IsMetricsPolling(container.ID) {
 			errChan := make(chan error, 1)
 			// Link all metrics poller in one session with one context
 			ctxVal, exists := session.Get("metrics-context")
@@ -793,7 +793,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 				session.Set("metrics-context-cancel", cancel)
 			}
 
-			go container.PollMetrics(server.Docker, ctx, errChan)
+			go server.StatsManager.PollMetrics(container, server.Docker, ctx, errChan)
 
 			go func() {
 				e := <-errChan
@@ -807,7 +807,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 			}()
 		}
 
-		metrics, next_idx := container.GetMetricsFrom(from_idx)
+		metrics, next_idx := server.StatsManager.GetMetricsFrom(container.ID, from_idx)
 		server.SendNotification(
 			session,
 			ui.NotificationData(ui.NP{

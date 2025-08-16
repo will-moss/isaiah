@@ -44,7 +44,7 @@ func (r *RingBuffer[T]) GetFromCount(count uint64) ([]T, uint64) {
 	// if from last time to now, we added more than whole array, head is made full circle
 	if itemsToRead >= uint64(len(r.data)) {
 		// To be safe from modifications of this slice
-		out := append([]T(nil), r.data[r.head:]...)
+		out := append([]T{}, r.data[r.head:]...)
 		out = append(out, r.data[:r.head]...)
 		return out, r.count
 	} else {
@@ -52,10 +52,10 @@ func (r *RingBuffer[T]) GetFromCount(count uint64) ([]T, uint64) {
 		idx := int(count % uint64(len(r.data)))
 
 		if idx <= r.head {
-			out := append([]T(nil), r.data[idx:r.head]...)
+			out := append([]T{}, r.data[idx:r.head]...)
 			return out, r.count
 		} else {
-			out := append([]T(nil), r.data[idx:]...)
+			out := append([]T{}, r.data[idx:]...)
 			out = append(out, r.data[:r.head]...)
 			return out, r.count
 		}

@@ -199,16 +199,20 @@ func main() {
 		}
 	}
 
+	statsManager := resources.NewContainerStatsManager()
+
 	// Set up everything (Melody instance, Docker client, Server settings)
 	var _server server.Server
 	if _os.GetEnv("MULTI_HOST_ENABLED") != "TRUE" {
 		_server = server.Server{
-			Melody: melody.New(),
-			Docker: _client.NewClientWithOpts(client.FromEnv),
+			Melody:       melody.New(),
+			Docker:       _client.NewClientWithOpts(client.FromEnv),
+			StatsManager: statsManager,
 		}
 	} else {
 		_server = server.Server{
-			Melody: melody.New(),
+			Melody:       melody.New(),
+			StatsManager: statsManager,
 		}
 
 		// Populate server's known hosts when multi-host is enabled

@@ -447,10 +447,16 @@ type containerStats struct {
 	lastAccessed time.Time
 }
 
-var (
+type ContainerStatsManager struct {
 	storeMutex           sync.RWMutex
-	containersStatsStore = make(map[string]containerStats)
-)
+	containersStatsStore map[string]containerStats
+}
+
+func NewContainerStatsManager() *ContainerStatsManager {
+	return &ContainerStatsManager{
+		containersStatsStore: make(map[string]containerStats),
+	}
+}
 
 const RING_BUFFER_SIZE = 3000
 const POLLING_IDLE_DURATION = 30
@@ -462,23 +468,23 @@ func NewContainerStats() containerStats {
 	}
 }
 
-func (c Container) UpdateLastAccessed() {
-	storeMutex.Lock()
-	s, ok := containersStatsStore[c.ID]
+func (c *ContainerStatsManager) UpdateLastAccessed(containerID string) {
+	c.storeMutex.Lock()
+	s, ok := c.containersStatsStore[containerID]
 	if !ok {
-		containersStatsStore[c.ID] = NewContainerStats()
+		c.containersStatsStore[containerID] = NewContainerStats()
 	} else {
 		s.lastAccessed = time.Now()
-		containersStatsStore[c.ID] = s
+		c.containersStatsStore[containerID] = s
 	}
-	storeMutex.Unlock()
+	c.storeMutex.Unlock()
 }
 
 // GetMetricsFrom returns the metric data point for a container, starting from a given index.
-func (c Container) GetMetricsFrom(from uint64) ([]MetricPoint, uint64) {
-	storeMutex.RLock()
-	s, ok := containersStatsStore[c.ID]
-	storeMutex.RUnlock()
+func (c *ContainerStatsManager) GetMetricsFrom(containerID string, from uint64) ([]MetricPoint, uint64) {
+	c.storeMutex.RLock()
+	s, ok := c.containersStatsStore[containerID]
+	c.storeMutex.RUnlock()
 	if !ok {
 		return []MetricPoint{}, 0
 	}
@@ -486,10 +492,10 @@ func (c Container) GetMetricsFrom(from uint64) ([]MetricPoint, uint64) {
 }
 
 // IsMetricsPolling returns whether metrics are currently being polled for a container.
-func (c Container) IsMetricsPolling() bool {
-	storeMutex.RLock()
-	defer storeMutex.RUnlock()
-	s, ok := containersStatsStore[c.ID]
+func (c *ContainerStatsManager) IsMetricsPolling(containerID string) bool {
+	c.storeMutex.RLock()
+	defer c.storeMutex.RUnlock()
+	s, ok := c.containersStatsStore[containerID]
 	if ok {
 		return s.isPolling
 	}
@@ -498,8 +504,8 @@ func (c Container) IsMetricsPolling() bool {
 
 // PollMetrics polls the metrics for a container
 // It will retry up to 5 times on error before stopping.
-func (c Container) PollMetrics(client *client.Client, ctx context.Context, errChan chan error) {
-	inspection, err := c.Inspect(client)
+func (c *ContainerStatsManager) PollMetrics(container Container, client *client.Client, ctx context.Context, errChan chan error) {
+	inspection, err := container.Inspect(client)
 	if err != nil {
 		errChan <- err
 		return
@@ -510,49 +516,49 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
 		errChan <- fmt.Errorf("Container state is not running, paused or restarting")
 		return
 	}
-	storeMutex.Lock()
-	cs, ok := containersStatsStore[c.ID]
+	c.storeMutex.Lock()
+	cStats, ok := c.containersStatsStore[container.ID]
 	if !ok {
-		cs = NewContainerStats()
-		containersStatsStore[c.ID] = cs
+		cStats = NewContainerStats()
+		c.containersStatsStore[container.ID] = cStats
 	}
-	cs.isPolling = true
-	containersStatsStore[c.ID] = cs
-	storeMutex.Unlock()
+	cStats.isPolling = true
+	c.containersStatsStore[container.ID] = cStats
+	c.storeMutex.Unlock()
 	retries := 5
 
 	t := time.NewTicker(time.Second * 3)
 	for {
 		select {
 		case <-ctx.Done():
-			storeMutex.Lock()
-			cs.isPolling = false
-			containersStatsStore[c.ID] = cs
-			storeMutex.Unlock()
+			c.storeMutex.Lock()
+			cStats.isPolling = false
+			c.containersStatsStore[container.ID] = cStats
+			c.storeMutex.Unlock()
 			return
 		case <-t.C:
 
-			if time.Since(containersStatsStore[c.ID].lastAccessed) > POLLING_IDLE_DURATION*time.Minute {
-				storeMutex.Lock()
-				cs.isPolling = false
-				containersStatsStore[c.ID] = cs
-				storeMutex.Unlock()
+			if time.Since(c.containersStatsStore[container.ID].lastAccessed) > POLLING_IDLE_DURATION*time.Minute {
+				c.storeMutex.Lock()
+				cStats.isPolling = false
+				c.containersStatsStore[container.ID] = cStats
+				c.storeMutex.Unlock()
 				errChan <- fmt.Errorf("Idle metrics polling time period exceeded")
 				return
 			}
 
-			information, err := client.ContainerStatsOneShot(context.TODO(), c.ID)
+			information, err := client.ContainerStatsOneShot(ctx, container.ID)
 
 			if err != nil {
 				errChan <- err
 				retries -= 1
 
 				if retries <= 0 {
-					errChan <- fmt.Errorf("Stopping polling metrics for container %s", c.ID)
-					storeMutex.Lock()
-					cs.isPolling = false
-					containersStatsStore[c.ID] = cs
-					storeMutex.Unlock()
+					errChan <- fmt.Errorf("Stopping polling metrics for container %s", container.ID)
+					c.storeMutex.Lock()
+					cStats.isPolling = false
+					c.containersStatsStore[container.ID] = cStats
+					c.storeMutex.Unlock()
 					return
 				}
 
@@ -564,10 +570,10 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
 			var statsResult types.StatsJSON
 			if err := json.NewDecoder(information.Body).Decode(&statsResult); err != nil {
 				errChan <- err
-				storeMutex.Lock()
-				cs.isPolling = false
-				containersStatsStore[c.ID] = cs
-				storeMutex.Unlock()
+				c.storeMutex.Lock()
+				cStats.isPolling = false
+				c.containersStatsStore[container.ID] = cStats
+				c.storeMutex.Unlock()
 				return
 			}
 			// move out to helper func
@@ -588,7 +594,7 @@ func (c Container) PollMetrics(client *client.Client, ctx context.Context, errCh
 				MemMetric: memPercent,
 			}
 
-			cs.metrics.Add(mp)
+			cStats.metrics.Add(mp)
 		}
 	}
 }

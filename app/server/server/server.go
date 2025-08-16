@@ -30,6 +30,7 @@ type Server struct {
 	Agents          AgentsArray
 	Hosts           HostsArray
 	CurrentHostName string
+	StatsManager    *resources.ContainerStatsManager
 }
 
 // Represent a command handler, used only _internally
