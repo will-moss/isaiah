@@ -33,7 +33,7 @@
  *   directly mapped to a key press (public), or used
  *   internally to facilitate some operations (private).
  */
-((window) => {
+// ((window) => {
   // === Handy methods and aliases
 
   /**
@@ -126,6 +126,27 @@
       }, delay);
     };
   };
+
+  /**
+   * Turn a given method into with interval version of it
+   * @param {Function} fn
+   * @param {int} interval
+   */
+  const withInterval = (fn, interval) => {
+    let intervalId = null;
+    return (param, ...args) => {
+    if (param === "cancel") {
+      window.clearInterval(intervalId);
+      intervalId = null;
+      return;
+    }
+      window.clearInterval(intervalId);
+      intervalId = window.setInterval(() => {
+        fn( ...args);
+      }, interval);
+    };
+  };
+
 
   // === Handy HTML-querying methods
 
@@ -477,6 +498,10 @@
       html += `</div>`;
     }
 
+    if (inspector.currentTab === 'Stats') {
+       html += `<div class="plot-container"></div>`;
+    }
+
     html += `<div class="tab-content">`;
     if (inspector.content.length > 0) {
       // Render Inspector Content
@@ -526,6 +551,7 @@
             // prettier-ignore
             html += `<pre><code class="language-yaml">${inspectorPart.Content.join('\n')}</code></pre>`;
             break;
+
         }
 
         // Empty row separator between every content part (except for raw lines)
@@ -1103,6 +1129,14 @@
       // 3. Build inspector
       html = renderInspector(_state.inspector);
       hgetScreen('dashboard').querySelector('.right').innerHTML = html;
+
+        if (_state.inspector.currentTab === 'Stats') {
+           plotData = state.inspector.content.find(t => t.Type === "Plot")?.Content
+           timestamps = Array.from({ length: plotData?.cpu?.length }, (_, i) => i + 1);
+
+           cmds._initPlot();
+           state.inspector.plot.setData([timestamps, plotData?.cpu || [] , plotData?.mem || []]);
+        }
     }
 
     // 4. Build current popup
@@ -1395,6 +1429,8 @@
     // 12.3. Highlight code
     if (_state.settings.enableSyntaxHighlight)
       if (window.hljs) hljs.highlightAll();
+
+
   };
 
   // === Websocket-related methods
@@ -1435,7 +1471,7 @@
   // === State
 
   let state = {
-    /**
+      /**
      * @type {boolean}
      */
     hasEstablishedConnection: false,
@@ -1684,6 +1720,7 @@
       content: [],
       horizontalScroll: 0,
       verticalScroll: 0,
+      plot: null,
     },
 
     /**
@@ -2018,6 +2055,7 @@
     cmdRun(cmd, ...args);
   }, state._delays.default);
 
+
   // === Commands
 
   const cmds = {
@@ -2043,6 +2081,51 @@
       setTimeout(() => {
         cmdRun(cmds._showAuthentication);
       }, state._delays.forTTYInputFocus);
+    },
+
+    /**
+     * Private - Starts container metrics polling
+     */
+    _init_metrics_polling: withInterval(function() {
+      const query = {
+        action: "container.metrics",
+        args: {
+          Resource: sgetCurrentRow().ID,
+          From: state.inspector.content.find(t => t.Type === "Plot")?.nextMetric || 0
+        }
+      };
+      websocketSend(query);
+    }, 3000),
+
+    _initPlot: function() {
+      const target = hgetTab('inspector').querySelector('.plot-container');
+      if (target) {
+        const plot = new uPlot({
+          width: target.clientWidth,
+          height: target.clientHeight,
+          series: [
+            {},
+            {
+              label: "CPU",
+              stroke: "red",
+            },
+            {
+              label: "Memory",
+              stroke: "blue",
+            },
+          ],
+          axes: [
+            {},
+            {
+              label: "CPU %",
+            },
+            {
+              label: "Memory (MB)",
+            },
+          ],
+        }, [[], [], []], target);
+        state.inspector.plot = plot;
+      }
     },
 
     /**
@@ -4411,7 +4494,6 @@
    */
   const listenerMouseClick = (evt) => {
     evt.preventDefault();
-
     // Prevent doing anything while the server is loading
     if (state.isLoading) return;
 
@@ -4435,6 +4517,11 @@
       else if (part === 'inspector') {
         if (state.search.isEnabled && state.search.startedOn === 'logs')
           cmdRun(cmds._clearSearch);
+
+        if (key == 'Stats'){
+            cmds._init_metrics_polling()
+            cmdRun(cmds._initPlot);
+        }
 
         if (!state.inspector.isEnabled) cmdRun(cmds._enterInspect);
 
@@ -4942,6 +5029,36 @@
           cmdRun(cmds._showPopup, 'menu');
         }
 
+        if ('Metrics' in notification.Content ) {
+            if (state?.inspector?.currentTab === "Stats") {
+                plotContent = state.inspector.content.find(t => t.Type === "Plot");
+                if (!plotContent) {
+                    state.inspector.content.push({ Type: "Plot", Content: { cpu: [], mem: []} });
+                }
+
+                const plotData = state.inspector.content.find(t => t.Type === "Plot").Content;
+
+                for (const metric_point of notification.Content.Metrics) {
+                    plotData.cpu.push(metric_point.cpu);
+                    plotData.mem.push(metric_point.mem);
+                }
+
+                plotContent = state.inspector.content.find(t => t.Type === "Plot");
+                plotContent.nextMetric = notification.Content.From
+
+                timestamps = Array.from({ length: plotData.cpu.length }, (_, i) => i + 1);
+                if (state.inspector.plot) {
+                    state.inspector.plot.setData([timestamps, plotData.cpu, plotData.mem]);
+                } else {
+                    cmds._initPlot();
+                    state.inspector.plot.setData([timestamps, plotData.cpu, plotData.mem]);
+                }
+
+            } else {
+                cmds._init_metrics_polling("cancel")
+            }
+        }
+
         if ('Address' in notification.Content) {
           window.open(notification.Content.Address, '_blank');
         }
@@ -5293,4 +5410,4 @@
     window.addEventListener('click', listenerMouseClick);
     window.addEventListener('mousemove', listenerMouseMove);
   });
-})(window);
+// })(window);

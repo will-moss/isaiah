@@ -504,8 +504,8 @@ func (c *ContainerStatsManager) IsMetricsPolling(containerID string) bool {
 
 // PollMetrics polls the metrics for a container
 // It will retry up to 5 times on error before stopping.
-func (c *ContainerStatsManager) PollMetrics(container Container, client *client.Client, ctx context.Context, errChan chan error) {
-	inspection, err := container.Inspect(client)
+func (c *ContainerStatsManager) PollMetrics(containerID string, client *client.Client, ctx context.Context, errChan chan error) {
+	inspection, err := client.ContainerInspect(context.Background(), containerID)
 	if err != nil {
 		errChan <- err
 		return
@@ -517,13 +517,13 @@ func (c *ContainerStatsManager) PollMetrics(container Container, client *client.
 		return
 	}
 	c.storeMutex.Lock()
-	cStats, ok := c.containersStatsStore[container.ID]
+	cStats, ok := c.containersStatsStore[containerID]
 	if !ok {
 		cStats = NewContainerStats()
-		c.containersStatsStore[container.ID] = cStats
+		c.containersStatsStore[containerID] = cStats
 	}
 	cStats.isPolling = true
-	c.containersStatsStore[container.ID] = cStats
+	c.containersStatsStore[containerID] = cStats
 	c.storeMutex.Unlock()
 	retries := 5
 
@@ -533,31 +533,31 @@ func (c *ContainerStatsManager) PollMetrics(container Container, client *client.
 		case <-ctx.Done():
 			c.storeMutex.Lock()
 			cStats.isPolling = false
-			c.containersStatsStore[container.ID] = cStats
+			c.containersStatsStore[containerID] = cStats
 			c.storeMutex.Unlock()
 			return
 		case <-t.C:
 
-			if time.Since(c.containersStatsStore[container.ID].lastAccessed) > POLLING_IDLE_DURATION*time.Minute {
+			if time.Since(c.containersStatsStore[containerID].lastAccessed) > POLLING_IDLE_DURATION*time.Minute {
 				c.storeMutex.Lock()
 				cStats.isPolling = false
-				c.containersStatsStore[container.ID] = cStats
+				c.containersStatsStore[containerID] = cStats
 				c.storeMutex.Unlock()
 				errChan <- fmt.Errorf("Idle metrics polling time period exceeded")
 				return
 			}
 
-			information, err := client.ContainerStatsOneShot(ctx, container.ID)
+			information, err := client.ContainerStatsOneShot(ctx, containerID)
 
 			if err != nil {
 				errChan <- err
 				retries -= 1
 
 				if retries <= 0 {
-					errChan <- fmt.Errorf("Stopping polling metrics for container %s", container.ID)
+					errChan <- fmt.Errorf("Stopping polling metrics for container %s", containerID)
 					c.storeMutex.Lock()
 					cStats.isPolling = false
-					c.containersStatsStore[container.ID] = cStats
+					c.containersStatsStore[containerID] = cStats
 					c.storeMutex.Unlock()
 					return
 				}
@@ -572,7 +572,7 @@ func (c *ContainerStatsManager) PollMetrics(container Container, client *client.
 				errChan <- err
 				c.storeMutex.Lock()
 				cStats.isPolling = false
-				c.containersStatsStore[container.ID] = cStats
+				c.containersStatsStore[containerID] = cStats
 				c.storeMutex.Unlock()
 				return
 			}

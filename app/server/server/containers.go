@@ -751,11 +751,18 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 		)
 
 	case "container.metrics":
-		var container resources.Container
-		err := mapstructure.Decode(command.Args["Resource"], &container)
+		// var container resources.Container
+		// err := mapstructure.Decode(command.Args["Resource"], &container)
+		//
+		// if err != nil {
+		// 	server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+		// 	break
+		// }
+		containerID, ok := command.Args["Resource"].(string)
+		fmt.Println(containerID)
 
-		if err != nil {
-			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+		if !ok {
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "Container id must string"}}))
 			break
 		}
 
@@ -773,12 +780,12 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be integer "}}))
 			break
 		}
-		server.StatsManager.UpdateLastAccessed(container.ID)
+		server.StatsManager.UpdateLastAccessed(containerID)
 
 		// Spawn a new metrics poller, if we don't have one yet for this session.
 		// All metric pollers for a given session share the same context,
 		// so they can be cancelled all at once.
-		if !server.StatsManager.IsMetricsPolling(container.ID) {
+		if !server.StatsManager.IsMetricsPolling(containerID) {
 			errChan := make(chan error, 1)
 			// Link all metrics poller in one session with one context
 			ctxVal, exists := session.Get("metrics-context")
@@ -793,25 +800,26 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 				session.Set("metrics-context-cancel", cancel)
 			}
 
-			go server.StatsManager.PollMetrics(container, server.Docker, ctx, errChan)
+			go server.StatsManager.PollMetrics(containerID, server.Docker, ctx, errChan)
 
 			go func() {
 				e := <-errChan
 				// based on type of error send correct notification
-				server.SendNotification(
-					session,
-					ui.NotificationInfo(ui.NP{
-						Content: ui.JSON{"Message": e.Error()},
-					}),
-				)
+				// server.SendNotification(
+				// 	session,
+				// 	ui.NotificationInfo(ui.NP{
+				// 		Content: ui.JSON{"Message": e.Error()},
+				// 	}),
+				// )
+				fmt.Printf("container.metrics: %s \n", e.Error())
 			}()
 		}
 
-		metrics, next_idx := server.StatsManager.GetMetricsFrom(container.ID, from_idx)
+		metrics, next_idx := server.StatsManager.GetMetricsFrom(containerID, from_idx)
 		server.SendNotification(
 			session,
 			ui.NotificationData(ui.NP{
-				Content: ui.JSON{"container.metrics": metrics, "From": next_idx}}),
+				Content: ui.JSON{"Metrics": metrics, "From": next_idx}}),
 		)
 
 	// Command not found
