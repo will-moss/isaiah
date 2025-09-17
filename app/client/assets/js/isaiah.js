@@ -141,6 +141,9 @@
       return;
     }
       window.clearInterval(intervalId);
+
+      fn(...args);
+
       intervalId = window.setInterval(() => {
         fn( ...args);
       }, interval);
@@ -498,9 +501,6 @@
       html += `</div>`;
     }
 
-    if (inspector.currentTab === 'Stats') {
-       html += `<div class="plot-container"></div>`;
-    }
 
     html += `<div class="tab-content">`;
     if (inspector.content.length > 0) {
@@ -550,6 +550,11 @@
           case 'code':
             // prettier-ignore
             html += `<pre><code class="language-yaml">${inspectorPart.Content.join('\n')}</code></pre>`;
+            break;
+
+          case 'plot':
+            // prettier-ignore
+            html += `<div class="plot-container"></div>`;
             break;
 
         }
@@ -1130,11 +1135,23 @@
       html = renderInspector(_state.inspector);
       hgetScreen('dashboard').querySelector('.right').innerHTML = html;
 
-        if (_state.inspector.currentTab === 'Stats') {
-           plotData = state.inspector.content.find(t => t.Type === "Plot")?.Content
+        plot = state.inspector.content.find(t => t.Type === "plot")
+        if (_state.inspector.currentTab === 'Stats' && plot) {
+           plotData = plot.Content
            timestamps = Array.from({ length: plotData?.cpu?.length }, (_, i) => i + 1);
 
-           cmds._initPlot();
+          const target = hgetTab('inspector').querySelector('.plot-container');
+
+          if (!state.inspector.plot) {
+            cmds._initPlot();
+          } else {
+            target?.appendChild(state.inspector.plot.root);
+          }
+        console.log("re-render")
+
+           if (target) {
+            state.inspector.plot.setSize({width: 500, height: 500});
+           }
            state.inspector.plot.setData([timestamps, plotData?.cpu || [] , plotData?.mem || []]);
         }
     }
@@ -2091,15 +2108,30 @@
         action: "container.metrics",
         args: {
           Resource: sgetCurrentRow().ID,
-          From: state.inspector.content.find(t => t.Type === "Plot")?.nextMetric || 0
+          From: state.inspector.content.find(t => t.Type === "plot")?.nextMetric || 0
         }
       };
       websocketSend(query);
     }, 3000),
 
+    _cancel_metrics_polling: function(){
+        cmds._init_metrics_polling("cancel")
+    },
+
     _initPlot: function() {
       const target = hgetTab('inspector').querySelector('.plot-container');
       if (target) {
+       plotData = state.inspector.content.find(t => t.Type === "plot")?.Content
+       timestamps = Array.from({ length: plotData?.cpu?.length }, (_, i) => i + 1);
+
+        const style = getComputedStyle(document.body);
+        const plotTheme = {
+          cpu: style.getPropertyValue('--color-terminal-accent'),
+          mem: style.getPropertyValue('--color-terminal-accent-alternative'),
+          axis: style.getPropertyValue('--color-terminal-base'),
+          grid: style.getPropertyValue('--color-terminal-hover'),
+        }
+
         const plot = new uPlot({
           width: target.clientWidth,
           height: target.clientHeight,
@@ -2107,23 +2139,40 @@
             {},
             {
               label: "CPU",
-              stroke: "red",
+              stroke: plotTheme.cpu,
             },
             {
               label: "Memory",
-              stroke: "blue",
+              stroke: plotTheme.mem,
             },
           ],
           axes: [
-            {},
+            {
+              show: false,
+              stroke: plotTheme.axis,
+              grid: {
+                stroke: plotTheme.grid,
+              }
+            },
             {
               label: "CPU %",
+              stroke: plotTheme.axis,
             },
             {
               label: "Memory (MB)",
+              stroke: plotTheme.axis,
             },
           ],
-        }, [[], [], []], target);
+          legend: {
+            show: true,
+          },
+          cursor: {
+            show: true,
+          },
+          focus: {
+            alpha: 0.3,
+          }
+        }, [timestamps, plotData?.cpu || [] , plotData?.mem || []], target);
         state.inspector.plot = plot;
       }
     },
@@ -2503,6 +2552,10 @@
     _pickTheme: function (action) {
       state.appearance.currentTheme = action.Label.toLowerCase();
       localStorage.setItem('theme', state.appearance.currentTheme);
+      if (state.inspector.plot) {
+        state.inspector.plot.destroy();
+        state.inspector.plot = null;
+      }
     },
 
     /**
@@ -4518,15 +4571,15 @@
         if (state.search.isEnabled && state.search.startedOn === 'logs')
           cmdRun(cmds._clearSearch);
 
-        if (key == 'Stats'){
-            cmds._init_metrics_polling()
-            cmdRun(cmds._initPlot);
-        }
 
         if (!state.inspector.isEnabled) cmdRun(cmds._enterInspect);
 
         state.inspector.currentTab = key;
         cmdRun(cmds._refreshInspector);
+
+        if (key == 'Stats'){
+            cmds._init_metrics_polling()
+        }
       }
       // 1.3. Tab Row
       else if (part === 'row') {
@@ -5030,33 +5083,49 @@
         }
 
         if ('Metrics' in notification.Content ) {
-            if (state?.inspector?.currentTab === "Stats") {
-                plotContent = state.inspector.content.find(t => t.Type === "Plot");
-                if (!plotContent) {
-                    state.inspector.content.push({ Type: "Plot", Content: { cpu: [], mem: []} });
-                }
-
-                const plotData = state.inspector.content.find(t => t.Type === "Plot").Content;
-
-                for (const metric_point of notification.Content.Metrics) {
-                    plotData.cpu.push(metric_point.cpu);
-                    plotData.mem.push(metric_point.mem);
-                }
-
-                plotContent = state.inspector.content.find(t => t.Type === "Plot");
-                plotContent.nextMetric = notification.Content.From
-
-                timestamps = Array.from({ length: plotData.cpu.length }, (_, i) => i + 1);
-                if (state.inspector.plot) {
-                    state.inspector.plot.setData([timestamps, plotData.cpu, plotData.mem]);
-                } else {
-                    cmds._initPlot();
-                    state.inspector.plot.setData([timestamps, plotData.cpu, plotData.mem]);
-                }
-
-            } else {
-                cmds._init_metrics_polling("cancel")
+            // New metric received and user left Stats tab
+            if (state?.inspector?.currentTab !== "Stats") {
+                cmds._cancel_metrics_polling()
+                delete state.inspector.plot
+                state.isLoading = false;
+                break
             }
+
+            if (notification.Content.Metrics.length == 0){
+                // Stop polling when container exited
+                if (!state.inspector.content.find(t => t.Type === "plot")){
+                    cmds._cancel_metrics_polling()
+                    delete state.inspector.plot
+                }
+                state.isLoading = false;
+                break
+            }
+            // container.inspect.stats returned after container.metrics
+            if (!state.inspector.content.find(t => t.Type === "plot")){
+                state.isLoading = false;
+                cmds._cancel_metrics_polling()
+                cmds._init_metrics_polling()
+                break
+            }
+            const plotData = state.inspector.content.find(t => t.Type === "plot").Content;
+
+            for (const metric_point of notification.Content.Metrics) {
+                plotData.cpu.push(metric_point.cpu);
+                plotData.mem.push(metric_point.mem);
+            }
+
+            plotContent = state.inspector.content.find(t => t.Type === "plot");
+            plotContent.nextMetric = notification.Content.From
+
+            timestamps = Array.from({ length: plotData.cpu.length }, (_, i) => i + 1);
+
+            if (state.inspector.plot) {
+                state.inspector.plot.setData([timestamps, plotData.cpu, plotData.mem]);
+            } else {
+                cmdRun(cmds._initPlot);
+            }
+            state.isLoading = false;
+            return
         }
 
         if ('Address' in notification.Content) {
@@ -5216,6 +5285,9 @@
         break;
 
       case 'loading':
+        if (state.inspector.plot && state.inspector.currentTab == 'Stats'){
+            return
+        }
         state.isLoading = true;
         break;
 

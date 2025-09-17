@@ -579,7 +579,15 @@ func (c *ContainerStatsManager) PollMetrics(containerID string, client *client.C
 			// move out to helper func
 			cpuUsageDelta := statsResult.CPUStats.CPUUsage.TotalUsage - statsResult.PreCPUStats.CPUUsage.TotalUsage
 			cpuTotalUsageDelta := statsResult.CPUStats.SystemUsage - statsResult.PreCPUStats.SystemUsage
-			cpuPercent := float64(cpuUsageDelta*100) / float64(cpuTotalUsageDelta)
+
+			// Get number of CPUs
+			onlineCPUs := statsResult.CPUStats.OnlineCPUs
+
+			// cpuPercent := float64(cpuUsageDelta*100) / float64(cpuTotalUsageDelta)
+			var cpuPercent float64
+			if cpuTotalUsageDelta > 0 && onlineCPUs > 0 {
+				cpuPercent = (float64(cpuUsageDelta) / float64(cpuTotalUsageDelta)) * float64(onlineCPUs) * 100
+			}
 
 			usage := statsResult.MemoryStats.Usage
 			limit := statsResult.MemoryStats.Limit
@@ -1035,8 +1043,10 @@ func (c Container) GetStats(client *client.Client) (ui.InspectorContent, error) 
 	mainStats.Content = rows
 
 	separator := ui.InspectorContentPart{Type: "lines", Content: []string{"Full stats:", "&nbsp;"}}
+	plot := ui.InspectorContentPart{Type: "plot", Content: map[string]interface{}{"cpu": []int{}, "mem": []int{}}}
 
 	return ui.InspectorContent{
+		plot,
 		mainStats,
 		separator,
 		ui.InspectorContentPart{Type: "json", Content: statsResult},
