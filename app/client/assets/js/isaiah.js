@@ -33,7 +33,7 @@
  *   directly mapped to a key press (public), or used
  *   internally to facilitate some operations (private).
  */
-// ((window) => {
+((window) => {
   // === Handy methods and aliases
 
   /**
@@ -5482,4 +5482,4 @@
     window.addEventListener('click', listenerMouseClick);
     window.addEventListener('mousemove', listenerMouseMove);
   });
-// })(window);
+})(window);

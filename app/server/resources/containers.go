@@ -527,6 +527,81 @@ func (c *ContainerStatsManager) PollMetrics(containerID string, client *client.C
 	c.storeMutex.Unlock()
 	retries := 5
 
+	// tick returns true to continue polling, false to stop.
+	tick := func() bool {
+		if time.Since(c.containersStatsStore[containerID].lastAccessed) > POLLING_IDLE_DURATION*time.Minute {
+			c.storeMutex.Lock()
+			cStats.isPolling = false
+			c.containersStatsStore[containerID] = cStats
+			c.storeMutex.Unlock()
+			errChan <- fmt.Errorf("Idle metrics polling time period exceeded")
+			return false
+		}
+
+		information, err := client.ContainerStatsOneShot(ctx, containerID)
+
+		if err != nil {
+			errChan <- err
+			retries -= 1
+
+			if retries <= 0 {
+				errChan <- fmt.Errorf("Stopping polling metrics for container %s", containerID)
+				c.storeMutex.Lock()
+				cStats.isPolling = false
+				c.containersStatsStore[containerID] = cStats
+				c.storeMutex.Unlock()
+				return false
+			}
+
+			return true
+		}
+
+		retries = 5
+
+		var statsResult types.StatsJSON
+		if err := json.NewDecoder(information.Body).Decode(&statsResult); err != nil {
+			errChan <- err
+			c.storeMutex.Lock()
+			cStats.isPolling = false
+			c.containersStatsStore[containerID] = cStats
+			c.storeMutex.Unlock()
+			return false
+		}
+		// move out to helper func
+		cpuUsageDelta := statsResult.CPUStats.CPUUsage.TotalUsage - statsResult.PreCPUStats.CPUUsage.TotalUsage
+		cpuTotalUsageDelta := statsResult.CPUStats.SystemUsage - statsResult.PreCPUStats.SystemUsage
+
+		// Get number of CPUs
+		onlineCPUs := statsResult.CPUStats.OnlineCPUs
+
+		// cpuPercent := float64(cpuUsageDelta*100) / float64(cpuTotalUsageDelta)
+		var cpuPercent float64
+		if cpuTotalUsageDelta > 0 && onlineCPUs > 0 {
+			cpuPercent = (float64(cpuUsageDelta) / float64(cpuTotalUsageDelta)) * float64(onlineCPUs) * 100
+		}
+
+		usage := statsResult.MemoryStats.Usage
+		limit := statsResult.MemoryStats.Limit
+		var memPercent float64
+
+		if limit > 0 {
+			memPercent = float64(usage) * 100 / float64(limit)
+		}
+
+		mp := MetricPoint{
+			CpuMetric: cpuPercent,
+			MemMetric: memPercent,
+		}
+
+		cStats.metrics.Add(mp)
+		return true
+	}
+
+	// Fire the first tick immediately,  stop if it fails
+	if !tick() {
+		return
+	}
+
 	t := time.NewTicker(time.Second * 3)
 	for {
 		select {
@@ -537,72 +612,9 @@ func (c *ContainerStatsManager) PollMetrics(containerID string, client *client.C
 			c.storeMutex.Unlock()
 			return
 		case <-t.C:
-
-			if time.Since(c.containersStatsStore[containerID].lastAccessed) > POLLING_IDLE_DURATION*time.Minute {
-				c.storeMutex.Lock()
-				cStats.isPolling = false
-				c.containersStatsStore[containerID] = cStats
-				c.storeMutex.Unlock()
-				errChan <- fmt.Errorf("Idle metrics polling time period exceeded")
+			if !tick() {
 				return
 			}
-
-			information, err := client.ContainerStatsOneShot(ctx, containerID)
-
-			if err != nil {
-				errChan <- err
-				retries -= 1
-
-				if retries <= 0 {
-					errChan <- fmt.Errorf("Stopping polling metrics for container %s", containerID)
-					c.storeMutex.Lock()
-					cStats.isPolling = false
-					c.containersStatsStore[containerID] = cStats
-					c.storeMutex.Unlock()
-					return
-				}
-
-				break
-			}
-
-			retries = 5
-
-			var statsResult types.StatsJSON
-			if err := json.NewDecoder(information.Body).Decode(&statsResult); err != nil {
-				errChan <- err
-				c.storeMutex.Lock()
-				cStats.isPolling = false
-				c.containersStatsStore[containerID] = cStats
-				c.storeMutex.Unlock()
-				return
-			}
-			// move out to helper func
-			cpuUsageDelta := statsResult.CPUStats.CPUUsage.TotalUsage - statsResult.PreCPUStats.CPUUsage.TotalUsage
-			cpuTotalUsageDelta := statsResult.CPUStats.SystemUsage - statsResult.PreCPUStats.SystemUsage
-
-			// Get number of CPUs
-			onlineCPUs := statsResult.CPUStats.OnlineCPUs
-
-			// cpuPercent := float64(cpuUsageDelta*100) / float64(cpuTotalUsageDelta)
-			var cpuPercent float64
-			if cpuTotalUsageDelta > 0 && onlineCPUs > 0 {
-				cpuPercent = (float64(cpuUsageDelta) / float64(cpuTotalUsageDelta)) * float64(onlineCPUs) * 100
-			}
-
-			usage := statsResult.MemoryStats.Usage
-			limit := statsResult.MemoryStats.Limit
-			var memPercent float64
-
-			if limit > 0 {
-				memPercent = float64(usage) * 100 / float64(limit)
-			}
-
-			mp := MetricPoint{
-				CpuMetric: cpuPercent,
-				MemMetric: memPercent,
-			}
-
-			cStats.metrics.Add(mp)
 		}
 	}
 }
