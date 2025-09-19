@@ -1053,7 +1053,7 @@ func (c Container) GetStats(client *client.Client) (ui.InspectorContent, error) 
 	mainStats.Content = rows
 
 	separator := ui.InspectorContentPart{Type: "lines", Content: []string{"Full stats:", "&nbsp;"}}
-	plot := ui.InspectorContentPart{Type: "plot", Content: map[string]interface{}{"cpu": []int{}, "mem": []int{}, "timestamps": []int{}}}
+	plot := ui.InspectorContentPart{Type: "plot", Content: map[string]interface{}{"metrics": []MetricPoint{}}}
 
 	return ui.InspectorContent{
 		plot,

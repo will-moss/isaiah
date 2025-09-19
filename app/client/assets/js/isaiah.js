@@ -265,6 +265,20 @@
   const hgetMobileControls = (action) =>
     qq(`.mobile-controls button[data-action]`);
 
+  const getMetrics = (metrics) => {
+    const timestamps = [];
+    const cpu = [];
+    const mem = [];
+
+    for (const metric of metrics) {
+      timestamps.push(metric.timestamp);
+      cpu.push(metric.cpu);
+      mem.push(metric.mem);
+    }
+
+    return [timestamps, cpu, mem];
+  };
+
   // === Render-related methods
 
   /**
@@ -1146,12 +1160,10 @@
           } else {
             target?.appendChild(state.inspector.plot.root);
           }
-        console.log("re-render")
-
            if (target) {
             state.inspector.plot.setSize({width: 500, height: 500});
            }
-           state.inspector.plot.setData([plotData?.timestamps, plotData?.cpu || [] , plotData?.mem || []]);
+           state.inspector.plot.setData(getMetrics(plotData?.metrics || []));
         }
     }
 
@@ -2170,7 +2182,7 @@
           focus: {
             alpha: 0.3,
           }
-        }, [plotData?.timestamps, plotData?.cpu || [] , plotData?.mem || []], target);
+        }, getMetrics(plotData?.metrics || []), target);
         state.inspector.plot = plot;
       }
     },
@@ -5081,7 +5093,7 @@
         }
 
         if ('Metrics' in notification.Content ) {
-            // New metric received and user left Stats tab
+            // new metric received and user left Stats tab
             if (state?.inspector?.currentTab !== "Stats") {
                 cmds._cancel_metrics_polling()
                 delete state.inspector.plot
@@ -5099,7 +5111,6 @@
 
             if (notification.Content.Metrics.length == 0){
                 // Stop polling when container exited
-                // what will we do if no metrics and we get this first
                 if (!state.inspector.content.find(t => t.Type === "plot")){
                     cmds._cancel_metrics_polling()
                     delete state.inspector.plot
@@ -5107,13 +5118,7 @@
                 state.isLoading = false;
                 break
             }
-            // container.inspect.stats returned after container.metrics
-            // if (!state.inspector.content.find(t => t.Type === "plot")){
-            //     state.isLoading = false;
-            //     cmds._cancel_metrics_polling()
-            //     cmds._init_metrics_polling()
-            //     break
-            // }
+
             if (!state.inspector.content.find(t => t.Type === "plot")){
                 state.isLoading = false;
                 cmds._cancel_metrics_polling()
@@ -5122,18 +5127,17 @@
             }
             const plotData = state.inspector.content.find(t => t.Type === "plot").Content;
 
-            for (const metric_point of notification.Content.Metrics) {
-                plotData.cpu.push(metric_point.cpu);
-                plotData.mem.push(metric_point.mem);
-                plotData.timestamps.push(metric_point.timestamp);
+            if (!plotData.metrics) {
+                plotData.metrics = [];
             }
+            plotData.metrics.push(...notification.Content.Metrics);
 
             plotContent = state.inspector.content.find(t => t.Type === "plot");
             plotContent.nextMetric = notification.Content.From
 
-            // only rerender plot
+            // rerender only plot
             if (state.inspector.plot) {
-                state.inspector.plot.setData([plotData.timestamps, plotData.cpu, plotData.mem]);
+                state.inspector.plot.setData(getMetrics(plotData.metrics));
             } else {
                 cmdRun(cmds._initPlot);
             }
