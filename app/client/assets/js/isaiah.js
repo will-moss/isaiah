@@ -33,7 +33,7 @@
  *   directly mapped to a key press (public), or used
  *   internally to facilitate some operations (private).
  */
-// ((window) => {
+((window) => {
   // === Handy methods and aliases
 
   /**
@@ -135,21 +135,20 @@
   const withInterval = (fn, interval) => {
     let intervalId = null;
     return (param, ...args) => {
-    if (param === "cancel") {
-      window.clearInterval(intervalId);
-      intervalId = null;
-      return;
-    }
+      if (param === 'cancel') {
+        window.clearInterval(intervalId);
+        intervalId = null;
+        return;
+      }
       window.clearInterval(intervalId);
 
       fn(...args);
 
       intervalId = window.setInterval(() => {
-        fn( ...args);
+        fn(...args);
       }, interval);
     };
   };
-
 
   // === Handy HTML-querying methods
 
@@ -515,7 +514,6 @@
       html += `</div>`;
     }
 
-
     html += `<div class="tab-content">`;
     if (inspector.content.length > 0) {
       // Render Inspector Content
@@ -570,7 +568,6 @@
             // prettier-ignore
             html += `<div class="plot-container"></div>`;
             break;
-
         }
 
         // Empty row separator between every content part (except for raw lines)
@@ -707,7 +704,7 @@
       theme: 'Theme',
       agent: 'Agent',
       host: 'Host',
-      parameters: 'Parameters',
+      parameters: 'Parameters'
     }[menu.key];
     if (menu.key === 'menu' && row) title += ` (${row.Name})`;
 
@@ -760,8 +757,8 @@
                     historyCursor >= 0 && historyCursor < history.length
                       ? s(history[historyCursor])
                       : tty._tmpCommand
-                      ? s(tty._tmpCommand)
-                      : ''
+                        ? s(tty._tmpCommand)
+                        : ''
                   }"/>
               </div>
       `;
@@ -1060,16 +1057,16 @@
         !jump.search
           ? `<p><i>Start typing, and results will appear</i></p>`
           : jump.results.length === 0
-          ? `<p class="no-result-message"><i>No resource found</i></p>`
-          : jump.results
-              .map(
-                (r) =>
-                  `
+            ? `<p class="no-result-message"><i>No resource found</i></p>`
+            : jump.results
+                .map(
+                  (r) =>
+                    `
                   <div
                     class="jump-result row"
                     data-jump="${r.Host ? `${r.Host}.` : ''}${r.ParentKey}.${
-                    r.ID || r.Name
-                  }"
+                      r.ID || r.Name
+                    }"
                   >
                     ${r.Host ? `<span class="for-host">(${r.Host})</span>` : ''}
                     <span class="for-tab">${r.Parent}</span>
@@ -1077,8 +1074,8 @@
                     <span class="for-resource">${r.Name}</span>
                   </div>
                 `
-              )
-              .join('')
+                )
+                .join('')
       }
   `;
 
@@ -1149,22 +1146,22 @@
       html = renderInspector(_state.inspector);
       hgetScreen('dashboard').querySelector('.right').innerHTML = html;
 
-        plot = state.inspector.content.find(t => t.Type === "plot")
-        if (_state.inspector.currentTab === 'Stats' && plot) {
-           plotData = plot.Content
+      plot = state.inspector.content.find((t) => t.Type === 'plot');
+      if (_state.inspector.currentTab === 'Stats' && plot) {
+        plotData = plot.Content;
 
-          const target = hgetTab('inspector').querySelector('.plot-container');
+        const target = hgetTab('inspector').querySelector('.plot-container');
 
-          if (!state.inspector.plot) {
-            cmds._initPlot();
-          } else {
-            target?.appendChild(state.inspector.plot.root);
-          }
-           if (target) {
-            state.inspector.plot.setSize({width: 500, height: 500});
-           }
-           state.inspector.plot.setData(getMetrics(plotData?.metrics || []));
+        if (!state.inspector.plot) {
+          cmds._initPlot();
+        } else {
+          target?.appendChild(state.inspector.plot.root);
         }
+        if (target) {
+          state.inspector.plot.setSize({ width: 500, height: 500 });
+        }
+        state.inspector.plot.setData(getMetrics(plotData?.metrics || []));
+      }
     }
 
     // 4. Build current popup
@@ -1457,8 +1454,6 @@
     // 12.3. Highlight code
     if (_state.settings.enableSyntaxHighlight)
       if (window.hljs) hljs.highlightAll();
-
-
   };
 
   // === Websocket-related methods
@@ -1499,7 +1494,7 @@
   // === State
 
   let state = {
-      /**
+    /**
      * @type {boolean}
      */
     hasEstablishedConnection: false,
@@ -1543,7 +1538,7 @@
           'host',
           'parameters',
           'overview',
-          'jump',
+          'jump'
         ].includes(state.popup)
       );
     },
@@ -1577,11 +1572,11 @@
         name: null,
         placeholder: null,
         type: 'input',
-        defaultValue: null,
+        defaultValue: null
       },
       callback: null,
       callbackArgs: [],
-      isEnabled: false,
+      isEnabled: false
     },
 
     /**
@@ -1612,7 +1607,7 @@
       /**
        * @type {'menu'|'bulk'|'theme'|'agent'|'host'|'parameters'}
        */
-      key: null,
+      key: null
     },
 
     /**
@@ -1644,7 +1639,7 @@
       /**
        * @type {"default"|"moon"|"dawn"}
        */
-      currentTheme: 'default',
+      currentTheme: 'default'
     },
 
     settings: {
@@ -1681,7 +1676,7 @@
       /**
        * @type {boolean}
        */
-      enableSyntaxHighlight: true,
+      enableSyntaxHighlight: true
     },
 
     /**
@@ -1701,7 +1696,7 @@
       category: null,
       type: null,
       title: null,
-      content: null,
+      content: null
     },
 
     /**
@@ -1721,7 +1716,7 @@
       previousTab: null,
       currentTabsRows: {},
       currentMenuRow: null,
-      previousMenuRow: null,
+      previousMenuRow: null
     },
 
     /**
@@ -1748,7 +1743,7 @@
       content: [],
       horizontalScroll: 0,
       verticalScroll: 0,
-      plot: null,
+      plot: null
     },
 
     /**
@@ -1790,7 +1785,7 @@
       historyCursor: -1,
       type: null,
       _buffer: '',
-      _tmpCommand: null,
+      _tmpCommand: null
     },
 
     communication: {
@@ -1822,7 +1817,7 @@
       /**
        * @type {Array<string>}
        */
-      availableHosts: [],
+      availableHosts: []
     },
 
     /**
@@ -1842,7 +1837,7 @@
       isEnabled: false,
       isPending: false,
       startedOn: null,
-      previousRows: [],
+      previousRows: []
     },
 
     /**
@@ -1862,7 +1857,7 @@
       search: null,
       results: [],
       remoteResources: [],
-      backlog: null,
+      backlog: null
     },
 
     _delays: {
@@ -1889,7 +1884,7 @@
       /**
        * @type {number}
        */
-      default: 250,
+      default: 250
     },
 
     /**
@@ -1926,8 +1921,8 @@
      */
     overview: {
       isEnabled: false,
-      Instances: [],
-    },
+      Instances: []
+    }
   };
 
   // === State-related handy methods
@@ -2015,7 +2010,7 @@
         'parameters',
         'agent',
         'host',
-        'overview',
+        'overview'
       ].includes(cmd)
     )
       return false;
@@ -2043,7 +2038,7 @@
         'shellSystem',
         'message',
         'prompt',
-        'overview',
+        'overview'
       ].includes(cmd)
     )
       return false;
@@ -2083,7 +2078,6 @@
     cmdRun(cmd, ...args);
   }, state._delays.default);
 
-
   // === Commands
 
   const cmds = {
@@ -2114,75 +2108,83 @@
     /**
      * Private - Starts container metrics polling
      */
-    _init_metrics_polling: withInterval(function() {
+    _init_metrics_polling: withInterval(function () {
       const query = {
-        action: "container.metrics",
+        action: 'container.metrics',
         args: {
           Resource: sgetCurrentRow().ID,
-          From: state.inspector.content.find(t => t.Type === "plot")?.nextMetric || 0
+          From:
+            state.inspector.content.find((t) => t.Type === 'plot')
+              ?.nextMetric || 0
         }
       };
       websocketSend(query);
     }, 3000),
 
-    _cancel_metrics_polling: function(){
-        cmds._init_metrics_polling("cancel")
+    _cancel_metrics_polling: function () {
+      cmds._init_metrics_polling('cancel');
     },
 
-    _initPlot: function() {
+    _initPlot: function () {
       const target = hgetTab('inspector').querySelector('.plot-container');
       if (target) {
-       plotData = state.inspector.content.find(t => t.Type === "plot")?.Content
+        plotData = state.inspector.content.find(
+          (t) => t.Type === 'plot'
+        )?.Content;
 
         const style = getComputedStyle(document.body);
         const plotTheme = {
           cpu: style.getPropertyValue('--color-terminal-accent'),
           mem: style.getPropertyValue('--color-terminal-accent-alternative'),
           axis: style.getPropertyValue('--color-terminal-base'),
-          grid: style.getPropertyValue('--color-terminal-hover'),
-        }
+          grid: style.getPropertyValue('--color-terminal-hover')
+        };
 
-        const plot = new uPlot({
-          width: target.clientWidth,
-          height: target.clientHeight,
-          series: [
-            {},
-            {
-              label: "CPU",
-              stroke: plotTheme.cpu,
-            },
-            {
-              label: "Memory",
-              stroke: plotTheme.mem,
-            },
-          ],
-          axes: [
-            {
-              show: false,
-              stroke: plotTheme.axis,
-              grid: {
-                stroke: plotTheme.grid,
+        const plot = new uPlot(
+          {
+            width: target.clientWidth,
+            height: target.clientHeight,
+            series: [
+              {},
+              {
+                label: 'CPU',
+                stroke: plotTheme.cpu
+              },
+              {
+                label: 'Memory',
+                stroke: plotTheme.mem
               }
+            ],
+            axes: [
+              {
+                show: false,
+                stroke: plotTheme.axis,
+                grid: {
+                  stroke: plotTheme.grid
+                }
+              },
+              {
+                label: 'CPU %',
+                stroke: plotTheme.axis
+              },
+              {
+                label: 'Memory (MB)',
+                stroke: plotTheme.axis
+              }
+            ],
+            legend: {
+              show: true
             },
-            {
-              label: "CPU %",
-              stroke: plotTheme.axis,
+            cursor: {
+              show: true
             },
-            {
-              label: "Memory (MB)",
-              stroke: plotTheme.axis,
-            },
-          ],
-          legend: {
-            show: true,
+            focus: {
+              alpha: 0.3
+            }
           },
-          cursor: {
-            show: true,
-          },
-          focus: {
-            alpha: 0.3,
-          }
-        }, getMetrics(plotData?.metrics || []), target);
+          getMetrics(plotData?.metrics || []),
+          target
+        );
         state.inspector.plot = plot;
       }
     },
@@ -2204,7 +2206,7 @@
         placeholder: null,
         name: null,
         type: 'input',
-        defaultValue: null,
+        defaultValue: null
       };
       state.prompt.isForAuthentication = args.isForAuthentication || false;
 
@@ -2241,7 +2243,7 @@
         name: null,
         placeholder: null,
         type: 'input',
-        defaultValue: null,
+        defaultValue: null
       };
 
       if (!state.inspector.wasEnabled) {
@@ -2402,7 +2404,7 @@
       state.tty._tmpCommand = null;
       websocketSend({
         action: 'shell.command',
-        args: { Command: command },
+        args: { Command: command }
       });
     },
 
@@ -2456,14 +2458,14 @@
         const currentImage = sgetCurrentRow();
         websocketSend({
           action: 'image.pull',
-          args: { Image: `${currentImage.Name}:${currentImage.Version}` },
+          args: { Image: `${currentImage.Name}:${currentImage.Version}` }
         });
       }
       // Else -> Use the user-supplied name
       else
         websocketSend({
           action: 'image.pull',
-          args: { Image: args.Image },
+          args: { Image: args.Image }
         });
     },
 
@@ -2476,7 +2478,7 @@
       if (!args.Name || args.Name.length === 0) return;
       websocketSend({
         action: 'image.run',
-        args: { Resource: sgetCurrentRow(), Name: args.Name },
+        args: { Resource: sgetCurrentRow(), Name: args.Name }
       });
     },
 
@@ -2489,7 +2491,7 @@
       if (!args.Name || args.Name.length === 0) return;
       websocketSend({
         action: 'container.rename',
-        args: { Resource: sgetCurrentRow(), Name: args.Name },
+        args: { Resource: sgetCurrentRow(), Name: args.Name }
       });
     },
 
@@ -2522,7 +2524,7 @@
       websocketSend({
         // prettier-ignore
         action: `${currentTabKey.slice(0,-1)}.inspect.${currentInspectorTab.toLowerCase()}`,
-        args: payload,
+        args: payload
       });
     },
 
@@ -2535,10 +2537,10 @@
           isEnabled: true,
           name: 'Password',
           placeholder: 'Please fill in your server secret',
-          type: 'input',
+          type: 'input'
         },
         isForAuthentication: true,
-        callback: cmds._authenticate,
+        callback: cmds._authenticate
       });
     },
 
@@ -2588,8 +2590,8 @@
               action: 'auth.login',
               args: {
                 Password: state.communication.masterPassword,
-                AutoLogin: true,
-              },
+                AutoLogin: true
+              }
             });
 
             hasAttemptedAutoLogin = true;
@@ -2622,9 +2624,8 @@
      * @param {MenuAction} action
      */
     _toggleParameter: function (action) {
-      state.settings[action.Metadata['Key']] = !state.settings[
-        action.Metadata['Key']
-      ];
+      state.settings[action.Metadata['Key']] =
+        !state.settings[action.Metadata['Key']];
       localStorage.setItem(
         action.Metadata['Key'],
         state.settings[action.Metadata['Key']]
@@ -2756,7 +2757,7 @@
           keys: ['Name'],
           isCaseSensitive: false,
           ignoreLocation: true,
-          threshold: 0.3,
+          threshold: 0.3
         };
         const fuse = new Fuse(resources, options);
         const results = fuse.search(search.toLowerCase());
@@ -2782,7 +2783,7 @@
             keys: ['Name'],
             isCaseSensitive: false,
             ignoreLocation: true,
-            threshold: 0.3,
+            threshold: 0.3
           };
           const fuse = new Fuse(state.jump.remoteResources, options);
           const results = fuse.search(search.toLowerCase());
@@ -2806,7 +2807,7 @@
 
       websocketSend({
         action: `stack.create`,
-        args: { Content: content },
+        args: { Content: content }
       });
     },
 
@@ -2824,21 +2825,20 @@
         cmdRun(cmds._clearPrompt);
         setTimeout(() => {
           cmdRun(cmds._showPrompt, {
-            text:
-              'The content of your docker-compose.yml file will be overwritten. Proceed?',
+            text: 'The content of your docker-compose.yml file will be overwritten. Proceed?',
             callback: cmds._wsSend,
             callbackArgs: [
               {
                 action: `stack.edit`,
-                args: { Content: content, Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Content: content, Resource: sgetCurrentRow() }
+              }
+            ]
           });
         }, state._delays.default);
       } else
         websocketSend({
           action: `stack.edit`,
-          args: { Content: content, Resource: sgetCurrentRow() },
+          args: { Content: content, Resource: sgetCurrentRow() }
         });
     },
 
@@ -2856,21 +2856,20 @@
         cmdRun(cmds._clearPrompt);
         setTimeout(() => {
           cmdRun(cmds._showPrompt, {
-            text:
-              'Your container will be killed, and recreated with this new command. Proceed?',
+            text: 'Your container will be killed, and recreated with this new command. Proceed?',
             callback: cmds._wsSend,
             callbackArgs: [
               {
                 action: `container.edit`,
-                args: { Content: content, Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Content: content, Resource: sgetCurrentRow() }
+              }
+            ]
           });
         }, state._delays.default);
       } else
         websocketSend({
           action: `container.edit`,
-          args: { Content: content, Resource: sgetCurrentRow() },
+          args: { Content: content, Resource: sgetCurrentRow() }
         });
     },
 
@@ -2910,45 +2909,45 @@
           Label: 'Show Single Actions',
           Command: 'menu',
           RequiresResource: false,
-          RunLocally: true,
+          RunLocally: true
         },
         {
           Label: 'Show Bulk Actions',
           Command: 'bulk',
           RequiresResource: false,
-          RunLocally: true,
+          RunLocally: true
         },
         {
           Label: 'Open System Shell',
           Command: 'shellSystem',
           RequiresResource: false,
-          RunLocally: true,
+          RunLocally: true
         },
         {
           Label: 'Change Theme',
           Command: 'theme',
           RequiresResource: false,
-          RunLocally: true,
+          RunLocally: true
         },
         {
           Label: 'Change Preferences',
           Command: 'parameters',
           RequiresMenuAction: true,
           RequiresResource: false,
-          RunLocally: true,
+          RunLocally: true
         },
         {
           Label: 'Show Overview',
           Command: 'overview',
           RequiresResource: false,
-          RunLocally: true,
+          RunLocally: true
         },
         {
           Label: 'Perform Global Search',
           Command: 'jump',
           RequiresResource: false,
-          RunLocally: true,
-        },
+          RunLocally: true
+        }
       ];
 
       if (state.communication.availableAgents.length > 0)
@@ -2956,7 +2955,7 @@
           Label: 'Change Agent',
           Command: 'agent',
           RequiresResource: false,
-          RunLocally: true,
+          RunLocally: true
         });
 
       if (state.communication.availableHosts.length > 0)
@@ -2964,7 +2963,7 @@
           Label: 'Change Host',
           Command: 'host',
           RequiresResource: false,
-          RunLocally: true,
+          RunLocally: true
         });
 
       state.navigation.currentMenuRow = 1;
@@ -2984,7 +2983,7 @@
 
       websocketSend({
         action: `${currentTab.slice(0, -1)}.menu`,
-        args: { Resource: sgetCurrentRow() },
+        args: { Resource: sgetCurrentRow() }
       });
     },
 
@@ -3023,7 +3022,7 @@
           cmdRun(state.prompt.callback, ...state.prompt.callbackArgs);
         else
           cmdRun(state.prompt.callback, {
-            [state.prompt.input.name]: hgetPromptInput().value,
+            [state.prompt.input.name]: hgetPromptInput().value
           });
 
         cmdRun(cmds._clearPrompt);
@@ -3059,9 +3058,9 @@
             callbackArgs: [
               {
                 action: attributes.command,
-                args: { Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Resource: sgetCurrentRow() }
+              }
+            ]
           });
 
           cmdRun(cmds._clearMenu);
@@ -3074,7 +3073,7 @@
           else
             cmdRun(cmds._wsSend, {
               action: attributes.command,
-              args: { Resource: sgetCurrentRow() },
+              args: { Resource: sgetCurrentRow() }
             });
 
           // Can clear anytime as the command is private ("_wsSend")
@@ -3550,7 +3549,7 @@
 
         websocketSend({
           action: `${sgetCurrentTabKey().slice(0, -1)}.menu.remove`,
-          args: { Resource: sgetCurrentRow() },
+          args: { Resource: sgetCurrentRow() }
         });
       } else {
         if (state.settings.enableMenuPrompt)
@@ -3560,14 +3559,14 @@
             callbackArgs: [
               {
                 action: `stack.down`,
-                args: { Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Resource: sgetCurrentRow() }
+              }
+            ]
           });
         else
           websocketSend({
             action: `stack.down`,
-            args: { Resource: sgetCurrentRow() },
+            args: { Resource: sgetCurrentRow() }
           });
       }
     },
@@ -3586,14 +3585,14 @@
             callbackArgs: [
               {
                 action: `container.pause`,
-                args: { Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Resource: sgetCurrentRow() }
+              }
+            ]
           });
         else
           websocketSend({
             action: `container.pause`,
-            args: { Resource: sgetCurrentRow() },
+            args: { Resource: sgetCurrentRow() }
           });
       } else if (currentTabKey === 'stacks') {
         if (state.settings.enableMenuPrompt)
@@ -3603,14 +3602,14 @@
             callbackArgs: [
               {
                 action: `stack.pause`,
-                args: { Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Resource: sgetCurrentRow() }
+              }
+            ]
           });
         else
           websocketSend({
             action: `stack.pause`,
-            args: { Resource: sgetCurrentRow() },
+            args: { Resource: sgetCurrentRow() }
           });
       }
     },
@@ -3630,14 +3629,14 @@
             callbackArgs: [
               {
                 action: `container.stop`,
-                args: { Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Resource: sgetCurrentRow() }
+              }
+            ]
           });
         else
           websocketSend({
             action: `container.stop`,
-            args: { Resource: sgetCurrentRow() },
+            args: { Resource: sgetCurrentRow() }
           });
       } else if (currentTabKey === 'stacks') {
         if (state.settings.enableMenuPrompt)
@@ -3647,14 +3646,14 @@
             callbackArgs: [
               {
                 action: `stack.stop`,
-                args: { Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Resource: sgetCurrentRow() }
+              }
+            ]
           });
         else
           websocketSend({
             action: `stack.stop`,
-            args: { Resource: sgetCurrentRow() },
+            args: { Resource: sgetCurrentRow() }
           });
       }
     },
@@ -3676,14 +3675,14 @@
             callbackArgs: [
               {
                 action: `container.restart`,
-                args: { Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Resource: sgetCurrentRow() }
+              }
+            ]
           });
         else
           websocketSend({
             action: `container.restart`,
-            args: { Resource: sgetCurrentRow() },
+            args: { Resource: sgetCurrentRow() }
           });
       } else if (currentTabKey === 'images')
         cmdRun(cmds.prompt, {
@@ -3691,9 +3690,9 @@
             isEnabled: true,
             name: 'Name',
             placeholder: 'Please fill in a name for the new container',
-            type: 'input',
+            type: 'input'
           },
-          callback: cmds._imageRun,
+          callback: cmds._imageRun
         });
       else if (currentTabKey === 'stacks') {
         if (state.settings.enableMenuPrompt)
@@ -3703,14 +3702,14 @@
             callbackArgs: [
               {
                 action: `stack.restart`,
-                args: { Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Resource: sgetCurrentRow() }
+              }
+            ]
           });
         else
           websocketSend({
             action: `stack.restart`,
-            args: { Resource: sgetCurrentRow() },
+            args: { Resource: sgetCurrentRow() }
           });
       }
     },
@@ -3726,9 +3725,9 @@
           isEnabled: true,
           name: 'Name',
           placeholder: 'Please fill in a new name for the container',
-          type: 'input',
+          type: 'input'
         },
-        callback: cmds._containerRename,
+        callback: cmds._containerRename
       });
     },
 
@@ -3739,7 +3738,7 @@
       if (sgetCurrentTabKey() !== 'stacks') return;
       websocketSend({
         action: `stack.update`,
-        args: { Resource: sgetCurrentRow() },
+        args: { Resource: sgetCurrentRow() }
       });
     },
 
@@ -3753,12 +3752,12 @@
       if (currentTabKey === 'containers') {
         websocketSend({
           action: `container.update`,
-          args: { Resource: sgetCurrentRow() },
+          args: { Resource: sgetCurrentRow() }
         });
       } else if (currentTabKey === 'stacks') {
         websocketSend({
           action: `stack.up`,
-          args: { Resource: sgetCurrentRow() },
+          args: { Resource: sgetCurrentRow() }
         });
       }
     },
@@ -3773,12 +3772,12 @@
       if (currentTabKey === 'stacks')
         websocketSend({
           action: `stack.edit.prepare`,
-          args: { Resource: sgetCurrentRow() },
+          args: { Resource: sgetCurrentRow() }
         });
       else if (currentTabKey === 'containers')
         websocketSend({
           action: `container.edit.prepare`,
-          args: { Resource: sgetCurrentRow() },
+          args: { Resource: sgetCurrentRow() }
         });
     },
 
@@ -3789,7 +3788,7 @@
       if (sgetCurrentTabKey() !== 'containers') return;
       websocketSend({
         action: `container.shell`,
-        args: { Resource: sgetCurrentRow() },
+        args: { Resource: sgetCurrentRow() }
       });
     },
 
@@ -3807,7 +3806,7 @@
       if (sgetCurrentTabKey() !== 'containers') return;
       websocketSend({
         action: `container.browser`,
-        args: { Resource: sgetCurrentRow() },
+        args: { Resource: sgetCurrentRow() }
       });
     },
 
@@ -3831,9 +3830,9 @@
           name: 'Image',
           placeholder:
             '[repository/]name[:tag] -- Leave empty to pull the current image',
-          type: 'input',
+          type: 'input'
         },
-        callback: cmds._imagePull,
+        callback: cmds._imagePull
       });
     },
 
@@ -3844,7 +3843,7 @@
       if (sgetCurrentTabKey() !== 'volumes') return;
       websocketSend({
         action: `volume.browse`,
-        args: { Resource: sgetCurrentRow() },
+        args: { Resource: sgetCurrentRow() }
       });
     },
 
@@ -3873,9 +3872,9 @@
           name: 'Create a new stack',
           placeholder:
             'Please fill in the content of your docker-compose.yml file',
-          type: 'textarea',
+          type: 'textarea'
         },
-        callback: cmds._createStack,
+        callback: cmds._createStack
       });
     },
 
@@ -3910,7 +3909,7 @@
         RequiresResource: false,
         RequiresMenuAction: true,
         Label: t,
-        Command: '_pickTheme',
+        Command: '_pickTheme'
       }));
       state.navigation.currentMenuRow = 1;
       cmdRun(cmds._showPopup, 'menu');
@@ -3930,7 +3929,7 @@
         RequiresResource: false,
         RequiresMenuAction: true,
         Label: t,
-        Command: '_pickAgent',
+        Command: '_pickAgent'
       }));
 
       state.menu.actions.unshift({
@@ -3938,7 +3937,7 @@
         RequiresResource: false,
         RequiresMenuAction: true,
         Label: 'Master',
-        Command: '_pickAgent',
+        Command: '_pickAgent'
       });
 
       state.navigation.currentMenuRow = 1;
@@ -3959,7 +3958,7 @@
         RequiresResource: false,
         RequiresMenuAction: true,
         Label: t,
-        Command: '_pickHost',
+        Command: '_pickHost'
       }));
 
       state.navigation.currentMenuRow = 1;
@@ -3978,7 +3977,7 @@
         RequiresMenuAction: true,
         Label: `[${state.settings[k] ? 'x' : ' '}] ${k}`,
         Command: '_toggleParameter',
-        Metadata: { Key: k },
+        Metadata: { Key: k }
       }));
       state.navigation.currentMenuRow = 1;
       cmdRun(cmds._showPopup, 'menu');
@@ -4235,7 +4234,7 @@
 
           cmdRun(cmds._render);
         });
-    },
+    }
   };
 
   // === Misc
@@ -4345,7 +4344,7 @@
 
     // Appearance
     '+': 'nextLayout', // Next layout
-    '-': 'previousLayout', // Previous layout
+    '-': 'previousLayout' // Previous layout
   };
 
   /**
@@ -4581,14 +4580,13 @@
         if (state.search.isEnabled && state.search.startedOn === 'logs')
           cmdRun(cmds._clearSearch);
 
-
         if (!state.inspector.isEnabled) cmdRun(cmds._enterInspect);
 
         state.inspector.currentTab = key;
         cmdRun(cmds._refreshInspector);
 
-        if (key == 'Stats'){
-            cmds._init_metrics_polling()
+        if (key == 'Stats') {
+          cmds._init_metrics_polling();
         }
       }
       // 1.3. Tab Row
@@ -4857,7 +4855,7 @@
                       : val2.localeCompare(val1);
                   else if (comparisonType === 'numeric')
                     return !inReverse ? val1 - val2 : val2 - val1;
-                }),
+                })
           }));
         } else {
           state.isFullyEmpty = true;
@@ -4940,7 +4938,7 @@
                     : val2.localeCompare(val1);
                 else if (comparisonType === 'numeric')
                   return !inReverse ? val1 - val2 : val2 - val1;
-              }),
+              })
         }));
 
         // Jump to the picked resource if previously Jumped to a new host
@@ -5092,57 +5090,59 @@
           cmdRun(cmds._showPopup, 'menu');
         }
 
-        if ('Metrics' in notification.Content ) {
-            // new metric received and user left Stats tab
-            if (state?.inspector?.currentTab !== "Stats") {
-                cmds._cancel_metrics_polling()
-                delete state.inspector.plot
-                state.isLoading = false;
-                break
-            }
+        if ('Metrics' in notification.Content) {
+          // new metric received and user left Stats tab
+          if (state?.inspector?.currentTab !== 'Stats') {
+            cmds._cancel_metrics_polling();
+            delete state.inspector.plot;
+            state.isLoading = false;
+            break;
+          }
 
-            // container.inspect.stats returned after container.metrics
-            if (state.inspector.content.length == 0){
-                state.isLoading = false;
-                cmds._cancel_metrics_polling()
-                cmds._init_metrics_polling()
-                break
-            }
+          // container.inspect.stats returned after container.metrics
+          if (state.inspector.content.length == 0) {
+            state.isLoading = false;
+            cmds._cancel_metrics_polling();
+            cmds._init_metrics_polling();
+            break;
+          }
 
-            if (notification.Content.Metrics.length == 0){
-                // Stop polling when container exited
-                if (!state.inspector.content.find(t => t.Type === "plot")){
-                    cmds._cancel_metrics_polling()
-                    delete state.inspector.plot
-                }
-                state.isLoading = false;
-                break
-            }
-
-            if (!state.inspector.content.find(t => t.Type === "plot")){
-                state.isLoading = false;
-                cmds._cancel_metrics_polling()
-                cmds._init_metrics_polling()
-                break
-            }
-            const plotData = state.inspector.content.find(t => t.Type === "plot").Content;
-
-            if (!plotData.metrics) {
-                plotData.metrics = [];
-            }
-            plotData.metrics.push(...notification.Content.Metrics);
-
-            plotContent = state.inspector.content.find(t => t.Type === "plot");
-            plotContent.nextMetric = notification.Content.From
-
-            // rerender only plot
-            if (state.inspector.plot) {
-                state.inspector.plot.setData(getMetrics(plotData.metrics));
-            } else {
-                cmdRun(cmds._initPlot);
+          if (notification.Content.Metrics.length == 0) {
+            // Stop polling when container exited
+            if (!state.inspector.content.find((t) => t.Type === 'plot')) {
+              cmds._cancel_metrics_polling();
+              delete state.inspector.plot;
             }
             state.isLoading = false;
-            return
+            break;
+          }
+
+          if (!state.inspector.content.find((t) => t.Type === 'plot')) {
+            state.isLoading = false;
+            cmds._cancel_metrics_polling();
+            cmds._init_metrics_polling();
+            break;
+          }
+          const plotData = state.inspector.content.find(
+            (t) => t.Type === 'plot'
+          ).Content;
+
+          if (!plotData.metrics) {
+            plotData.metrics = [];
+          }
+          plotData.metrics.push(...notification.Content.Metrics);
+
+          plotContent = state.inspector.content.find((t) => t.Type === 'plot');
+          plotContent.nextMetric = notification.Content.From;
+
+          // rerender only plot
+          if (state.inspector.plot) {
+            state.inspector.plot.setData(getMetrics(plotData.metrics));
+          } else {
+            cmdRun(cmds._initPlot);
+          }
+          state.isLoading = false;
+          return;
         }
 
         if ('Address' in notification.Content) {
@@ -5199,7 +5199,7 @@
             state.communication.availableHosts.length === 0
           ) {
             state.communication.availableHosts = [
-              ...notification.Content.Overview.Instances[0].Server.Hosts,
+              ...notification.Content.Overview.Instances[0].Server.Hosts
             ];
             cmdRun(cmds.overview);
             return;
@@ -5243,7 +5243,7 @@
                 ...r,
                 Host: notification.Content.Host,
                 Parent: t.Title,
-                ParentKey: t.Key,
+                ParentKey: t.Key
               }))
             ).flat()
           );
@@ -5268,7 +5268,7 @@
               t.Key === notification.Content.Tab.Key
                 ? {
                     ...t,
-                    Rows: [...t.Rows, ...notification.Content.Tab.Rows],
+                    Rows: [...t.Rows, ...notification.Content.Tab.Rows]
                   }
                 : t
             );
@@ -5290,7 +5290,7 @@
               ...r,
               Host: notification.Content.Host,
               Parent: notification.Content.Enumeration.Title,
-              ParentKey: notification.Content.Enumeration.Key,
+              ParentKey: notification.Content.Enumeration.Key
             }))
           );
           state.isLoading = false;
@@ -5302,8 +5302,8 @@
         break;
 
       case 'loading':
-        if (state.inspector.plot && state.inspector.currentTab == 'Stats'){
-            return
+        if (state.inspector.plot && state.inspector.currentTab == 'Stats') {
+          return;
         }
         state.isLoading = true;
         break;
@@ -5336,8 +5336,8 @@
               name: notification.Content.Input.Name,
               defaultValue: notification.Content.Input.DefaultValue,
               type: notification.Content.Input.Type,
-              placeholder: notification.Content.Input.Placeholder,
-            },
+              placeholder: notification.Content.Input.Placeholder
+            }
           });
         else
           cmdRun(cmds._showPrompt, {
@@ -5346,9 +5346,9 @@
             callbackArgs: [
               {
                 action: notification.Content.Command,
-                args: { Resource: sgetCurrentRow() },
-              },
-            ],
+                args: { Resource: sgetCurrentRow() }
+              }
+            ]
           });
         break;
 
@@ -5499,4 +5499,4 @@
     window.addEventListener('click', listenerMouseClick);
     window.addEventListener('mousemove', listenerMouseMove);
   });
-// })(window);
+})(window);
