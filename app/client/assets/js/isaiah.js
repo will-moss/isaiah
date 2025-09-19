@@ -33,7 +33,7 @@
  *   directly mapped to a key press (public), or used
  *   internally to facilitate some operations (private).
  */
-((window) => {
+// ((window) => {
   // === Handy methods and aliases
 
   /**
@@ -1138,7 +1138,6 @@
         plot = state.inspector.content.find(t => t.Type === "plot")
         if (_state.inspector.currentTab === 'Stats' && plot) {
            plotData = plot.Content
-           timestamps = Array.from({ length: plotData?.cpu?.length }, (_, i) => i + 1);
 
           const target = hgetTab('inspector').querySelector('.plot-container');
 
@@ -1152,7 +1151,7 @@
            if (target) {
             state.inspector.plot.setSize({width: 500, height: 500});
            }
-           state.inspector.plot.setData([timestamps, plotData?.cpu || [] , plotData?.mem || []]);
+           state.inspector.plot.setData([plotData?.timestamps, plotData?.cpu || [] , plotData?.mem || []]);
         }
     }
 
@@ -2122,7 +2121,6 @@
       const target = hgetTab('inspector').querySelector('.plot-container');
       if (target) {
        plotData = state.inspector.content.find(t => t.Type === "plot")?.Content
-       timestamps = Array.from({ length: plotData?.cpu?.length }, (_, i) => i + 1);
 
         const style = getComputedStyle(document.body);
         const plotTheme = {
@@ -2172,7 +2170,7 @@
           focus: {
             alpha: 0.3,
           }
-        }, [timestamps, plotData?.cpu || [] , plotData?.mem || []], target);
+        }, [plotData?.timestamps, plotData?.cpu || [] , plotData?.mem || []], target);
         state.inspector.plot = plot;
       }
     },
@@ -5091,8 +5089,17 @@
                 break
             }
 
+            // container.inspect.stats returned after container.metrics
+            if (state.inspector.content.length == 0){
+                state.isLoading = false;
+                cmds._cancel_metrics_polling()
+                cmds._init_metrics_polling()
+                break
+            }
+
             if (notification.Content.Metrics.length == 0){
                 // Stop polling when container exited
+                // what will we do if no metrics and we get this first
                 if (!state.inspector.content.find(t => t.Type === "plot")){
                     cmds._cancel_metrics_polling()
                     delete state.inspector.plot
@@ -5101,6 +5108,12 @@
                 break
             }
             // container.inspect.stats returned after container.metrics
+            // if (!state.inspector.content.find(t => t.Type === "plot")){
+            //     state.isLoading = false;
+            //     cmds._cancel_metrics_polling()
+            //     cmds._init_metrics_polling()
+            //     break
+            // }
             if (!state.inspector.content.find(t => t.Type === "plot")){
                 state.isLoading = false;
                 cmds._cancel_metrics_polling()
@@ -5112,15 +5125,15 @@
             for (const metric_point of notification.Content.Metrics) {
                 plotData.cpu.push(metric_point.cpu);
                 plotData.mem.push(metric_point.mem);
+                plotData.timestamps.push(metric_point.timestamp);
             }
 
             plotContent = state.inspector.content.find(t => t.Type === "plot");
             plotContent.nextMetric = notification.Content.From
 
-            timestamps = Array.from({ length: plotData.cpu.length }, (_, i) => i + 1);
-
+            // only rerender plot
             if (state.inspector.plot) {
-                state.inspector.plot.setData([timestamps, plotData.cpu, plotData.mem]);
+                state.inspector.plot.setData([plotData.timestamps, plotData.cpu, plotData.mem]);
             } else {
                 cmdRun(cmds._initPlot);
             }
@@ -5482,4 +5495,4 @@
     window.addEventListener('click', listenerMouseClick);
     window.addEventListener('mousemove', listenerMouseMove);
   });
-})(window);
+// })(window);

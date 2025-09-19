@@ -439,6 +439,7 @@ func (containers Containers) ToRows(columns []string) ui.Rows {
 type MetricPoint struct {
 	CpuMetric float64 `json:"cpu"`
 	MemMetric float64 `json:"mem"`
+	Timestamp int64   `json:"timestamp"`
 }
 
 type containerStats struct {
@@ -571,13 +572,9 @@ func (c *ContainerStatsManager) PollMetrics(containerID string, client *client.C
 		cpuUsageDelta := statsResult.CPUStats.CPUUsage.TotalUsage - statsResult.PreCPUStats.CPUUsage.TotalUsage
 		cpuTotalUsageDelta := statsResult.CPUStats.SystemUsage - statsResult.PreCPUStats.SystemUsage
 
-		// Get number of CPUs
-		onlineCPUs := statsResult.CPUStats.OnlineCPUs
-
-		// cpuPercent := float64(cpuUsageDelta*100) / float64(cpuTotalUsageDelta)
 		var cpuPercent float64
-		if cpuTotalUsageDelta > 0 && onlineCPUs > 0 {
-			cpuPercent = (float64(cpuUsageDelta) / float64(cpuTotalUsageDelta)) * float64(onlineCPUs) * 100
+		if cpuTotalUsageDelta > 0 {
+			cpuPercent = (float64(cpuUsageDelta) * 100) / float64(cpuTotalUsageDelta)
 		}
 
 		usage := statsResult.MemoryStats.Usage
@@ -591,6 +588,7 @@ func (c *ContainerStatsManager) PollMetrics(containerID string, client *client.C
 		mp := MetricPoint{
 			CpuMetric: cpuPercent,
 			MemMetric: memPercent,
+			Timestamp: statsResult.Read.Unix(),
 		}
 
 		cStats.metrics.Add(mp)
@@ -1055,7 +1053,7 @@ func (c Container) GetStats(client *client.Client) (ui.InspectorContent, error) 
 	mainStats.Content = rows
 
 	separator := ui.InspectorContentPart{Type: "lines", Content: []string{"Full stats:", "&nbsp;"}}
-	plot := ui.InspectorContentPart{Type: "plot", Content: map[string]interface{}{"cpu": []int{}, "mem": []int{}}}
+	plot := ui.InspectorContentPart{Type: "plot", Content: map[string]interface{}{"cpu": []int{}, "mem": []int{}, "timestamps": []int{}}}
 
 	return ui.InspectorContent{
 		plot,
