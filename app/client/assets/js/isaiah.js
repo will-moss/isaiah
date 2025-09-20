@@ -5099,30 +5099,34 @@
             break;
           }
 
+          // Stop polling when container exited
+          if (!notification.Content.IsRunning) {
+            state.isLoading = false;
+            cmds._cancel_metrics_polling();
+            break;
+          }
+
           // container.inspect.stats returned after container.metrics
           if (state.inspector.content.length == 0) {
             state.isLoading = false;
             cmds._cancel_metrics_polling();
             cmds._init_metrics_polling();
+            // do not process if no container.inspector.stats loaded
             break;
           }
 
+          // don't rerender if no metrics
           if (notification.Content.Metrics.length == 0) {
-            // Stop polling when container exited
-            if (!state.inspector.content.find((t) => t.Type === 'plot')) {
-              cmds._cancel_metrics_polling();
-              delete state.inspector.plot;
-            }
             state.isLoading = false;
             break;
           }
 
+          // ensure there is plot content available
           if (!state.inspector.content.find((t) => t.Type === 'plot')) {
             state.isLoading = false;
-            cmds._cancel_metrics_polling();
-            cmds._init_metrics_polling();
             break;
           }
+
           const plotData = state.inspector.content.find(
             (t) => t.Type === 'plot'
           ).Content;

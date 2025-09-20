@@ -506,17 +506,6 @@ func (c *ContainerStatsManager) IsMetricsPolling(containerID string) bool {
 // PollMetrics polls the metrics for a container
 // It will retry up to 5 times on error before stopping.
 func (c *ContainerStatsManager) PollMetrics(containerID string, client *client.Client, ctx context.Context, errChan chan error) {
-	inspection, err := client.ContainerInspect(context.Background(), containerID)
-	if err != nil {
-		errChan <- err
-		return
-	}
-
-	status := inspection.State.Status
-	if status == "created" || status == "removing" || status == "exited" || status == "dead" {
-		errChan <- fmt.Errorf("Container state is not running, paused or restarting")
-		return
-	}
 	c.storeMutex.Lock()
 	cStats, ok := c.containersStatsStore[containerID]
 	if !ok {

@@ -759,7 +759,6 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 		// 	break
 		// }
 		containerID, ok := command.Args["Resource"].(string)
-		fmt.Println(containerID)
 
 		if !ok {
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "Container id must string"}}))
@@ -780,6 +779,27 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be integer "}}))
 			break
 		}
+
+		inspection, err := server.Docker.ContainerInspect(context.Background(), containerID)
+		if err != nil {
+			server.SendNotification(
+				session,
+				ui.NotificationData(ui.NP{
+					Content: ui.JSON{"Metrics": []resources.MetricPoint{}, "From": 0, "IsRunning": false}}),
+			)
+			break
+		}
+
+		status := inspection.State.Status
+		if status == "created" || status == "removing" || status == "exited" || status == "dead" {
+			server.SendNotification(
+				session,
+				ui.NotificationData(ui.NP{
+					Content: ui.JSON{"Metrics": []resources.MetricPoint{}, "From": 0, "IsRunning": false}}),
+			)
+			break
+		}
+
 		server.StatsManager.UpdateLastAccessed(containerID)
 
 		// Spawn a new metrics poller, if we don't have one yet for this session.
@@ -819,7 +839,7 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 		server.SendNotification(
 			session,
 			ui.NotificationData(ui.NP{
-				Content: ui.JSON{"Metrics": metrics, "From": next_idx}}),
+				Content: ui.JSON{"Metrics": metrics, "From": next_idx, "IsRunning": true}}),
 		)
 
 	// Command not found
