@@ -22,3 +22,5 @@ app/package.json
 app/package-lock.json
 scripts/_*.sh
 !app/sample.custom.css
+!app/client/assets/css/uPlot.min.css
+.air.toml

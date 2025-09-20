@@ -48,8 +48,12 @@ func performVerifications() error {
 
 	// 1. Ensure Docker CLI is available
 	if _os.GetEnv("DOCKER_RUNNING") != "TRUE" {
-		cmd := exec.Command("docker", "version")
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+
+		cmd := exec.CommandContext(ctx, "docker", "version")
 		_, err := cmd.Output()
+
 		if err != nil {
 			return fmt.Errorf("Failed Verification : Access to Docker CLI -> %s", err)
 		}
@@ -195,16 +199,20 @@ func main() {
 		}
 	}
 
+	statsManager := resources.NewContainerStatsManager()
+
 	// Set up everything (Melody instance, Docker client, Server settings)
 	var _server server.Server
 	if _os.GetEnv("MULTI_HOST_ENABLED") != "TRUE" {
 		_server = server.Server{
-			Melody: melody.New(),
-			Docker: _client.NewClientWithOpts(client.FromEnv),
+			Melody:       melody.New(),
+			Docker:       _client.NewClientWithOpts(client.FromEnv),
+			StatsManager: statsManager,
 		}
 	} else {
 		_server = server.Server{
-			Melody: melody.New(),
+			Melody:       melody.New(),
+			StatsManager: statsManager,
 		}
 
 		// Populate server's known hosts when multi-host is enabled
@@ -301,6 +309,14 @@ func main() {
 	_server.Melody.HandleDisconnect(func(s *melody.Session) {
 		// When current node is master
 		if _os.GetEnv("SERVER_ROLE") == "Master" {
+			// Clear metrics polling gorutines if disconected client is not agent
+			if _, exists := s.Get("agent"); !exists {
+				if v, exists := s.Get("metrics-context-cancel"); exists {
+					if cancel, ok := v.(context.CancelFunc); ok {
+						cancel()
+					}
+				}
+			}
 			// Clear user tty if there's any open
 			if terminal, exists := s.Get("tty"); exists {
 				(terminal.(*tty.TTY)).ClearAndQuit()

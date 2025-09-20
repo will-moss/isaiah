@@ -1,9 +1,15 @@
 {
+  "scripts": {
+    "build": "npm run build:css",
+    "build:css": "lessc ./client/assets/css/style.less > ./client/assets/css/tmp.css && lightningcss --minify --bundle --targets \"cover 99.5%\" ./client/assets/css/tmp.css -o ./client/assets/css/style.css && rm ./client/assets/css/tmp.css",
+    "build:js": "babel ./client/assets/js/isaiah.js --out-file ./client/assets/js/isaiah.js --config-file ./.babelrc.json && terser ./client/assets/js/isaiah.js -o ./client/assets/js/isaiah.js"
+  },
   "dependencies": {
     "@babel/cli": "^7.25.9",
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",
     "less": "^4.2.1",
-    "lightningcss-cli": "^1.28.2"
+    "lightningcss-cli": "^1.28.2",
+    "terser": "^5.31.3"
   }
 }

@@ -15,6 +15,7 @@ import (
 	"time"
 	_os "will-moss/isaiah/server/_internal/os"
 	"will-moss/isaiah/server/_internal/process"
+	"will-moss/isaiah/server/_internal/ringbuf"
 	"will-moss/isaiah/server/_internal/tty"
 	"will-moss/isaiah/server/ui"
 
@@ -432,6 +433,177 @@ func (containers Containers) ToRows(columns []string) ui.Rows {
 	}
 
 	return rows
+}
+
+// Represents a metric data point for a container.
+type MetricPoint struct {
+	CpuMetric float64 `json:"cpu"`
+	MemMetric float64 `json:"mem"`
+	Timestamp int64   `json:"timestamp"`
+}
+
+type containerStats struct {
+	isPolling    bool
+	metrics      *ringbuf.RingBuffer[MetricPoint]
+	lastAccessed time.Time
+}
+
+type ContainerStatsManager struct {
+	storeMutex           sync.RWMutex
+	containersStatsStore map[string]containerStats
+}
+
+func NewContainerStatsManager() *ContainerStatsManager {
+	return &ContainerStatsManager{
+		containersStatsStore: make(map[string]containerStats),
+	}
+}
+
+const RING_BUFFER_SIZE = 3000
+const POLLING_IDLE_DURATION = 30
+
+func NewContainerStats() containerStats {
+	return containerStats{
+		metrics:      ringbuf.NewRingBuffer[MetricPoint](RING_BUFFER_SIZE),
+		lastAccessed: time.Now(),
+	}
+}
+
+func (c *ContainerStatsManager) UpdateLastAccessed(containerID string) {
+	c.storeMutex.Lock()
+	s, ok := c.containersStatsStore[containerID]
+	if !ok {
+		c.containersStatsStore[containerID] = NewContainerStats()
+	} else {
+		s.lastAccessed = time.Now()
+		c.containersStatsStore[containerID] = s
+	}
+	c.storeMutex.Unlock()
+}
+
+// GetMetricsFrom returns the metric data point for a container, starting from a given index.
+func (c *ContainerStatsManager) GetMetricsFrom(containerID string, from uint64) ([]MetricPoint, uint64) {
+	c.storeMutex.RLock()
+	s, ok := c.containersStatsStore[containerID]
+	c.storeMutex.RUnlock()
+	if !ok {
+		return []MetricPoint{}, 0
+	}
+	return s.metrics.GetFromCount(from)
+}
+
+// IsMetricsPolling returns whether metrics are currently being polled for a container.
+func (c *ContainerStatsManager) IsMetricsPolling(containerID string) bool {
+	c.storeMutex.RLock()
+	defer c.storeMutex.RUnlock()
+	s, ok := c.containersStatsStore[containerID]
+	if ok {
+		return s.isPolling
+	}
+	return false
+}
+
+// PollMetrics polls the metrics for a container
+// It will retry up to 5 times on error before stopping.
+func (c *ContainerStatsManager) PollMetrics(containerID string, client *client.Client, ctx context.Context, errChan chan error) {
+	c.storeMutex.Lock()
+	cStats, ok := c.containersStatsStore[containerID]
+	if !ok {
+		cStats = NewContainerStats()
+		c.containersStatsStore[containerID] = cStats
+	}
+	cStats.isPolling = true
+	c.containersStatsStore[containerID] = cStats
+	c.storeMutex.Unlock()
+	retries := 5
+
+	// tick returns true to continue polling, false to stop.
+	tick := func() bool {
+		if time.Since(c.containersStatsStore[containerID].lastAccessed) > POLLING_IDLE_DURATION*time.Minute {
+			c.storeMutex.Lock()
+			cStats.isPolling = false
+			c.containersStatsStore[containerID] = cStats
+			c.storeMutex.Unlock()
+			errChan <- fmt.Errorf("Idle metrics polling time period exceeded")
+			return false
+		}
+
+		information, err := client.ContainerStatsOneShot(ctx, containerID)
+
+		if err != nil {
+			errChan <- err
+			retries -= 1
+
+			if retries <= 0 {
+				errChan <- fmt.Errorf("Stopping polling metrics for container %s", containerID)
+				c.storeMutex.Lock()
+				cStats.isPolling = false
+				c.containersStatsStore[containerID] = cStats
+				c.storeMutex.Unlock()
+				return false
+			}
+
+			return true
+		}
+
+		retries = 5
+
+		var statsResult types.StatsJSON
+		if err := json.NewDecoder(information.Body).Decode(&statsResult); err != nil {
+			errChan <- err
+			c.storeMutex.Lock()
+			cStats.isPolling = false
+			c.containersStatsStore[containerID] = cStats
+			c.storeMutex.Unlock()
+			return false
+		}
+		// move out to helper func
+		cpuUsageDelta := statsResult.CPUStats.CPUUsage.TotalUsage - statsResult.PreCPUStats.CPUUsage.TotalUsage
+		cpuTotalUsageDelta := statsResult.CPUStats.SystemUsage - statsResult.PreCPUStats.SystemUsage
+
+		var cpuPercent float64
+		if cpuTotalUsageDelta > 0 {
+			cpuPercent = (float64(cpuUsageDelta) * 100) / float64(cpuTotalUsageDelta)
+		}
+
+		usage := statsResult.MemoryStats.Usage
+		limit := statsResult.MemoryStats.Limit
+		var memPercent float64
+
+		if limit > 0 {
+			memPercent = float64(usage) * 100 / float64(limit)
+		}
+
+		mp := MetricPoint{
+			CpuMetric: cpuPercent,
+			MemMetric: memPercent,
+			Timestamp: statsResult.Read.Unix(),
+		}
+
+		cStats.metrics.Add(mp)
+		return true
+	}
+
+	// Fire the first tick immediately,  stop if it fails
+	if !tick() {
+		return
+	}
+
+	t := time.NewTicker(time.Second * 3)
+	for {
+		select {
+		case <-ctx.Done():
+			c.storeMutex.Lock()
+			cStats.isPolling = false
+			c.containersStatsStore[containerID] = cStats
+			c.storeMutex.Unlock()
+			return
+		case <-t.C:
+			if !tick() {
+				return
+			}
+		}
+	}
 }
 
 // Remove the Docker container
@@ -870,8 +1042,10 @@ func (c Container) GetStats(client *client.Client) (ui.InspectorContent, error) 
 	mainStats.Content = rows
 
 	separator := ui.InspectorContentPart{Type: "lines", Content: []string{"Full stats:", "&nbsp;"}}
+	plot := ui.InspectorContentPart{Type: "plot", Content: map[string]interface{}{"metrics": []MetricPoint{}}}
 
 	return ui.InspectorContent{
+		plot,
 		mainStats,
 		separator,
 		ui.InspectorContentPart{Type: "json", Content: statsResult},

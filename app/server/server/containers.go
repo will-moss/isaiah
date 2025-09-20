@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -747,6 +748,98 @@ func (Containers) RunCommand(server *Server, session _session.GenericSession, co
 					},
 				},
 			}),
+		)
+
+	case "container.metrics":
+		// var container resources.Container
+		// err := mapstructure.Decode(command.Args["Resource"], &container)
+		//
+		// if err != nil {
+		// 	server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": err.Error()}}))
+		// 	break
+		// }
+		containerID, ok := command.Args["Resource"].(string)
+
+		if !ok {
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "Container id must string"}}))
+			break
+		}
+
+		from, ok := command.Args["From"]
+
+		if !ok {
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "missing container.metrics mandatory argument \"from\""}}))
+			break
+		}
+
+		idx, ok := from.(float64)
+		from_idx := uint64(idx)
+
+		if !ok {
+			server.SendNotification(session, ui.NotificationError(ui.NP{Content: ui.JSON{"Message": "container.metrics \"from\" argument must be integer "}}))
+			break
+		}
+
+		inspection, err := server.Docker.ContainerInspect(context.Background(), containerID)
+		if err != nil {
+			server.SendNotification(
+				session,
+				ui.NotificationData(ui.NP{
+					Content: ui.JSON{"Metrics": []resources.MetricPoint{}, "From": 0, "IsRunning": false}}),
+			)
+			break
+		}
+
+		status := inspection.State.Status
+		if status == "created" || status == "removing" || status == "exited" || status == "dead" {
+			server.SendNotification(
+				session,
+				ui.NotificationData(ui.NP{
+					Content: ui.JSON{"Metrics": []resources.MetricPoint{}, "From": 0, "IsRunning": false}}),
+			)
+			break
+		}
+
+		server.StatsManager.UpdateLastAccessed(containerID)
+
+		// Spawn a new metrics poller, if we don't have one yet for this session.
+		// All metric pollers for a given session share the same context,
+		// so they can be cancelled all at once.
+		if !server.StatsManager.IsMetricsPolling(containerID) {
+			errChan := make(chan error, 1)
+			// Link all metrics poller in one session with one context
+			ctxVal, exists := session.Get("metrics-context")
+			var ctx context.Context
+
+			if exists {
+				ctx = ctxVal.(context.Context)
+			} else {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithCancel(context.Background())
+				session.Set("metrics-context", ctx)
+				session.Set("metrics-context-cancel", cancel)
+			}
+
+			go server.StatsManager.PollMetrics(containerID, server.Docker, ctx, errChan)
+
+			go func() {
+				e := <-errChan
+				// based on type of error send correct notification
+				// server.SendNotification(
+				// 	session,
+				// 	ui.NotificationInfo(ui.NP{
+				// 		Content: ui.JSON{"Message": e.Error()},
+				// 	}),
+				// )
+				fmt.Printf("container.metrics: %s \n", e.Error())
+			}()
+		}
+
+		metrics, next_idx := server.StatsManager.GetMetricsFrom(containerID, from_idx)
+		server.SendNotification(
+			session,
+			ui.NotificationData(ui.NP{
+				Content: ui.JSON{"Metrics": metrics, "From": next_idx, "IsRunning": true}}),
 		)
 
 	// Command not found
