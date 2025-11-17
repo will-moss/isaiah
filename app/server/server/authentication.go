@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/sha256"
+	"crypto/subtle"
 	"fmt"
 	_os "will-moss/isaiah/server/_internal/os"
 	_session "will-moss/isaiah/server/_internal/session"
@@ -33,7 +34,8 @@ func (Authentication) RunCommand(server *Server, session _session.GenericSession
 
 		// Authentication against raw password
 		if _os.GetEnv("AUTHENTICATION_HASH") == "" {
-			if password != _os.GetEnv("AUTHENTICATION_SECRET") {
+			secret := _os.GetEnv("AUTHENTICATION_SECRET")
+			if subtle.ConstantTimeCompare([]byte(password.(string)), []byte(secret)) != 1 {
 				session.Set("authenticated", false)
 				server.SendNotification(
 					session,
@@ -55,8 +57,9 @@ func (Authentication) RunCommand(server *Server, session _session.GenericSession
 			hasher := sha256.New()
 			hasher.Write([]byte(password.(string)))
 			hashed := fmt.Sprintf("%x", hasher.Sum(nil))
+			passwordHash := _os.GetEnv("AUTHENTICATION_HASH")
 
-			if hashed != _os.GetEnv("AUTHENTICATION_HASH") {
+			if subtle.ConstantTimeCompare([]byte(hashed), []byte(passwordHash)) != 1 {
 				session.Set("authenticated", false)
 				server.SendNotification(
 					session,
