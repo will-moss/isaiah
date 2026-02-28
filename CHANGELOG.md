@@ -1,3 +1,10 @@
+## [1.36.6](https://github.com/will-moss/isaiah/compare/1.36.5...1.36.6) (2026-02-28)
+
+
+### Bug Fixes
+
+* **dummy:** forcefully creating a new version ([53eba6b](https://github.com/will-moss/isaiah/commit/53eba6b9c06297b24659d8ce4310fc7bf039898b))
+
 ## [1.36.5](https://github.com/will-moss/isaiah/compare/1.36.4...1.36.5) (2026-02-28)
 
 
