@@ -1,3 +1,10 @@
+## [1.36.9](https://github.com/will-moss/isaiah/compare/1.36.8...1.36.9) (2026-02-28)
+
+
+### Bug Fixes
+
+* **build:** fixed the build steps to match the newer babel/lightiningcss and PNPM configurations ([4875806](https://github.com/will-moss/isaiah/commit/4875806d3fa3ed0e4244072f08588f305681cf7d))
+
 ## [1.36.8](https://github.com/will-moss/isaiah/compare/1.36.7...1.36.8) (2026-02-28)
 
 
