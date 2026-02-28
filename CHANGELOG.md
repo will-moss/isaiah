@@ -1,3 +1,10 @@
+## [1.36.8](https://github.com/will-moss/isaiah/compare/1.36.7...1.36.8) (2026-02-28)
+
+
+### Bug Fixes
+
+* **publishing:** attempt at fixing the release process since the update of Docker Engine ([a0147c6](https://github.com/will-moss/isaiah/commit/a0147c61ea52b118d342d9352601c740f7e5ba48))
+
 ## [1.36.7](https://github.com/will-moss/isaiah/compare/1.36.6...1.36.7) (2026-02-28)
 
 
