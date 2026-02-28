@@ -1,3 +1,10 @@
+## [1.36.3](https://github.com/will-moss/isaiah/compare/1.36.2...1.36.3) (2026-02-28)
+
+
+### Bug Fixes
+
+* **compatibility:** updated the Docker SDK for Go tu work with Docker 29+, and adjusted the code ([a3b8ed6](https://github.com/will-moss/isaiah/commit/a3b8ed6ccf849a0a71336f9430a0650ddc976d66)), closes [#32](https://github.com/will-moss/isaiah/issues/32)
+
 ## [1.36.2](https://github.com/will-moss/isaiah/compare/1.36.1...1.36.2) (2025-07-23)
 
 
