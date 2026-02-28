@@ -56,32 +56,32 @@ dockers:
   build_flag_templates:
   - "--pull"
   - "--platform=linux/amd64"
+  - "--provenance=false"
   goarch: amd64
-
-
 - image_templates:
   - 'mosswill/isaiah:{{ .Tag }}-arm64'
   use: buildx
   build_flag_templates:
   - "--pull"
   - "--platform=linux/arm64"
+  - "--provenance=false"
   goarch: arm64
-
 - image_templates:
   - 'mosswill/isaiah:{{ .Tag }}-armv6'
   use: buildx
   build_flag_templates:
   - "--pull"
   - "--platform=linux/arm/v6"
+  - "--provenance=false"
   goarch: arm
   goarm: 6
-
 - image_templates:
   - 'mosswill/isaiah:{{ .Tag }}-armv7'
   use: buildx
   build_flag_templates:
   - "--pull"
   - "--platform=linux/arm/v7"
+  - "--provenance=false"
   goarch: arm
   goarm: 7
 
