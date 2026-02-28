@@ -12,9 +12,9 @@ import (
 	"will-moss/isaiah/server/_internal/process"
 	"will-moss/isaiah/server/ui"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/fatih/structs"
 )
@@ -142,7 +142,7 @@ func ImagesBulkActions() []ui.MenuAction {
 
 // Retrieve all Docker images
 func ImagesList(client *client.Client) Images {
-	imgReader, err := client.ImageList(context.Background(), types.ImageListOptions{All: true})
+	imgReader, err := client.ImageList(context.Background(), image.ListOptions{All: true})
 
 	if err != nil {
 		return []Image{}
@@ -150,7 +150,7 @@ func ImagesList(client *client.Client) Images {
 
 	// Fetch used image ids from containers as well to determine if an image is currently in use
 	var usedImageIds = make(map[string][]string, 0)
-	cntReader, cntErr := client.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	cntReader, cntErr := client.ContainerList(context.Background(), container.ListOptions{All: true})
 	if cntErr == nil {
 		for i := 0; i < len(cntReader); i++ {
 			var imageID = cntReader[i].ImageID
@@ -211,7 +211,7 @@ func ImagesList(client *client.Client) Images {
 
 // Count the number of Docker images
 func ImagesCount(client *client.Client) int {
-	reader, err := client.ImageList(context.Background(), types.ImageListOptions{All: true})
+	reader, err := client.ImageList(context.Background(), image.ListOptions{All: true})
 
 	if err != nil {
 		return 0
@@ -286,14 +286,14 @@ func (images Images) ToRows(columns []string) ui.Rows {
 
 // Remove the Docker image
 func (i Image) Remove(client *client.Client, force bool, prune bool) error {
-	_, err := client.ImageRemove(context.Background(), i.ID, types.ImageRemoveOptions{Force: force, PruneChildren: prune})
+	_, err := client.ImageRemove(context.Background(), i.ID, image.RemoveOptions{Force: force, PruneChildren: prune})
 	return err
 }
 
 // Pull a new Docker image
 func ImagePull(c *client.Client, m process.LongTaskMonitor, args map[string]interface{}) {
 	name := args["Image"].(string)
-	rc, err := c.ImagePull(context.Background(), name, types.ImagePullOptions{})
+	rc, err := c.ImagePull(context.Background(), name, image.PullOptions{})
 
 	if err != nil {
 		m.Errors <- err
@@ -424,7 +424,7 @@ func (i Image) Run(client *client.Client, name string) error {
 	err = client.ContainerStart(
 		context.Background(),
 		response.ID,
-		types.ContainerStartOptions{},
+		container.StartOptions{},
 	)
 
 	return err

@@ -221,7 +221,7 @@ func ContainersBulkActions() []ui.MenuAction {
 
 // Retrieve all Docker containers
 func ContainersList(client *client.Client, filters filters.Args) Containers {
-	reader, err := client.ContainerList(context.Background(), types.ContainerListOptions{All: true, Filters: filters})
+	reader, err := client.ContainerList(context.Background(), container.ListOptions{All: true, Filters: filters})
 
 	if err != nil {
 		return []Container{}
@@ -252,7 +252,7 @@ func ContainersList(client *client.Client, filters filters.Args) Containers {
 
 // Count the number of Docker containers
 func ContainersCount(client *client.Client) int {
-	containers, err := client.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	containers, err := client.ContainerList(context.Background(), container.ListOptions{All: true})
 
 	if err != nil {
 		return 0
@@ -359,7 +359,7 @@ func ContainersRemove(client *client.Client) error {
 			continue
 		}
 
-		err := client.ContainerRemove(context.Background(), _container.Name, types.ContainerRemoveOptions{Force: true})
+		err := client.ContainerRemove(context.Background(), _container.Name, container.RemoveOptions{Force: true})
 
 		if err != nil {
 			return err
@@ -436,7 +436,7 @@ func (containers Containers) ToRows(columns []string) ui.Rows {
 
 // Remove the Docker container
 func (c Container) Remove(client *client.Client, force bool, removeVolumes bool) error {
-	return client.ContainerRemove(context.Background(), c.ID, types.ContainerRemoveOptions{Force: force, RemoveVolumes: removeVolumes})
+	return client.ContainerRemove(context.Background(), c.ID, container.RemoveOptions{Force: force, RemoveVolumes: removeVolumes})
 }
 
 // Pause the Docker container
@@ -468,7 +468,7 @@ func (c Container) Inspect(client *client.Client) (types.ContainerJSON, error) {
 func (c Container) Shell(client *client.Client, tty *tty.TTY, channelErrors chan error, channelUpdates chan string) {
 	cmd := _os.GetEnv("TTY_SERVER_COMMAND")
 
-	execConfig := types.ExecConfig{
+	execConfig := container.ExecOptions{
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
@@ -482,7 +482,7 @@ func (c Container) Shell(client *client.Client, tty *tty.TTY, channelErrors chan
 		return
 	}
 
-	process, err := client.ContainerExecAttach(context.Background(), exec.ID, types.ExecStartCheck{Tty: true})
+	process, err := client.ContainerExecAttach(context.Background(), exec.ID, container.ExecStartOptions{Tty: true})
 	if err != nil {
 		channelErrors <- err
 	}
@@ -609,7 +609,7 @@ func (c Container) Update(client *client.Client) error {
 	err = client.ContainerStart(
 		context.Background(),
 		response.ID,
-		types.ContainerStartOptions{},
+		container.StartOptions{},
 	)
 
 	if err != nil {
@@ -703,7 +703,7 @@ func (c Container) Edit(client *client.Client, m process.LongTaskMonitor, args m
 
 // Inspector - Retrieve the logs written by the Docker container
 func (c Container) GetLogs(client *client.Client, writer io.Writer, showTimestamps bool) (*io.ReadCloser, error) {
-	opts := types.ContainerLogsOptions{
+	opts := container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Timestamps: showTimestamps,
@@ -836,7 +836,7 @@ func (c Container) GetStats(client *client.Client) (ui.InspectorContent, error) 
 	}
 	defer information.Body.Close()
 
-	var statsResult types.StatsJSON
+	var statsResult container.StatsResponse
 	if err := json.NewDecoder(information.Body).Decode(&statsResult); err != nil {
 		return nil, err
 	}

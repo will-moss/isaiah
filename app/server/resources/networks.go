@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"will-moss/isaiah/server/ui"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/fatih/structs"
 )
@@ -74,7 +74,7 @@ func NetworksBulkActions() []ui.MenuAction {
 
 // Retrieve all Docker networks
 func NetworksList(client *client.Client) Networks {
-	reader, err := client.NetworkList(context.Background(), types.NetworkListOptions{})
+	reader, err := client.NetworkList(context.Background(), network.ListOptions{})
 
 	if err != nil {
 		return []Network{}
@@ -97,7 +97,7 @@ func NetworksList(client *client.Client) Networks {
 
 // Count the number of Docker networks
 func NetworksCount(client *client.Client) int {
-	images, err := client.NetworkList(context.Background(), types.NetworkListOptions{})
+	images, err := client.NetworkList(context.Background(), network.ListOptions{})
 
 	if err != nil {
 		return 0
@@ -156,7 +156,7 @@ func (networks Networks) ToRows(columns []string) ui.Rows {
 
 // Inspector - Retrieve the full configuration associated with a Docker network
 func (n Network) GetConfig(client *client.Client) (ui.InspectorContent, error) {
-	information, err := client.NetworkInspect(context.Background(), n.ID, types.NetworkInspectOptions{})
+	information, err := client.NetworkInspect(context.Background(), n.ID, network.InspectOptions{})
 
 	if err != nil {
 		return nil, err
