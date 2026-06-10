@@ -144,6 +144,43 @@ func performVerifications() error {
 	return nil
 }
 
+func isTrustedForwardProxy(remoteAddr string) bool {
+	trustedProxies := strings.TrimSpace(_os.GetEnv("FORWARD_PROXY_AUTHENTICATION_TRUSTED_PROXIES"))
+	if trustedProxies == "" {
+		return false
+	}
+
+	host, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		host = remoteAddr
+	}
+
+	remoteIP := net.ParseIP(strings.Trim(host, "[]"))
+	if remoteIP == nil {
+		return false
+	}
+
+	for _, trustedProxy := range strings.Split(trustedProxies, ",") {
+		trustedProxy = strings.TrimSpace(trustedProxy)
+		if trustedProxy == "" {
+			continue
+		}
+
+		if _, network, err := net.ParseCIDR(trustedProxy); err == nil {
+			if network.Contains(remoteIP) {
+				return true
+			}
+			continue
+		}
+
+		if ip := net.ParseIP(trustedProxy); ip != nil && ip.Equal(remoteIP) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Entrypoint
 func main() {
 	// Handle commandline arguments if any
@@ -271,19 +308,22 @@ func main() {
 			requiredHeaderValue := _os.GetEnv("FORWARD_PROXY_AUTHENTICATION_HEADER_VALUE")
 
 			suppliedHeaderValue := session.Request.Header.Get(requiredHeaderKey)
-
 			if suppliedHeaderValue != "" {
-				if requiredHeaderValue == "*" || suppliedHeaderValue == requiredHeaderValue {
-					session.Set("authenticated", true)
-					_server.SendNotification(session, ui.NotificationAuth(ui.NP{
-						Type: ui.TypeSuccess,
-						Content: ui.JSON{
-							"Authentication": ui.JSON{
-								"Spontaneous": true,
-								"Message":     "You are now authenticated",
+				if isTrustedForwardProxy(session.Request.RemoteAddr) {
+					if requiredHeaderValue == "*" || suppliedHeaderValue == requiredHeaderValue {
+						session.Set("authenticated", true)
+						_server.SendNotification(session, ui.NotificationAuth(ui.NP{
+							Type: ui.TypeSuccess,
+							Content: ui.JSON{
+								"Authentication": ui.JSON{
+									"Spontaneous": true,
+									"Message":     "You are now authenticated",
+								},
 							},
-						},
-					}))
+						}))
+					}
+				} else {
+					log.Printf("Ignoring forward proxy authentication from untrusted remote address %s", session.Request.RemoteAddr)
 				}
 			}
 		}
