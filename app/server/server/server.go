@@ -464,6 +464,11 @@ func (server *Server) Handle(session _session.GenericSession, message ...[]byte)
 
 	// If the command is meant to be run by an agent, forward it, no further action
 	if _os.GetEnv("SERVER_ROLE") == "Master" && command.Agent != "" {
+		if authenticated, _ := session.Get("authenticated"); authenticated != true {
+			Authentication{}.RunCommand(server, session, command)
+			return
+		}
+
 		allSessions, _ := server.Melody.Sessions()
 		for index := range allSessions {
 			s := allSessions[index]
