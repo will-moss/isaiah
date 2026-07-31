@@ -415,6 +415,7 @@ Before proceeding, please ensure the following :
 - Your proxy supports HTTP/2 and Websockets.
 - Your proxy can communicate with Isaiah on the network.
 - Your proxy forwards authentication headers to Isaiah (but not to the browser).
+- Isaiah can identify your proxy by IP address or CIDR range, and the proxy overwrites or strips user-supplied authentication headers.
 
 <blockquote>
   <br />
@@ -445,8 +446,9 @@ Then, configure Isaiah using the following variables :
 - Set `FORWARD_PROXY_AUTHENTICATION_ENABLED` to `true`.
 - Set `FORWARD_PROXY_AUTHENTICATION_HEADER_KEY` to the name of the forwarded authentication header your proxy sends to Isaiah.
 - Set `FORWARD_PROXY_AUTHENTICATION_HEADER_VALUE` to the value of the header that Isaiah should expect (or use `*` if all values are accepted).
+- Set `FORWARD_PROXY_AUTHENTICATION_TRUSTED_PROXIES` to the comma-separated list of proxy IP addresses or CIDR ranges that are allowed to provide authentication headers.
 
-> By default, Isaiah is configured to work with Authelia out of the box. Hence, you can just set `FORWARD_PROXY_AUTHENTICATION_ENABLED` to `true` and be done with it.
+> Isaiah ignores forward proxy authentication headers from clients that are not listed in `FORWARD_PROXY_AUTHENTICATION_TRUSTED_PROXIES`.
 
 If everything was properly set up, you will encounter the following flow :
 - Navigate to `isaiah.your-domain.tld`.
@@ -505,6 +507,7 @@ To run Isaiah, you will need to set the following environment variables in a `.e
 | `FORWARD_PROXY_AUTHENTICATION_ENABLED`    | `boolean` | Whether Isaiah should accept authentication headers from a forward proxy. | False        |
 | `FORWARD_PROXY_AUTHENTICATION_HEADER_KEY` | `string` | The name of the authentication header sent by the forward proxy after a succesful authentication. | Remote-User        |
 | `FORWARD_PROXY_AUTHENTICATION_HEADER_VALUE` | `string` | The value accepted by Isaiah for the authentication header. Using `*` means that all values are accepted (except emptiness). This parameter can be used to enforce that only a specific user or group can access Isaiah (e.g. `admins` or `john`). | * |
+| `FORWARD_PROXY_AUTHENTICATION_TRUSTED_PROXIES` | `string` | Comma-separated list of trusted proxy IP addresses or CIDR ranges allowed to provide forward proxy authentication headers. Required when `FORWARD_PROXY_AUTHENTICATION_ENABLED` is `true`. | Empty |
 | `CLIENT_PREFERENCE_XXX` | `string` | Please read [this troubleshooting paragraph](#the-web-interface-does-not-save-my-preferences). These settings enable you to define your client preferences on the server, for when your browser can't use the `localStorage` due to limitations, or private browsing. | Empty |
 
 > **Note :** To sort rows in reverse using the `SORTBY_` parameters, prepend your field with the minus symbol, as in `-Name`
