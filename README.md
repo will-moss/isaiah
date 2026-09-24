@@ -26,6 +26,7 @@
   * [Deploy with Docker](#deploy-with-docker)
   * [Deploy with Docker Compose](#deploy-with-docker-compose)
   * [Deploy as a standalone application](#deploy-as-a-standalone-application)
+  * [Deploy with Easypanel](#deploy-with-easypanel)
     + [Using an existing binary](#using-an-existing-binary)
     + [Building the binary manually](#building-the-binary-manually)
     + [Updating](#updating)
@@ -182,6 +183,12 @@ docker logs <NAME-OF-YOUR-CONTAINER>
 > Warning : Always make sure that your Docker Unix socket is mounted, else Isaiah won't be able to communicate with the Docker API.
 
 > Note : Since version 1.36.2, all the Docker images are also mirrored on Github. You can pull from `ghcr.io/will-moss/isaiah:latest`
+
+### Deploy with Easypanel
+
+[Easypanel](https://easypanel.io) is a self-hosted Docker deployment platform, and Isaiah has a one-click deployment template there.
+
+[![Deploy on Easypanel](https://easypanel.io/img/deploy-on-easypanel-40.svg)](https://easypanel.io/templates/isaiah)
 
 ### Deploy as a standalone application
 
